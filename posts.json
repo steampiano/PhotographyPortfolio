@@ -41,8 +41,10 @@
     "thumb": "thumbs/FC 2026/exp-_F2A9863.jpg",
     "caption": "",
     "date": "2026-04-11T07:35:20.333241+00:00",
-    "event": "",
-    "people": [],
+    "event": "FC 2026",
+    "people": [
+      "@scaddams5"
+    ],
     "tags": [],
     "featured": false
   },
@@ -51,8 +53,10 @@
     "thumb": "thumbs/FC 2026/exp-_F2A9885.jpg",
     "caption": "",
     "date": "2026-04-11T07:34:37.872226+00:00",
-    "event": "",
-    "people": [],
+    "event": "FC 2026",
+    "people": [
+      "puppybunz_"
+    ],
     "tags": [],
     "featured": false
   },
@@ -63,7 +67,7 @@
     "date": "2026-04-10T04:00:56.945425+00:00",
     "event": "TFF 2026",
     "people": [
-      "@collieclovis"
+      "@collie.clovis"
     ],
     "tags": [],
     "featured": true
@@ -75,7 +79,7 @@
     "date": "2026-04-07T06:09:30.557709+00:00",
     "event": "TFF 2026",
     "people": [
-      "@collieclovis"
+      "@collie.clovis"
     ],
     "tags": [],
     "featured": false
@@ -87,7 +91,7 @@
     "date": "2026-04-07T06:09:29.506595+00:00",
     "event": "TFF 2026",
     "people": [
-      "@collieclovis"
+      "@collie.clovis"
     ],
     "tags": [],
     "featured": false
@@ -185,8 +189,13 @@
     "thumb": "thumbs/FC 2026/exp-_F2A0029.jpg",
     "caption": "",
     "date": "2026-02-14T06:02:29.678540+00:00",
-    "event": "",
-    "people": [],
+    "event": "FC 2026",
+    "people": [
+      "@olivaceous.orchid",
+      "@soygirrrl",
+      "@dj_whole_milk",
+      "@supdawg1e"
+    ],
     "tags": [],
     "featured": false
   },
@@ -195,10 +204,12 @@
     "thumb": "thumbs/FC 2026/exp-_F2A0001.jpg",
     "caption": "",
     "date": "2026-02-14T06:02:13.542580+00:00",
-    "event": "",
-    "people": [],
+    "event": "FC 2026",
+    "people": [
+      "@snowedleopard"
+    ],
     "tags": [],
-    "featured": false
+    "featured": true
   },
   {
     "image": "photos/FC 2026/exp-DSC03033.jpg",
@@ -215,8 +226,10 @@
     "thumb": "thumbs/FC 2026/exp-DSC02501.jpg",
     "caption": "",
     "date": "2026-01-26T23:27:53.208836+00:00",
-    "event": "",
-    "people": [],
+    "event": "FC 2026",
+    "people": [
+      "@scaddams5"
+    ],
     "tags": [],
     "featured": false
   },
@@ -225,18 +238,23 @@
     "thumb": "thumbs/FC 2026/exp-DSC02577.jpg",
     "caption": "",
     "date": "2026-01-26T21:55:33.148389+00:00",
-    "event": "",
-    "people": [],
+    "event": "FC 2026",
+    "people": [
+      "wynn.gram"
+    ],
     "tags": [],
-    "featured": false
+    "featured": true
   },
   {
     "image": "photos/FC 2026/exp-DSC02746.jpg",
     "thumb": "thumbs/FC 2026/exp-DSC02746.jpg",
     "caption": "",
     "date": "2026-01-23T01:00:47.311356+00:00",
-    "event": "",
-    "people": [],
+    "event": "FC 2026",
+    "people": [
+      "dj_whole_milk",
+      "supdawg1e"
+    ],
     "tags": [],
     "featured": false
   },
@@ -245,8 +263,10 @@
     "thumb": "thumbs/FC 2026/exp-DSC02555.jpg",
     "caption": "",
     "date": "2026-01-23T00:57:55.127917+00:00",
-    "event": "",
-    "people": [],
+    "event": "FC 2026",
+    "people": [
+      "cryingghosts"
+    ],
     "tags": [],
     "featured": false
   },

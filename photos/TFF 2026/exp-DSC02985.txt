@@ -1,2 +1,3 @@
 event: TFF 2026
-people: @collieclovis
+featured: no
+people: @collie.clovis

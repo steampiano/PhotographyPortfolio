@@ -1,0 +1,3 @@
+event: FC 2026
+featured: no
+people: @olivaceous.orchid, @soygirrrl, @dj_whole_milk, @supdawg1e
