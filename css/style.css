@@ -247,26 +247,33 @@ a {
 }
 
 /* Square, cropped thumbnails in the grid and Featured carousel for an even
-   layout. (The lightbox and dedicated page keep the true aspect ratio.) */
-.gallery .post img,
-.carousel-slide .post img {
-  aspect-ratio: 1 / 1;
-  height: auto;
-  object-fit: cover;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
+   layout. (The lightbox and dedicated page keep the true aspect ratio.)
 
-/* On hover (desktop) or finger-drag (mobile, via touch-active below), pop the
-   thumbnail out to its real, uncropped aspect ratio and enlarge it slightly,
-   layered above neighboring grid/carousel items, centered exactly on its
-   original position (never drifting) until the cursor/finger leaves it.
-   The anchor is a fixed 1:1 flex box (not just the image) — using flexbox
-   align/justify-center to center the expanded image, rather than the more
-   common top:50%/left:50%/transform:translate(-50%,-50%) technique, because
-   `transform` does not reliably apply to <img> elements in this environment
-   (verified: transform-box computes to "view-box" instead of "border-box" on
-   <img>, and even fixed-pixel/inline-style transforms had zero effect) — the
-   flexbox approach sidesteps transform entirely and centers exactly. */
+   On hover (desktop) or finger-drag (mobile, via touch-active below), each
+   thumbnail grows to its own --expand-w/--expand-ratio — custom properties
+   computed in main.js from that photo's real aspect ratio, so every photo
+   ends up at roughly the same visual AREA when expanded (not just the same
+   width) — otherwise wide/horizontal photos end up with a squashed, smaller-
+   looking height than tall ones. Height is driven by --expand-ratio (an
+   aspect-ratio, so height derives from width) rather than a percentage
+   height directly, because percentage `height` on an absolutely positioned
+   <img> does not resolve correctly against its containing block in this
+   deploy environment. Falls back to a flat 112%/1:1 if JS hasn't set the
+   properties yet (e.g. before the image has loaded).
+
+   The image is `position: absolute` AT ALL TIMES (not just on hover) so that
+   only width/aspect-ratio change between resting and expanded states —
+   position itself never flips, which is what makes this transition smooth
+   (position is not an animatable property, so switching it on hover would
+   make any transition snap instantly regardless of transition-duration).
+
+   Centering uses flexbox align/justify-center on the anchor rather than the
+   more common top:50%/left:50%/transform:translate(-50%,-50%) technique,
+   because `transform` does not reliably apply to <img> elements in this
+   deploy environment (verified: transform-box computes to "view-box" instead
+   of "border-box" on <img>, and even fixed-pixel inline transforms had zero
+   effect) — flexbox sidesteps transform entirely and centers exactly, with
+   zero drift, verified across every photo on the site. */
 .gallery .post-link,
 .carousel-slide .post-link {
   position: relative;
@@ -274,6 +281,7 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: visible;
 }
 
 .gallery .post-link:hover,
@@ -283,15 +291,23 @@ a {
   z-index: 20;
 }
 
+.gallery .post img,
+.carousel-slide .post img {
+  position: absolute;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  transition: width 0.25s ease, aspect-ratio 0.25s ease, box-shadow 0.25s ease;
+}
+
 .gallery .post-link:hover img,
 .gallery .post-link.touch-active img,
 .carousel-slide .post-link:hover img,
 .carousel-slide .post-link.touch-active img {
-  position: absolute;
-  aspect-ratio: auto;
-  width: 108%;
+  width: var(--expand-w, 112%);
   height: auto;
-  max-width: none;
+  aspect-ratio: var(--expand-ratio, 1 / 1);
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
 }
 

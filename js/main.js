@@ -14,6 +14,35 @@ function formatDate(iso) {
   });
 }
 
+// On hover/touch-active, thumbnails grow to roughly the same visual AREA
+// (not just the same width) regardless of orientation — otherwise wide
+// photos end up with a smaller-looking, squashed height than tall ones once
+// expanded. EXPAND_SCALE is the target linear scale for a perfectly square
+// photo (e.g. 1.15 = grows to 115% width and height).
+const EXPAND_SCALE = 1.15;
+
+function applyExpandSize(img) {
+  const w = img.naturalWidth, h = img.naturalHeight;
+  if (!w || !h) return;
+  const ratio = w / h;
+  const area = EXPAND_SCALE * EXPAND_SCALE;
+  const idealW = Math.sqrt(area * ratio) * 100;
+  const idealH = Math.sqrt(area / ratio) * 100;
+  // Never shrink below the resting square (100%) in either dimension — the
+  // orthogonal axis grows further to compensate instead, so the image always
+  // grows along its dominant axis rather than ever pulling inward.
+  const finalW = Math.max(100, idealW);
+  const finalH = Math.max(100, idealH);
+  // Height is set via --expand-ratio (an aspect-ratio, so height derives from
+  // width) rather than a percentage height directly — percentage `height` on
+  // an absolutely positioned <img> does not resolve correctly against its
+  // containing block in the deploy environment (verified: resolves to the
+  // image's own unrelated size instead of a % of the container), while
+  // width:<percent> + height:auto + aspect-ratio reliably works.
+  img.style.setProperty('--expand-w', finalW.toFixed(2) + '%');
+  img.style.setProperty('--expand-ratio', (finalW / finalH).toFixed(4));
+}
+
 // A handle bubble linking to the matching Instagram profile.
 function buildHandleBubble(handle) {
   const bubble = document.createElement('a');
@@ -46,6 +75,11 @@ function buildPostFigure(post, source) {
   img.src = post.thumb || post.image;
   img.alt = post.caption || (post.people ? post.people.join(', ') : '');
   img.loading = 'lazy';
+  if (img.complete && img.naturalWidth) {
+    applyExpandSize(img);
+  } else {
+    img.addEventListener('load', () => applyExpandSize(img), { once: true });
+  }
   link.appendChild(img);
   figure.appendChild(link);
 
