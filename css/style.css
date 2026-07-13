@@ -15,6 +15,15 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
   line-height: 1.5;
   letter-spacing: -0.01em;
+  /* Reserve space so content isn't hidden behind the fixed footer; generous
+     enough to cover the footer wrapping to two lines on narrow screens. */
+  padding-bottom: 100px;
+}
+
+@media (max-width: 640px) {
+  body {
+    padding-bottom: 150px;
+  }
 }
 
 h1, h2, .logo {
@@ -414,10 +423,52 @@ a {
 }
 
 .site-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 15;
   border-top: 1px solid var(--border);
-  padding: 24px 0;
+  background: rgba(11, 11, 12, 0.85);
+  backdrop-filter: blur(8px);
+  padding: 16px 0;
   color: var(--muted);
   font-size: 0.85rem;
+}
+
+.footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.footer-social {
+  display: flex;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.social-link {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg);
+  flex: 0 0 auto;
+}
+
+.social-link:hover {
+  background: var(--border);
+}
+
+.social-link svg {
+  width: 18px;
+  height: 18px;
 }
 
 /* ---- Lightbox (single photo view) ---- */
