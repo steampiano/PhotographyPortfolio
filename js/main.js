@@ -13,11 +13,16 @@ function buildPostFigure(post) {
   const figure = document.createElement('figure');
   figure.className = 'post';
 
+  const link = document.createElement('a');
+  link.className = 'post-link';
+  link.href = 'photo.html?src=' + encodeURIComponent(post.image);
+
   const img = document.createElement('img');
   img.src = post.image;
   img.alt = post.caption || '';
   img.loading = 'lazy';
-  figure.appendChild(img);
+  link.appendChild(img);
+  figure.appendChild(link);
 
   if (post.caption) {
     const caption = document.createElement('figcaption');
