@@ -20,7 +20,7 @@ function formatDate(iso) {
 // beyond that. So a landscape or portrait photo is larger than its neighbors
 // in every direction (better contrast), rather than matching the square's size
 // on its short axis like it used to.
-const SHORT_SCALE = 1.18;
+const SHORT_SCALE = 1.10;
 
 function applyExpandSize(img) {
   const w = img.naturalWidth, h = img.naturalHeight;
