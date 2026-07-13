@@ -14,33 +14,27 @@ function formatDate(iso) {
   });
 }
 
-// On hover/touch-active, thumbnails grow to roughly the same visual AREA
-// (not just the same width) regardless of orientation — otherwise wide
-// photos end up with a smaller-looking, squashed height than tall ones once
-// expanded. EXPAND_SCALE is the target linear scale for a perfectly square
-// photo (e.g. 1.15 = grows to 115% width and height).
-const EXPAND_SCALE = 1.15;
+// On hover/touch-active, a thumbnail expands to its real (uncropped) aspect
+// ratio and grows so that BOTH dimensions exceed the square resting size — the
+// SHORT axis grows to SHORT_SCALE and the long axis scales up proportionally
+// beyond that. So a landscape or portrait photo is larger than its neighbors
+// in every direction (better contrast), rather than matching the square's size
+// on its short axis like it used to.
+const SHORT_SCALE = 1.18;
 
 function applyExpandSize(img) {
   const w = img.naturalWidth, h = img.naturalHeight;
   if (!w || !h) return;
   const ratio = w / h;
-  const area = EXPAND_SCALE * EXPAND_SCALE;
-  const idealW = Math.sqrt(area * ratio) * 100;
-  const idealH = Math.sqrt(area / ratio) * 100;
-  // Never shrink below the resting square (100%) in either dimension — the
-  // orthogonal axis grows further to compensate instead, so the image always
-  // grows along its dominant axis rather than ever pulling inward.
-  const finalW = Math.max(100, idealW);
-  const finalH = Math.max(100, idealH);
-  // Height is set via --expand-ratio (an aspect-ratio, so height derives from
-  // width) rather than a percentage height directly — percentage `height` on
-  // an absolutely positioned <img> does not resolve correctly against its
-  // containing block in the deploy environment (verified: resolves to the
-  // image's own unrelated size instead of a % of the container), while
-  // width:<percent> + height:auto + aspect-ratio reliably works.
-  img.style.setProperty('--expand-w', finalW.toFixed(2) + '%');
-  img.style.setProperty('--expand-ratio', (finalW / finalH).toFixed(4));
+  const shortPct = SHORT_SCALE * 100;
+  // width% is the long axis for landscapes, the short axis for portraits;
+  // the height then derives from width via --expand-ratio (the natural
+  // aspect ratio). Percentage `height` is avoided because it doesn't resolve
+  // correctly against the containing block for an absolutely positioned
+  // <img> in the deploy environment, whereas width% + aspect-ratio does.
+  const widthPct = ratio >= 1 ? shortPct * ratio : shortPct;
+  img.style.setProperty('--expand-w', widthPct.toFixed(2) + '%');
+  img.style.setProperty('--expand-ratio', ratio.toFixed(4));
 }
 
 // A handle bubble linking to the matching Instagram profile.
