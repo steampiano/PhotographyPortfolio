@@ -238,6 +238,14 @@ a {
   transition: opacity 0.15s ease;
 }
 
+/* Recent Work grid: square, cropped thumbnails for an even grid.
+   (The carousel and lightbox keep the true aspect ratio.) */
+.gallery .post img {
+  aspect-ratio: 1 / 1;
+  height: auto;
+  object-fit: cover;
+}
+
 .post-link:hover img {
   opacity: 0.85;
 }
