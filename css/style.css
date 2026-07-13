@@ -238,9 +238,10 @@ a {
   transition: opacity 0.15s ease;
 }
 
-/* Recent Work grid: square, cropped thumbnails for an even grid.
-   (The carousel and lightbox keep the true aspect ratio.) */
-.gallery .post img {
+/* Square, cropped thumbnails in the grid and Featured carousel for an even
+   layout. (The lightbox and dedicated page keep the true aspect ratio.) */
+.gallery .post img,
+.carousel-slide .post img {
   aspect-ratio: 1 / 1;
   height: auto;
   object-fit: cover;
