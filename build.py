@@ -47,6 +47,16 @@ The full-resolution original loads only on a photo's own dedicated page. If
 sips isn't available (e.g. on the deploy server) an already-committed version
 is reused, and if none exists the full image is used as a fallback so nothing
 ever breaks.
+
+Photo date
+----------
+Each photo's date comes from its embedded EXIF capture time (when available),
+NOT the file's filesystem modification time. This matters because Vercel
+builds from a fresh git checkout, and git checkout resets every file's mtime
+to the moment of checkout — so mtime-based dates would make every photo show
+the deploy date instead of when it was actually taken. EXIF is stored in the
+file's own bytes, so it survives git perfectly. Only falls back to mtime for
+images with no EXIF data (e.g. screenshots, graphics).
 """
 
 import json
@@ -118,6 +128,30 @@ def derivative_for(image_path, rel_path, ext, out_dir, dir_name, max_px, quality
     if os.path.exists(out_path):
         return out_rel
     return rel_path  # fallback: full image
+
+
+def exif_capture_date(image_path):
+    """Return the photo's EXIF capture date/time as a naive ISO string
+    (e.g. "2026-04-23T16:58:07"), or None if the image has no EXIF date.
+
+    Deliberately naive (no timezone/offset) since EXIF stores local camera
+    wall-clock time with no timezone info — treating it as naive means the
+    browser displays this exact calendar date/time regardless of the
+    viewer's own timezone, rather than shifting it during UTC conversion.
+    """
+    if SIPS is None:
+        return None
+    result = subprocess.run(
+        [SIPS, "-g", "creation", image_path],
+        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
+    )
+    if result.returncode != 0:
+        return None
+    m = re.search(r"creation:\s*(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})", result.stdout)
+    if not m:
+        return None
+    year, month, day, hour, minute, second = m.groups()
+    return f"{year}-{month}-{day}T{hour}:{minute}:{second}"
 
 
 def find_profile_photo():
@@ -246,8 +280,13 @@ def main():
             tags = [t.strip() for t in meta.get("tags", "").split(",") if t.strip()]
             people = [p.strip() for p in meta.get("people", "").split(",") if p.strip()]
 
-            mtime = os.path.getmtime(image_path)
-            date = datetime.fromtimestamp(mtime, tz=timezone.utc).isoformat()
+            date = exif_capture_date(image_path)
+            if date is None:
+                # Fallback for images with no EXIF (e.g. screenshots, SVGs).
+                # Note: unlike EXIF, this is NOT stable across a fresh git
+                # checkout (see module docstring).
+                mtime = os.path.getmtime(image_path)
+                date = datetime.fromtimestamp(mtime, tz=timezone.utc).isoformat()
 
             rel_path = os.path.relpath(image_path, os.path.dirname(PHOTOS_DIR))
             rel_path = rel_path.replace(os.sep, "/")
