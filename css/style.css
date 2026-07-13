@@ -312,7 +312,12 @@ a {
   width: var(--expand-w, 112%);
   height: auto;
   aspect-ratio: var(--expand-ratio, 1 / 1);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
+  /* A crisp hairline ring defines the edge even when the expanded photo
+     bleeds over a similar-toned neighbor, plus a heavier drop shadow lifts
+     it clearly off the ones around it. */
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.3),
+    0 24px 60px rgba(0, 0, 0, 0.9);
 }
 
 .post-event {
