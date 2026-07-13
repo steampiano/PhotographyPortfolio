@@ -25,14 +25,20 @@ so older caption files keep working unchanged.
 Featured photos appear in the carousel at the top of the gallery; their order
 is controlled by photos/featured-order.txt (see load_featured_order).
 
-Thumbnails
-----------
-For each photo, a smaller web-sized version is generated into thumbs/ (mirroring
-the photos/ layout) using macOS's built-in `sips`. The gallery and carousel load
-these lightweight thumbnails; the full-resolution original loads only on a
-photo's own page. If sips isn't available (e.g. on the deploy server) the
-already-committed thumbnail is reused, and if none exists the full image is used
-as a fallback so nothing ever breaks.
+Thumbnails and previews
+-----------------------
+For each photo, two smaller web-sized versions are generated using macOS's
+built-in `sips`:
+
+- thumbs/ — small (800px), for the gallery grid and carousel, where many load
+  at once and speed matters most.
+- previews/ — larger (1800px), for the single-photo lightbox, where only one
+  image loads at a time so it can afford more bytes for real sharpness.
+
+The full-resolution original loads only on a photo's own dedicated page. If
+sips isn't available (e.g. on the deploy server) an already-committed version
+is reused, and if none exists the full image is used as a fallback so nothing
+ever breaks.
 """
 
 import json
@@ -45,6 +51,7 @@ from datetime import datetime, timezone
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PHOTOS_DIR = os.path.join(BASE_DIR, "photos")
 THUMBS_DIR = os.path.join(BASE_DIR, "thumbs")
+PREVIEWS_DIR = os.path.join(BASE_DIR, "previews")
 OUTPUT_FILE = os.path.join(BASE_DIR, "posts.json")
 FEATURED_ORDER_FILE = os.path.join(PHOTOS_DIR, "meta", "featured-order.txt")
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"}
@@ -53,50 +60,52 @@ IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"}
 META_KEYS = {"event", "featured", "tags", "people"}
 TRUE_VALUES = {"yes", "y", "true", "1", "on"}
 
-# Longest-edge size (px) and JPEG quality for generated thumbnails.
-THUMB_MAX_PX = 1200
-THUMB_QUALITY = 70
+# Longest-edge size (px) and JPEG quality for each derivative.
+THUMB_MAX_PX = 800      # gallery grid + carousel — many load at once
+THUMB_QUALITY = 68
+PREVIEW_MAX_PX = 1800   # lightbox — only one loads at a time, can afford more
+PREVIEW_QUALITY = 80
 
 SIPS = shutil.which("sips")
 
 
-def make_thumbnail(image_path, thumb_path):
-    """Generate a thumbnail with sips. Returns True on success."""
+def make_derivative(image_path, out_path, max_px, quality):
+    """Generate a resized/compressed derivative with sips. Returns True on success."""
     if SIPS is None:
         return False
-    os.makedirs(os.path.dirname(thumb_path), exist_ok=True)
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
     result = subprocess.run(
-        [SIPS, "-Z", str(THUMB_MAX_PX), "-s", "formatOptions", str(THUMB_QUALITY),
-         image_path, "--out", thumb_path],
+        [SIPS, "-Z", str(max_px), "-s", "formatOptions", str(quality),
+         image_path, "--out", out_path],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
     )
-    return result.returncode == 0 and os.path.exists(thumb_path)
+    return result.returncode == 0 and os.path.exists(out_path)
 
 
-def thumb_for(image_path, rel_path, ext):
-    """Return the web path to use as this photo's thumbnail.
+def derivative_for(image_path, rel_path, ext, out_dir, dir_name, max_px, quality):
+    """Return the web path to use for a derivative (thumb or preview) of a photo.
 
-    Generates the thumbnail if sips is available and it's missing or stale;
-    reuses an existing thumbnail otherwise; falls back to the full image if no
-    thumbnail can be produced or found.
+    Generates it if sips is available and it's missing or stale; reuses an
+    existing one otherwise; falls back to the full image if none can be
+    produced or found.
     """
     # SVGs are already tiny and don't resize well via sips — use as-is.
     if ext == ".svg":
         return rel_path
 
     rel_from_photos = os.path.relpath(image_path, PHOTOS_DIR)
-    thumb_path = os.path.join(THUMBS_DIR, rel_from_photos)
-    thumb_rel = os.path.join("thumbs", rel_from_photos).replace(os.sep, "/")
+    out_path = os.path.join(out_dir, rel_from_photos)
+    out_rel = os.path.join(dir_name, rel_from_photos).replace(os.sep, "/")
 
     needs_build = (
-        not os.path.exists(thumb_path)
-        or os.path.getmtime(image_path) > os.path.getmtime(thumb_path)
+        not os.path.exists(out_path)
+        or os.path.getmtime(image_path) > os.path.getmtime(out_path)
     )
     if needs_build:
-        make_thumbnail(image_path, thumb_path)
+        make_derivative(image_path, out_path, max_px, quality)
 
-    if os.path.exists(thumb_path):
-        return thumb_rel
+    if os.path.exists(out_path):
+        return out_rel
     return rel_path  # fallback: full image
 
 
@@ -192,11 +201,15 @@ def main():
             rel_path = os.path.relpath(image_path, os.path.dirname(PHOTOS_DIR))
             rel_path = rel_path.replace(os.sep, "/")
 
-            thumb = thumb_for(image_path, rel_path, ext)
+            thumb = derivative_for(image_path, rel_path, ext, THUMBS_DIR, "thumbs",
+                                    THUMB_MAX_PX, THUMB_QUALITY)
+            preview = derivative_for(image_path, rel_path, ext, PREVIEWS_DIR, "previews",
+                                      PREVIEW_MAX_PX, PREVIEW_QUALITY)
 
             post = {
                 "image": rel_path,
                 "thumb": thumb,
+                "preview": preview,
                 "caption": caption,
                 "date": date,
                 "event": event,

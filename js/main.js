@@ -209,7 +209,7 @@ function renderLightbox() {
   const post = lbList[lbIndex];
   if (!post) return;
 
-  document.getElementById('lightboxImg').src = post.thumb || post.image;
+  document.getElementById('lightboxImg').src = post.preview || post.thumb || post.image;
   document.getElementById('lightboxImg').alt = post.caption || '';
 
   const peopleEl = document.getElementById('lightboxPeople');

@@ -11,7 +11,7 @@ A static site. No backend, no build tooling beyond one small script.
    (e.g. `golden-gate.jpg` + `golden-gate.txt`) holding its caption and,
    optionally, metadata. See the format below.
 3. Run `python3 build.py` (see below), then commit and push everything —
-   including the generated `thumbs/` files and `posts.json`.
+   including the generated `thumbs/`, `previews/` files and `posts.json`.
 
 Posts are ordered newest-first, using each photo's file date.
 
@@ -48,19 +48,24 @@ those featured photos. The `.txt` extension on a line is optional. Any featured
 photo not listed appears after the listed ones, newest first. Lines starting
 with `#` are ignored.
 
-## Thumbnails (why to run build.py before pushing)
+## Thumbnails and previews (why to run build.py before pushing)
 
-Full-resolution photos can be many megabytes each. To keep the gallery fast,
-`build.py` generates a small web-sized thumbnail (longest edge 1200px) into
-`thumbs/` for every photo, using macOS's built-in `sips` — no installs needed.
+Full-resolution photos can be many megabytes each. To keep the site fast,
+`build.py` generates two smaller web-sized versions of every photo using
+macOS's built-in `sips` — no installs needed:
 
-- The **gallery** and **Featured carousel** load these lightweight thumbnails.
-- A photo's **own page** loads the full-resolution original.
+- **`thumbs/`** (longest edge 800px) — used by the **gallery grid** and
+  **Featured carousel**, where many photos load at once, so small/fast matters.
+- **`previews/`** (longest edge 1800px) — used by the **lightbox** (the
+  single-photo view you get by clicking a photo), where only one image loads
+  at a time, so it can afford more bytes for real sharpness.
+- A photo's **own dedicated page** loads the full-resolution original.
 
-Because the deploy server (Vercel) doesn't have `sips`, thumbnails must be
-generated locally: run `python3 build.py` on your Mac before committing, and
-commit the `thumbs/` files it produces. If a thumbnail is ever missing, the
-site falls back to loading the full image, so nothing breaks — it's just larger.
+Because the deploy server (Vercel) doesn't have `sips`, both must be generated
+locally: run `python3 build.py` on your Mac before committing, and commit the
+`thumbs/` and `previews/` files it produces. If either is ever missing, the
+site falls back to a smaller/larger alternative (or the full image), so
+nothing breaks — it's just not optimally sized.
 
 ## Local preview
 
