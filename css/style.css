@@ -258,10 +258,22 @@ a {
 
 /* On hover (desktop) or finger-drag (mobile, via touch-active below), pop the
    thumbnail out to its real, uncropped aspect ratio and enlarge it slightly,
-   layered above neighboring grid/carousel items. */
+   layered above neighboring grid/carousel items, centered exactly on its
+   original position (never drifting) until the cursor/finger leaves it.
+   The anchor is a fixed 1:1 flex box (not just the image) — using flexbox
+   align/justify-center to center the expanded image, rather than the more
+   common top:50%/left:50%/transform:translate(-50%,-50%) technique, because
+   `transform` does not reliably apply to <img> elements in this environment
+   (verified: transform-box computes to "view-box" instead of "border-box" on
+   <img>, and even fixed-pixel/inline-style transforms had zero effect) — the
+   flexbox approach sidesteps transform entirely and centers exactly. */
 .gallery .post-link,
 .carousel-slide .post-link {
   position: relative;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .gallery .post-link:hover,
@@ -276,11 +288,8 @@ a {
 .carousel-slide .post-link:hover img,
 .carousel-slide .post-link.touch-active img {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
   aspect-ratio: auto;
-  width: 116%;
+  width: 108%;
   height: auto;
   max-width: none;
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
