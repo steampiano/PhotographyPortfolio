@@ -17,12 +17,12 @@ body {
   letter-spacing: -0.01em;
   /* Reserve space so content isn't hidden behind the fixed footer; generous
      enough to cover the footer wrapping to two lines on narrow screens. */
-  padding-bottom: 100px;
+  padding-bottom: 74px;
 }
 
 @media (max-width: 640px) {
   body {
-    padding-bottom: 150px;
+    padding-bottom: 112px;
   }
 }
 
@@ -431,9 +431,9 @@ a {
   border-top: 1px solid var(--border);
   background: rgba(11, 11, 12, 0.85);
   backdrop-filter: blur(8px);
-  padding: 16px 0;
+  padding: 10px 0;
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }
 
 .footer-inner {
@@ -451,8 +451,8 @@ a {
 }
 
 .social-link {
-  width: 34px;
-  height: 34px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   border: 1px solid var(--border);
   display: flex;
@@ -467,8 +467,8 @@ a {
 }
 
 .social-link svg {
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
 }
 
 /* ---- Lightbox (single photo view) ---- */
