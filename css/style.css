@@ -163,6 +163,10 @@ a {
   margin-left: 4px;
 }
 
+.event-filter-panel[hidden] {
+  display: none;
+}
+
 .event-filter-panel {
   position: absolute;
   top: calc(100% + 6px);
