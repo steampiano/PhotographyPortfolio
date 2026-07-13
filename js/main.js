@@ -270,7 +270,35 @@ if (lightbox) {
   });
 }
 
+// Mobile equivalent of the desktop hover-expand effect: as a finger drags
+// across the grid/carousel, whichever thumbnail is currently under it gets
+// the same "touch-active" expanded treatment as :hover, one at a time.
+function setupTouchExpand() {
+  let activeLink = null;
+
+  function setActive(link) {
+    if (link === activeLink) return;
+    if (activeLink) activeLink.classList.remove('touch-active');
+    activeLink = link;
+    if (activeLink) activeLink.classList.add('touch-active');
+  }
+
+  document.addEventListener('touchmove', (e) => {
+    const touch = e.touches[0];
+    if (!touch) return;
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const link = el && el.closest('.post-link');
+    const inScope = link && (link.closest('.gallery') || link.closest('.carousel-slide'));
+    setActive(inScope ? link : null);
+  }, { passive: true });
+
+  document.addEventListener('touchend', () => setActive(null));
+  document.addEventListener('touchcancel', () => setActive(null));
+}
+
 if (gallery) {
+  setupTouchExpand();
+
   fetch('posts.json')
     .then((res) => res.json())
     .then((posts) => {

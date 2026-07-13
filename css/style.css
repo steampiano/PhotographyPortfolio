@@ -244,7 +244,6 @@ a {
   display: block;
   border-radius: 4px;
   background: #1a1a1a;
-  transition: opacity 0.15s ease;
 }
 
 /* Square, cropped thumbnails in the grid and Featured carousel for an even
@@ -254,10 +253,37 @@ a {
   aspect-ratio: 1 / 1;
   height: auto;
   object-fit: cover;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.post-link:hover img {
-  opacity: 0.85;
+/* On hover (desktop) or finger-drag (mobile, via touch-active below), pop the
+   thumbnail out to its real, uncropped aspect ratio and enlarge it slightly,
+   layered above neighboring grid/carousel items. */
+.gallery .post-link,
+.carousel-slide .post-link {
+  position: relative;
+}
+
+.gallery .post-link:hover,
+.gallery .post-link.touch-active,
+.carousel-slide .post-link:hover,
+.carousel-slide .post-link.touch-active {
+  z-index: 20;
+}
+
+.gallery .post-link:hover img,
+.gallery .post-link.touch-active img,
+.carousel-slide .post-link:hover img,
+.carousel-slide .post-link.touch-active img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  aspect-ratio: auto;
+  width: 116%;
+  height: auto;
+  max-width: none;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
 }
 
 .post-event {
