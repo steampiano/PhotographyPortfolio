@@ -18,7 +18,7 @@ function buildPostFigure(post) {
   link.href = 'photo.html?src=' + encodeURIComponent(post.image);
 
   const img = document.createElement('img');
-  img.src = post.image;
+  img.src = post.thumb || post.image;
   img.alt = post.caption || '';
   img.loading = 'lazy';
   link.appendChild(img);

@@ -8,10 +8,25 @@ A static site. No backend, no build tooling beyond one small script.
 2. Optional: add a caption by creating a text file with the **same name** as
    the photo, e.g. `photos/golden-gate.jpg` + `photos/golden-gate.txt`
    containing the caption text.
-3. Commit and push. If deployed on Vercel (see below), it rebuilds
-   `posts.json` automatically — nothing else to run.
+3. Run `python3 build.py` (see below), then commit and push everything —
+   including the generated `thumbs/` files and `posts.json`.
 
 Posts are ordered newest-first, using each photo's file date.
+Photos in `photos/highlights/` also appear in the carousel at the top.
+
+## Thumbnails (why to run build.py before pushing)
+
+Full-resolution photos can be many megabytes each. To keep the gallery fast,
+`build.py` generates a small web-sized thumbnail (longest edge 1200px) into
+`thumbs/` for every photo, using macOS's built-in `sips` — no installs needed.
+
+- The **gallery** and **highlights carousel** load these lightweight thumbnails.
+- A photo's **own page** loads the full-resolution original.
+
+Because the deploy server (Vercel) doesn't have `sips`, thumbnails must be
+generated locally: run `python3 build.py` on your Mac before committing, and
+commit the `thumbs/` files it produces. If a thumbnail is ever missing, the
+site falls back to loading the full image, so nothing breaks — it's just larger.
 
 ## Local preview
 
