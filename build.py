@@ -25,6 +25,14 @@ so older caption files keep working unchanged.
 Featured photos appear in the carousel at the top of the gallery; their order
 is controlled by photos/featured-order.txt (see load_featured_order).
 
+Profile photo
+-------------
+A file named exactly `profile.<ext>` (any image extension, any case), placed
+anywhere in photos/, is NOT a gallery post — it's excluded from posts.json and
+instead used as the About page photo. Its web-sized version is auto-generated
+to photos/meta/profile-web.jpg, which about.html references directly. To
+change the About page photo, just replace the profile.* file and rebuild.
+
 Thumbnails and previews
 -----------------------
 For each photo, two smaller web-sized versions are generated using macOS's
@@ -65,6 +73,9 @@ THUMB_MAX_PX = 800      # gallery grid + carousel — many load at once
 THUMB_QUALITY = 68
 PREVIEW_MAX_PX = 1800   # lightbox — only one loads at a time, can afford more
 PREVIEW_QUALITY = 80
+PROFILE_MAX_PX = 400    # About page avatar
+PROFILE_QUALITY = 78
+PROFILE_WEB_PATH = os.path.join(PHOTOS_DIR, "meta", "profile-web.jpg")
 
 SIPS = shutil.which("sips")
 
@@ -107,6 +118,29 @@ def derivative_for(image_path, rel_path, ext, out_dir, dir_name, max_px, quality
     if os.path.exists(out_path):
         return out_rel
     return rel_path  # fallback: full image
+
+
+def find_profile_photo():
+    """Find a file named exactly `profile.<ext>` anywhere in photos/.
+
+    If more than one exists, the most recently modified one wins (and the
+    others are reported so it's obvious one was ignored).
+    """
+    candidates = []
+    for root, _dirs, filenames in os.walk(PHOTOS_DIR):
+        for filename in filenames:
+            base, ext = os.path.splitext(filename)
+            if base.lower() == "profile" and ext.lower() in IMAGE_EXTS:
+                candidates.append(os.path.join(root, filename))
+
+    if not candidates:
+        return None
+    candidates.sort(key=os.path.getmtime, reverse=True)
+    if len(candidates) > 1:
+        print(f"Note: multiple profile.* files found; using {candidates[0]}")
+        for other in candidates[1:]:
+            print(f"  (ignoring {other})")
+    return candidates[0]
 
 
 def parse_caption_file(path):
@@ -178,12 +212,29 @@ def main():
     posts = []
     featured_order = load_featured_order()
 
-    for root, _dirs, filenames in os.walk(PHOTOS_DIR):
+    profile_source = find_profile_photo()
+    if profile_source:
+        needs_build = (
+            not os.path.exists(PROFILE_WEB_PATH)
+            or os.path.getmtime(profile_source) > os.path.getmtime(PROFILE_WEB_PATH)
+        )
+        if needs_build:
+            make_derivative(profile_source, PROFILE_WEB_PATH, PROFILE_MAX_PX, PROFILE_QUALITY)
+
+    for root, dirs, filenames in os.walk(PHOTOS_DIR):
+        # photos/meta/ holds config and generated assets (featured-order.txt,
+        # profile-web.jpg, etc.) — never gallery content.
+        dirs[:] = [d for d in dirs if d.lower() != "meta"]
+        if os.path.basename(root).lower() == "meta":
+            continue
+
         for filename in filenames:
             base, ext = os.path.splitext(filename)
             ext = ext.lower()
             if ext not in IMAGE_EXTS:
                 continue
+            if base.lower() == "profile":
+                continue  # the profile photo is not a gallery post
 
             image_path = os.path.join(root, filename)
             caption_path = os.path.join(root, base + ".txt")

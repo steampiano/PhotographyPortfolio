@@ -48,6 +48,16 @@ those featured photos. The `.txt` extension on a line is optional. Any featured
 photo not listed appears after the listed ones, newest first. Lines starting
 with `#` are ignored.
 
+## About page photo
+
+A file named exactly `profile.<ext>` (any image extension, any case) —
+anywhere in `photos/`, not just `photos/meta/` — is excluded from the gallery
+entirely and used as the About page photo instead. `build.py` auto-generates a
+small web-sized version to `photos/meta/profile-web.jpg`, which `about.html`
+references. To change your About page photo, just replace the `profile.*`
+file and run `build.py` again. `photos/meta/` itself is always excluded from
+the gallery too, since it holds config and generated files, not photos.
+
 ## Thumbnails and previews (why to run build.py before pushing)
 
 Full-resolution photos can be many megabytes each. To keep the site fast,
