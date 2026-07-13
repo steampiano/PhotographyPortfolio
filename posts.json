@@ -23,7 +23,8 @@
       "@supdawg1e"
     ],
     "tags": [],
-    "featured": true
+    "featured": true,
+    "order": 0
   },
   {
     "image": "photos/AC 2026/exp-DSC05997.jpg",
@@ -102,7 +103,7 @@
     ],
     "tags": [],
     "featured": true,
-    "order": 3
+    "order": 4
   },
   {
     "image": "photos/All else/exp-DSC09855-2.jpg",
@@ -129,7 +130,7 @@
     ],
     "tags": [],
     "featured": true,
-    "order": 4
+    "order": 5
   },
   {
     "image": "photos/All else/exp-DSC09847-2.jpg",
@@ -195,7 +196,7 @@
     ],
     "tags": [],
     "featured": true,
-    "order": 5
+    "order": 7
   },
   {
     "image": "photos/TFF 2026/exp-DSC02985.jpg",
@@ -433,7 +434,7 @@
     ],
     "tags": [],
     "featured": true,
-    "order": 6
+    "order": 8
   },
   {
     "image": "photos/Echo Park/exp-DSC08549.jpg",
@@ -464,7 +465,7 @@
     ],
     "tags": [],
     "featured": true,
-    "order": 7
+    "order": 6
   },
   {
     "image": "photos/Echo Park/exp-DSC08660.jpg",
@@ -558,7 +559,7 @@
     ],
     "tags": [],
     "featured": true,
-    "order": 8
+    "order": 3
   },
   {
     "image": "photos/All else/exp-DSC08198.jpg",
