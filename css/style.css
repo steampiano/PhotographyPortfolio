@@ -81,7 +81,7 @@ a {
 }
 
 .highlights-section {
-  padding: 56px 24px 24px;
+  padding: 32px 24px 24px;
 }
 
 .highlights-section h2 {
@@ -102,8 +102,20 @@ a {
   overflow-x: auto;
   scroll-snap-type: x proximity;
   scroll-behavior: smooth;
-  padding-bottom: 4px;
+  /* A horizontal scroller also clips vertical overflow, so a hovered photo
+     that grows taller than a slide would get cut off. This top/bottom padding
+     gives the expansion vertical room inside the scrollport. Photos are
+     bottom-anchored (see .post-link), so most of the room is on top. */
+  padding: 150px 0 40px;
+  /* Pull the track back up so the top padding (expansion headroom) doesn't
+     leave a big empty gap at rest — the padding just overlaps the space below
+     the heading, which only gets used when a tall photo is hovered. */
+  margin-top: -120px;
   scrollbar-width: none;
+  /* Fade the left/right edges out gradually instead of a hard cut, so photos
+     dissolve toward the arrows rather than hitting a "curtain of black". */
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 56px, #000 calc(100% - 56px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 56px, #000 calc(100% - 56px), transparent 100%);
 }
 
 .carousel-track::-webkit-scrollbar {
