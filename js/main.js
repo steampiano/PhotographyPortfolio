@@ -239,12 +239,44 @@ const lightbox = document.getElementById('lightbox');
 let lbList = [];
 let lbIndex = 0;
 
+// Previews are large (average ~450KB) — fetching+decoding one from scratch on
+// every open/step is what made the lightbox feel laggy. Preloading the
+// adjacent photos ahead of time means stepping next/prev is usually already
+// cached by the time you click.
+const preloadedPreviews = new Set();
+function preloadPreview(post) {
+  if (!post || !post.preview || preloadedPreviews.has(post.preview)) return;
+  preloadedPreviews.add(post.preview);
+  const img = new Image();
+  img.src = post.preview;
+}
+
 function renderLightbox() {
   const post = lbList[lbIndex];
   if (!post) return;
 
-  document.getElementById('lightboxImg').src = post.preview || post.thumb || post.image;
-  document.getElementById('lightboxImg').alt = post.caption || '';
+  const imgEl = document.getElementById('lightboxImg');
+  const thumbSrc = post.thumb || post.image;
+  const previewSrc = post.preview || thumbSrc;
+
+  // Show the already-cached, lightweight thumbnail immediately so there's no
+  // blank/slow flash, then swap to the sharper preview once it's actually
+  // loaded (same aspect ratio, so no visible size jump when it swaps in).
+  imgEl.src = thumbSrc;
+  imgEl.alt = post.caption || '';
+
+  if (previewSrc !== thumbSrc) {
+    const hiRes = new Image();
+    hiRes.onload = () => {
+      // Only swap in if still viewing this same post (user may have already
+      // stepped to a different photo by the time this finishes loading).
+      if (lbList[lbIndex] === post) imgEl.src = previewSrc;
+    };
+    hiRes.src = previewSrc;
+  }
+
+  preloadPreview(lbList[lbIndex - 1]);
+  preloadPreview(lbList[lbIndex + 1]);
 
   const peopleEl = document.getElementById('lightboxPeople');
   peopleEl.innerHTML = '';
