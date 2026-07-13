@@ -5,4 +5,12 @@
 # Lines starting with # are ignored. The extension is optional. Photos not
 # listed here appear after the listed ones, newest first.
 
+exp-DSC05997.jpg
+exp-DSC02577.jpg
+exp-DSC08660.jpg
 exp-DSC02922.jpg
+exp-DSC09824-2.jpg
+exp-DSC03027.jpg
+exp-_F2A0001.jpg
+exp-DSC08803.jpg
+exp-DSC08194.jpg

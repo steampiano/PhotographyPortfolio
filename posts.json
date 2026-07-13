@@ -23,7 +23,7 @@
       "@supdawg1e"
     ],
     "tags": [],
-    "featured": false
+    "featured": true
   },
   {
     "image": "photos/AC 2026/exp-DSC05997.jpg",
@@ -36,7 +36,7 @@
       "@supdawg1e"
     ],
     "tags": [],
-    "featured": true
+    "featured": false
   },
   {
     "image": "photos/All else/[3x2] exp-DSC04845-2.jpg",
@@ -102,7 +102,7 @@
     ],
     "tags": [],
     "featured": true,
-    "order": 0
+    "order": 3
   },
   {
     "image": "photos/All else/exp-DSC09855-2.jpg",
@@ -128,7 +128,8 @@
       "@pumaimpo"
     ],
     "tags": [],
-    "featured": true
+    "featured": true,
+    "order": 4
   },
   {
     "image": "photos/All else/exp-DSC09847-2.jpg",
@@ -193,7 +194,8 @@
       "@collie.clovis"
     ],
     "tags": [],
-    "featured": true
+    "featured": true,
+    "order": 5
   },
   {
     "image": "photos/TFF 2026/exp-DSC02985.jpg",
@@ -430,7 +432,8 @@
       "@snowedleopard"
     ],
     "tags": [],
-    "featured": true
+    "featured": true,
+    "order": 6
   },
   {
     "image": "photos/Echo Park/exp-DSC08549.jpg",
@@ -460,7 +463,8 @@
       "@myxiewaffles"
     ],
     "tags": [],
-    "featured": true
+    "featured": true,
+    "order": 7
   },
   {
     "image": "photos/Echo Park/exp-DSC08660.jpg",
@@ -473,7 +477,8 @@
       "@donniefloof"
     ],
     "tags": [],
-    "featured": true
+    "featured": true,
+    "order": 2
   },
   {
     "image": "photos/Echo Park/exp-DSC08627.jpg",
@@ -538,7 +543,8 @@
       "@wynn.gram"
     ],
     "tags": [],
-    "featured": true
+    "featured": true,
+    "order": 1
   },
   {
     "image": "photos/All else/exp-DSC08194.jpg",
@@ -551,7 +557,8 @@
       "@spacey.universes"
     ],
     "tags": [],
-    "featured": true
+    "featured": true,
+    "order": 8
   },
   {
     "image": "photos/All else/exp-DSC08198.jpg",
