@@ -1,4 +1,3 @@
 event: TFF 2026
 featured: yes
-
-@itsoofinsta
+people: @itsoofinsta

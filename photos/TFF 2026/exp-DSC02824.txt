@@ -1,4 +1,3 @@
 event: TFF 2026
 featured: yes
-
-@norfolker347
+people: @norfolker347

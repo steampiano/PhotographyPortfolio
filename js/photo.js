@@ -23,15 +23,28 @@ if (!src) {
         return;
       }
 
-      document.title = (post.caption || 'Photo') + ' | Photography Portfolio';
+      const people = post.people || [];
+      document.title = (post.caption || people.join(', ') || 'Photo') + ' | Photography Portfolio';
 
       content.innerHTML = '';
 
       const img = document.createElement('img');
       img.src = post.image;
-      img.alt = post.caption || '';
+      img.alt = post.caption || people.join(', ');
       img.className = 'photo-full';
       content.appendChild(img);
+
+      if (people.length) {
+        const peopleEl = document.createElement('div');
+        peopleEl.className = 'photo-people';
+        for (const handle of people) {
+          const bubble = document.createElement('span');
+          bubble.className = 'people-bubble';
+          bubble.textContent = handle;
+          peopleEl.appendChild(bubble);
+        }
+        content.appendChild(peopleEl);
+      }
 
       if (post.event) {
         const eventEl = document.createElement('p');

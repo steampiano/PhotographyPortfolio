@@ -50,7 +50,7 @@ FEATURED_ORDER_FILE = os.path.join(PHOTOS_DIR, "meta", "featured-order.txt")
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"}
 
 # Metadata keys recognized at the top of a caption .txt file.
-META_KEYS = {"event", "featured", "tags"}
+META_KEYS = {"event", "featured", "tags", "people"}
 TRUE_VALUES = {"yes", "y", "true", "1", "on"}
 
 # Longest-edge size (px) and JPEG quality for generated thumbnails.
@@ -184,6 +184,7 @@ def main():
             event = meta.get("event", "").strip()
             featured = meta.get("featured", "").strip().lower() in TRUE_VALUES
             tags = [t.strip() for t in meta.get("tags", "").split(",") if t.strip()]
+            people = [p.strip() for p in meta.get("people", "").split(",") if p.strip()]
 
             mtime = os.path.getmtime(image_path)
             date = datetime.fromtimestamp(mtime, tz=timezone.utc).isoformat()
@@ -199,6 +200,7 @@ def main():
                 "caption": caption,
                 "date": date,
                 "event": event,
+                "people": people,
                 "tags": tags,
                 "featured": featured,
             }

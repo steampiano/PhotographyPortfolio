@@ -23,6 +23,7 @@ line, then the caption:
 ```
 event: TFF 2026
 featured: yes
+people: @alice, @bob
 tags: fursuit, night
 
 A quiet moment by the string lights.
@@ -31,9 +32,11 @@ A quiet moment by the string lights.
 - **event** — the event/gathering this photo is from. Powers the "Filter by
   event" dropdown on the gallery.
 - **featured** — `yes` puts the photo in the "Featured" carousel at the top.
+- **people** — handles of people featured, separated by `, `. Shown as bubbles
+  in the single-photo (lightbox) view and on the photo's dedicated page.
 - **tags** — comma-separated labels (stored for future filtering; not shown yet).
 
-All three are optional. A plain `.txt` with just caption text still works — it's
+All keys are optional. A plain `.txt` with just caption text still works — it's
 treated entirely as the caption.
 
 ## Ordering the Featured carousel

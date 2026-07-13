@@ -1,3 +1,2 @@
 event: TFF 2026
-
-@teeganblu
+people: @teeganblu

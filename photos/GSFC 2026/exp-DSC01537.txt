@@ -1,3 +1,2 @@
 event: GSFC 2026
-
-@norfolker347
+people: @norfolker347

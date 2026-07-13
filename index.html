@@ -51,6 +51,21 @@
   </div>
 </footer>
 
+<div id="lightbox" class="lightbox" hidden aria-modal="true" role="dialog">
+  <button class="lightbox-close" id="lightboxClose" aria-label="Close">&times;</button>
+  <button class="lightbox-nav lightbox-prev" id="lightboxPrev" aria-label="Previous photo">&larr;</button>
+  <button class="lightbox-nav lightbox-next" id="lightboxNext" aria-label="Next photo">&rarr;</button>
+  <figure class="lightbox-figure" id="lightboxFigure">
+    <img class="lightbox-img" id="lightboxImg" src="" alt="">
+    <figcaption class="lightbox-meta">
+      <div class="lightbox-people" id="lightboxPeople"></div>
+      <p class="lightbox-caption" id="lightboxCaption"></p>
+      <p class="lightbox-sub"><span id="lightboxEvent"></span><span id="lightboxDate"></span></p>
+      <a class="lightbox-full" id="lightboxFull" href="#">View full photo</a>
+    </figcaption>
+  </figure>
+</div>
+
 <script src="js/main.js"></script>
 </body>
 </html>
