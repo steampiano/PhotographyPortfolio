@@ -73,8 +73,8 @@ THUMB_MAX_PX = 800      # gallery grid + carousel — many load at once
 THUMB_QUALITY = 68
 PREVIEW_MAX_PX = 1800   # lightbox — only one loads at a time, can afford more
 PREVIEW_QUALITY = 80
-PROFILE_MAX_PX = 400    # About page avatar
-PROFILE_QUALITY = 78
+PROFILE_MAX_PX = 900    # About page photo (displayed larger, so needs more res)
+PROFILE_QUALITY = 82
 PROFILE_WEB_PATH = os.path.join(PHOTOS_DIR, "meta", "profile-web.jpg")
 
 SIPS = shutil.which("sips")
