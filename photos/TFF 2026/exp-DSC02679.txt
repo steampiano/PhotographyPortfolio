@@ -1,1 +1,3 @@
+event: TFF 2026
 featured: no
+people: @teeganblu, @beanssecurity

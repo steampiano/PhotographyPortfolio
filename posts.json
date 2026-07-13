@@ -55,7 +55,7 @@
     "date": "2026-04-11T07:34:37.872226+00:00",
     "event": "FC 2026",
     "people": [
-      "puppybunz_"
+      "@puppybunz_"
     ],
     "tags": [],
     "featured": false
@@ -126,15 +126,18 @@
       "@norfolker347"
     ],
     "tags": [],
-    "featured": true
+    "featured": false
   },
   {
     "image": "photos/TFF 2026/exp-DSC02679.jpg",
     "thumb": "thumbs/TFF 2026/exp-DSC02679.jpg",
     "caption": "",
     "date": "2026-04-02T09:02:45.796220+00:00",
-    "event": "",
-    "people": [],
+    "event": "TFF 2026",
+    "people": [
+      "@teeganblu",
+      "@beanssecurity"
+    ],
     "tags": [],
     "featured": false
   },
@@ -218,7 +221,7 @@
     "date": "2026-01-27T20:45:08.184351+00:00",
     "event": "FC 2026",
     "people": [
-      "tarnwags"
+      "@tarnwags"
     ],
     "tags": [],
     "featured": false
@@ -242,7 +245,7 @@
     "date": "2026-01-26T21:55:33.148389+00:00",
     "event": "FC 2026",
     "people": [
-      "wynn.gram"
+      "@wynn.gram"
     ],
     "tags": [],
     "featured": true
@@ -254,8 +257,8 @@
     "date": "2026-01-23T01:00:47.311356+00:00",
     "event": "FC 2026",
     "people": [
-      "dj_whole_milk",
-      "supdawg1e"
+      "@dj_whole_milk",
+      "@supdawg1e"
     ],
     "tags": [],
     "featured": false
@@ -267,7 +270,7 @@
     "date": "2026-01-23T00:57:55.127917+00:00",
     "event": "FC 2026",
     "people": [
-      "cryingghosts"
+      "@cryingghosts"
     ],
     "tags": [],
     "featured": false

@@ -1,3 +1,3 @@
 event: FC 2026
 featured: yes
-people: wynn.gram
+people: @wynn.gram
