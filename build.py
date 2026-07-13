@@ -29,6 +29,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PHOTOS_DIR = os.path.join(BASE_DIR, "photos")
 THUMBS_DIR = os.path.join(BASE_DIR, "thumbs")
 OUTPUT_FILE = os.path.join(BASE_DIR, "posts.json")
+ORDER_FILE = os.path.join(PHOTOS_DIR, "highlights", "order.txt")
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"}
 
 # Longest-edge size (px) and JPEG quality for generated thumbnails.
@@ -78,8 +79,41 @@ def thumb_for(image_path, rel_path, ext):
     return rel_path  # fallback: full image
 
 
+def load_highlight_order():
+    """Read photos/highlights/order.txt into a list of filenames (in order).
+
+    Blank lines and lines starting with '#' are ignored. Returns [] if the file
+    doesn't exist.
+    """
+    if not os.path.exists(ORDER_FILE):
+        return []
+    entries = []
+    with open(ORDER_FILE, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            entries.append(line)
+    return entries
+
+
+def order_index_for(filename, order_list):
+    """Position of a highlight photo in order_list, or None if not listed.
+
+    Matches either the exact filename or its name without extension, so an
+    order.txt line can be written either way (e.g. "sunset.jpg" or "sunset").
+    """
+    stem = os.path.splitext(filename)[0]
+    for i, entry in enumerate(order_list):
+        entry_stem = os.path.splitext(entry)[0]
+        if filename in (entry, entry_stem) or stem in (entry, entry_stem):
+            return i
+    return None
+
+
 def main():
     posts = []
+    highlight_order = load_highlight_order()
 
     for root, _dirs, filenames in os.walk(PHOTOS_DIR):
         for filename in filenames:
@@ -107,13 +141,18 @@ def main():
 
             thumb = thumb_for(image_path, rel_path, ext)
 
-            posts.append({
+            post = {
                 "image": rel_path,
                 "thumb": thumb,
                 "caption": caption,
                 "date": date,
                 "highlight": highlight,
-            })
+            }
+            if highlight:
+                idx = order_index_for(filename, highlight_order)
+                if idx is not None:
+                    post["order"] = idx
+            posts.append(post)
 
     posts.sort(key=lambda p: p["date"], reverse=True)
 

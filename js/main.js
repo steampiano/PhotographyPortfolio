@@ -68,6 +68,16 @@ if (gallery) {
     .then((res) => res.json())
     .then((posts) => {
       const highlightPosts = posts.filter((p) => p.highlight);
+      // Photos listed in photos/highlights/order.txt (which carry an `order`
+      // index) come first in that order; the rest keep date order (the array
+      // is already sorted newest-first, and Array.sort is stable).
+      highlightPosts.sort((a, b) => {
+        const ao = a.order, bo = b.order;
+        if (ao != null && bo != null) return ao - bo;
+        if (ao != null) return -1;
+        if (bo != null) return 1;
+        return 0;
+      });
       setupCarousel(highlightPosts);
 
       if (!posts.length) {

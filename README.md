@@ -14,6 +14,14 @@ A static site. No backend, no build tooling beyond one small script.
 Posts are ordered newest-first, using each photo's file date.
 Photos in `photos/highlights/` also appear in the carousel at the top.
 
+## Ordering the highlights carousel
+
+Edit `photos/highlights/order.txt` — list photo filenames, one per line, in the
+order you want them shown in the carousel (top line = first). The `.txt`
+extension on a line is optional. Any highlight photo not listed appears after
+the listed ones, newest first. Lines starting with `#` are ignored.
+(This only affects the carousel; the Recent Work grid stays in date order.)
+
 ## Thumbnails (why to run build.py before pushing)
 
 Full-resolution photos can be many megabytes each. To keep the gallery fast,

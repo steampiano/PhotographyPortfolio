@@ -1,0 +1,6 @@
+# Highlights carousel order.
+# List photo filenames (one per line) in the order you want them to appear.
+# Lines starting with # are ignored. Photos not listed here appear after the
+# listed ones, newest first. The extension is optional.
+
+exp-DSC02922.jpg
