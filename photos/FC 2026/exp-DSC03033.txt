@@ -1,0 +1,3 @@
+event: FC 2026
+featured: no
+people: tarnwags

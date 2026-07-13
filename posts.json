@@ -216,8 +216,10 @@
     "thumb": "thumbs/FC 2026/exp-DSC03033.jpg",
     "caption": "",
     "date": "2026-01-27T20:45:08.184351+00:00",
-    "event": "",
-    "people": [],
+    "event": "FC 2026",
+    "people": [
+      "tarnwags"
+    ],
     "tags": [],
     "featured": false
   },
