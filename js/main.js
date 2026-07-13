@@ -14,6 +14,17 @@ function formatDate(iso) {
   });
 }
 
+// A handle bubble linking to the matching Instagram profile.
+function buildHandleBubble(handle) {
+  const bubble = document.createElement('a');
+  bubble.className = 'people-bubble';
+  bubble.textContent = handle;
+  bubble.href = 'https://instagram.com/' + handle.replace(/^@/, '');
+  bubble.target = '_blank';
+  bubble.rel = 'noopener noreferrer';
+  return bubble;
+}
+
 function buildPostFigure(post, source) {
   const figure = document.createElement('figure');
   figure.className = 'post';
@@ -204,10 +215,7 @@ function renderLightbox() {
   const peopleEl = document.getElementById('lightboxPeople');
   peopleEl.innerHTML = '';
   for (const handle of post.people || []) {
-    const bubble = document.createElement('span');
-    bubble.className = 'people-bubble';
-    bubble.textContent = handle;
-    peopleEl.appendChild(bubble);
+    peopleEl.appendChild(buildHandleBubble(handle));
   }
 
   const captionEl = document.getElementById('lightboxCaption');

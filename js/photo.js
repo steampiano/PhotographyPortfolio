@@ -38,9 +38,12 @@ if (!src) {
         const peopleEl = document.createElement('div');
         peopleEl.className = 'photo-people';
         for (const handle of people) {
-          const bubble = document.createElement('span');
+          const bubble = document.createElement('a');
           bubble.className = 'people-bubble';
           bubble.textContent = handle;
+          bubble.href = 'https://instagram.com/' + handle.replace(/^@/, '');
+          bubble.target = '_blank';
+          bubble.rel = 'noopener noreferrer';
           peopleEl.appendChild(bubble);
         }
         content.appendChild(peopleEl);
