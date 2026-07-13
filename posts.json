@@ -4,21 +4,27 @@
     "thumb": "photos/sample-two.svg",
     "caption": "City lights, long exposure.",
     "date": "2026-07-13T01:01:06.614466+00:00",
-    "highlight": false
+    "event": "",
+    "tags": [],
+    "featured": false
   },
   {
     "image": "photos/sample-one.svg",
     "thumb": "photos/sample-one.svg",
     "caption": "A quiet morning by the coast.",
     "date": "2026-07-13T01:01:06.612294+00:00",
-    "highlight": false
+    "event": "",
+    "tags": [],
+    "featured": false
   },
   {
-    "image": "photos/highlights/exp-DSC02922.jpg",
-    "thumb": "thumbs/highlights/exp-DSC02922.jpg",
-    "caption": "TFF 2026 (@itsoofinsta)",
+    "image": "photos/exp-DSC02922.jpg",
+    "thumb": "thumbs/exp-DSC02922.jpg",
+    "caption": "@itsoofinsta",
     "date": "2026-04-23T23:58:08.266314+00:00",
-    "highlight": true,
+    "event": "TFF 2026",
+    "tags": [],
+    "featured": true,
     "order": 0
   }
 ]

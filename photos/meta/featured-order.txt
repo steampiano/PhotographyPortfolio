@@ -1,0 +1,8 @@
+# Featured carousel order.
+# List photo filenames (one per line) in the order you want them shown in the
+# "Featured" carousel. A photo is featured by putting `featured: yes` in its
+# .txt file; this file only controls the ORDER of those featured photos.
+# Lines starting with # are ignored. The extension is optional. Photos not
+# listed here appear after the listed ones, newest first.
+
+exp-DSC02922.jpg

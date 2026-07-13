@@ -32,6 +32,12 @@
   <section class="gallery-intro container">
     <h1>Recent work</h1>
     <p>A running collection of photos, newest first.</p>
+    <div class="event-filter" id="eventFilter" hidden>
+      <button type="button" class="event-filter-btn" id="eventFilterBtn" aria-expanded="false" aria-haspopup="true">
+        Filter by event <span class="event-filter-caret">&#9662;</span>
+      </button>
+      <div class="event-filter-panel" id="eventFilterPanel" hidden></div>
+    </div>
   </section>
 
   <section id="gallery" class="gallery container" aria-live="polite">

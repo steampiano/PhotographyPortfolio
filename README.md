@@ -4,23 +4,46 @@ A static site. No backend, no build tooling beyond one small script.
 
 ## Adding a new post
 
-1. Drop the photo into `photos/` (`.jpg`, `.jpeg`, `.png`, `.webp`, or `.gif`).
-2. Optional: add a caption by creating a text file with the **same name** as
-   the photo, e.g. `photos/golden-gate.jpg` + `photos/golden-gate.txt`
-   containing the caption text.
+1. Drop the photo anywhere in `photos/` (`.jpg`, `.jpeg`, `.png`, `.webp`, or
+   `.gif`). Folders inside `photos/` are just for your own filing — they do
+   **not** affect the site.
+2. Add a text file with the **same name** as the photo
+   (e.g. `golden-gate.jpg` + `golden-gate.txt`) holding its caption and,
+   optionally, metadata. See the format below.
 3. Run `python3 build.py` (see below), then commit and push everything —
    including the generated `thumbs/` files and `posts.json`.
 
 Posts are ordered newest-first, using each photo's file date.
-Photos in `photos/highlights/` also appear in the carousel at the top.
 
-## Ordering the highlights carousel
+## Caption / metadata file format
 
-Edit `photos/highlights/order.txt` — list photo filenames, one per line, in the
-order you want them shown in the carousel (top line = first). The `.txt`
-extension on a line is optional. Any highlight photo not listed appears after
-the listed ones, newest first. Lines starting with `#` are ignored.
-(This only affects the carousel; the Recent Work grid stays in date order.)
+A photo's `.txt` file may begin with optional `key: value` lines, then a blank
+line, then the caption:
+
+```
+event: TFF 2026
+featured: yes
+tags: fursuit, night
+
+A quiet moment by the string lights.
+```
+
+- **event** — the event/gathering this photo is from. Powers the "Filter by
+  event" dropdown on the gallery.
+- **featured** — `yes` puts the photo in the "Featured" carousel at the top.
+- **tags** — comma-separated labels (stored for future filtering; not shown yet).
+
+All three are optional. A plain `.txt` with just caption text still works — it's
+treated entirely as the caption.
+
+## Ordering the Featured carousel
+
+Edit `photos/meta/featured-order.txt` — list photo filenames, one per line, in
+the order you want them shown (top line = first). A photo is *featured* via
+`featured: yes` in its own `.txt`; this file only controls the **order** of
+those featured photos. The `.txt` extension on a line is optional. Any featured
+photo not listed appears after the listed ones, newest first. Lines starting
+with `#` are ignored.
 
 ## Thumbnails (why to run build.py before pushing)
 
@@ -28,7 +51,7 @@ Full-resolution photos can be many megabytes each. To keep the gallery fast,
 `build.py` generates a small web-sized thumbnail (longest edge 1200px) into
 `thumbs/` for every photo, using macOS's built-in `sips` — no installs needed.
 
-- The **gallery** and **highlights carousel** load these lightweight thumbnails.
+- The **gallery** and **Featured carousel** load these lightweight thumbnails.
 - A photo's **own page** loads the full-resolution original.
 
 Because the deploy server (Vercel) doesn't have `sips`, thumbnails must be

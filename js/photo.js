@@ -33,6 +33,13 @@ if (!src) {
       img.className = 'photo-full';
       content.appendChild(img);
 
+      if (post.event) {
+        const eventEl = document.createElement('p');
+        eventEl.className = 'photo-event';
+        eventEl.textContent = post.event;
+        content.appendChild(eventEl);
+      }
+
       if (post.caption) {
         const caption = document.createElement('p');
         caption.className = 'photo-caption';

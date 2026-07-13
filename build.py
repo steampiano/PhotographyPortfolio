@@ -2,12 +2,28 @@
 """Scans photos/ (including subfolders) and writes posts.json. No dependencies
 beyond the standard library.
 
-Add a new post: drop an image in photos/ (or any subfolder within it),
-optionally add a same-named .txt file with the caption, then run
-`python3 build.py` (or let the host run it).
+Add a new post: drop an image in photos/ (or any subfolder within it) and add a
+same-named .txt file with its caption and metadata, then run `python3 build.py`
+(or let the host run it). Folders are only for your own filing — they do NOT
+affect the site; all categorization comes from the .txt metadata.
 
-Photos placed directly in photos/highlights/ are also flagged as highlights
-and shown in the carousel at the top of the gallery page.
+Caption / metadata file format
+------------------------------
+A photo's .txt file may start with optional `key: value` metadata lines,
+followed by a blank line, then the caption text. Example:
+
+    event: TFF 2026
+    featured: yes
+    tags: fursuit, night
+
+    A quiet moment by the string lights.
+
+Recognized keys: `event` (string), `featured` (yes/no), `tags` (comma-separated).
+A plain .txt with no recognized metadata lines is treated entirely as caption,
+so older caption files keep working unchanged.
+
+Featured photos appear in the carousel at the top of the gallery; their order
+is controlled by photos/featured-order.txt (see load_featured_order).
 
 Thumbnails
 ----------
@@ -21,6 +37,7 @@ as a fallback so nothing ever breaks.
 
 import json
 import os
+import re
 import shutil
 import subprocess
 from datetime import datetime, timezone
@@ -29,8 +46,12 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PHOTOS_DIR = os.path.join(BASE_DIR, "photos")
 THUMBS_DIR = os.path.join(BASE_DIR, "thumbs")
 OUTPUT_FILE = os.path.join(BASE_DIR, "posts.json")
-ORDER_FILE = os.path.join(PHOTOS_DIR, "highlights", "order.txt")
+FEATURED_ORDER_FILE = os.path.join(PHOTOS_DIR, "meta", "featured-order.txt")
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"}
+
+# Metadata keys recognized at the top of a caption .txt file.
+META_KEYS = {"event", "featured", "tags"}
+TRUE_VALUES = {"yes", "y", "true", "1", "on"}
 
 # Longest-edge size (px) and JPEG quality for generated thumbnails.
 THUMB_MAX_PX = 1200
@@ -79,16 +100,49 @@ def thumb_for(image_path, rel_path, ext):
     return rel_path  # fallback: full image
 
 
-def load_highlight_order():
-    """Read photos/highlights/order.txt into a list of filenames (in order).
+def parse_caption_file(path):
+    """Parse a photo's .txt into (metadata dict, caption string).
 
-    Blank lines and lines starting with '#' are ignored. Returns [] if the file
-    doesn't exist.
+    Leading lines of the form `key: value` (for keys in META_KEYS) are treated
+    as metadata, up to a blank line or the first non-metadata line; everything
+    after is the caption. A file with no recognized metadata lines is returned
+    entirely as the caption, so plain older caption files still work.
     """
-    if not os.path.exists(ORDER_FILE):
+    if not os.path.exists(path):
+        return {}, ""
+
+    with open(path, "r", encoding="utf-8") as f:
+        lines = f.read().splitlines()
+
+    meta = {}
+    i = 0
+    while i < len(lines):
+        stripped = lines[i].strip()
+        if stripped == "":
+            # A blank line ends a metadata block (if we found any).
+            if meta:
+                i += 1
+            break
+        m = re.match(r"^(\w+)\s*:\s*(.*)$", stripped)
+        if m and m.group(1).lower() in META_KEYS:
+            meta[m.group(1).lower()] = m.group(2).strip()
+            i += 1
+        else:
+            break
+
+    caption = "\n".join(lines[i:]).strip()
+    return meta, caption
+
+
+def load_featured_order():
+    """Read photos/featured-order.txt into a list of filenames (in order).
+
+    Blank lines and lines starting with '#' are ignored. Returns [] if absent.
+    """
+    if not os.path.exists(FEATURED_ORDER_FILE):
         return []
     entries = []
-    with open(ORDER_FILE, "r", encoding="utf-8") as f:
+    with open(FEATURED_ORDER_FILE, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line or line.startswith("#"):
@@ -98,10 +152,10 @@ def load_highlight_order():
 
 
 def order_index_for(filename, order_list):
-    """Position of a highlight photo in order_list, or None if not listed.
+    """Position of a featured photo in order_list, or None if not listed.
 
-    Matches either the exact filename or its name without extension, so an
-    order.txt line can be written either way (e.g. "sunset.jpg" or "sunset").
+    Matches either the exact filename or its name without extension, so a line
+    can be written either way (e.g. "sunset.jpg" or "sunset").
     """
     stem = os.path.splitext(filename)[0]
     for i, entry in enumerate(order_list):
@@ -113,7 +167,7 @@ def order_index_for(filename, order_list):
 
 def main():
     posts = []
-    highlight_order = load_highlight_order()
+    featured_order = load_featured_order()
 
     for root, _dirs, filenames in os.walk(PHOTOS_DIR):
         for filename in filenames:
@@ -125,19 +179,17 @@ def main():
             image_path = os.path.join(root, filename)
             caption_path = os.path.join(root, base + ".txt")
 
-            caption = ""
-            if os.path.exists(caption_path):
-                with open(caption_path, "r", encoding="utf-8") as f:
-                    caption = f.read().strip()
+            meta, caption = parse_caption_file(caption_path)
+
+            event = meta.get("event", "").strip()
+            featured = meta.get("featured", "").strip().lower() in TRUE_VALUES
+            tags = [t.strip() for t in meta.get("tags", "").split(",") if t.strip()]
 
             mtime = os.path.getmtime(image_path)
             date = datetime.fromtimestamp(mtime, tz=timezone.utc).isoformat()
 
             rel_path = os.path.relpath(image_path, os.path.dirname(PHOTOS_DIR))
             rel_path = rel_path.replace(os.sep, "/")
-
-            path_parts = os.path.relpath(root, PHOTOS_DIR).split(os.sep)
-            highlight = path_parts[0].lower() == "highlights"
 
             thumb = thumb_for(image_path, rel_path, ext)
 
@@ -146,10 +198,12 @@ def main():
                 "thumb": thumb,
                 "caption": caption,
                 "date": date,
-                "highlight": highlight,
+                "event": event,
+                "tags": tags,
+                "featured": featured,
             }
-            if highlight:
-                idx = order_index_for(filename, highlight_order)
+            if featured:
+                idx = order_index_for(filename, featured_order)
                 if idx is not None:
                     post["order"] = idx
             posts.append(post)
