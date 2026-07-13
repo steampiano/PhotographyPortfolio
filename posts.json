@@ -2,11 +2,13 @@
   {
     "image": "photos/sample-two.svg",
     "caption": "City lights, long exposure.",
-    "date": "2026-07-13T01:01:06.614466+00:00"
+    "date": "2026-07-13T01:01:06.614466+00:00",
+    "highlight": false
   },
   {
     "image": "photos/sample-one.svg",
     "caption": "A quiet morning by the coast.",
-    "date": "2026-07-13T01:01:06.612294+00:00"
+    "date": "2026-07-13T01:01:06.612294+00:00",
+    "highlight": false
   }
 ]

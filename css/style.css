@@ -71,6 +71,59 @@ a {
   color: var(--fg);
 }
 
+.highlights-section {
+  padding: 56px 24px 24px;
+}
+
+.highlights-section h2 {
+  font-size: 1.4rem;
+  margin: 0 0 20px;
+}
+
+.carousel {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.carousel-track {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.carousel-track::-webkit-scrollbar {
+  display: none;
+}
+
+.carousel-slide {
+  flex: 0 0 auto;
+  width: min(520px, 80vw);
+  scroll-snap-align: start;
+}
+
+.carousel-btn {
+  flex: 0 0 auto;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--fg);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.carousel-btn:hover {
+  background: var(--border);
+}
+
 .gallery-intro {
   padding: 56px 24px 24px;
 }

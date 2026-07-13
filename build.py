@@ -5,6 +5,9 @@ beyond the standard library.
 Add a new post: drop an image in photos/ (or any subfolder within it),
 optionally add a same-named .txt file with the caption, then run
 `python3 build.py` (or let the host run it).
+
+Photos placed directly in photos/highlights/ are also flagged as highlights
+and shown in the carousel at the top of the gallery page.
 """
 
 import json
@@ -39,10 +42,14 @@ def main():
             rel_path = os.path.relpath(image_path, os.path.dirname(PHOTOS_DIR))
             rel_path = rel_path.replace(os.sep, "/")
 
+            path_parts = os.path.relpath(root, PHOTOS_DIR).split(os.sep)
+            highlight = path_parts[0].lower() == "highlights"
+
             posts.append({
                 "image": rel_path,
                 "caption": caption,
                 "date": date,
+                "highlight": highlight,
             })
 
     posts.sort(key=lambda p: p["date"], reverse=True)
