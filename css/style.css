@@ -103,7 +103,7 @@ a {
 
 .carousel-slide {
   flex: 0 0 auto;
-  width: min(520px, 80vw);
+  width: min(345px, 55vw);
   scroll-snap-align: start;
 }
 
