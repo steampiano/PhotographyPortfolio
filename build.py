@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""Scans photos/ and writes posts.json. No dependencies beyond the standard library.
+"""Scans photos/ (including subfolders) and writes posts.json. No dependencies
+beyond the standard library.
 
-Add a new post: drop an image in photos/, optionally add a same-named .txt
-file with the caption, then run `python3 build.py` (or let the host run it).
+Add a new post: drop an image in photos/ (or any subfolder within it),
+optionally add a same-named .txt file with the caption, then run
+`python3 build.py` (or let the host run it).
 """
 
 import json
@@ -17,27 +19,31 @@ IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"}
 def main():
     posts = []
 
-    for filename in os.listdir(PHOTOS_DIR):
-        base, ext = os.path.splitext(filename)
-        if ext.lower() not in IMAGE_EXTS:
-            continue
+    for root, _dirs, filenames in os.walk(PHOTOS_DIR):
+        for filename in filenames:
+            base, ext = os.path.splitext(filename)
+            if ext.lower() not in IMAGE_EXTS:
+                continue
 
-        image_path = os.path.join(PHOTOS_DIR, filename)
-        caption_path = os.path.join(PHOTOS_DIR, base + ".txt")
+            image_path = os.path.join(root, filename)
+            caption_path = os.path.join(root, base + ".txt")
 
-        caption = ""
-        if os.path.exists(caption_path):
-            with open(caption_path, "r", encoding="utf-8") as f:
-                caption = f.read().strip()
+            caption = ""
+            if os.path.exists(caption_path):
+                with open(caption_path, "r", encoding="utf-8") as f:
+                    caption = f.read().strip()
 
-        mtime = os.path.getmtime(image_path)
-        date = datetime.fromtimestamp(mtime, tz=timezone.utc).isoformat()
+            mtime = os.path.getmtime(image_path)
+            date = datetime.fromtimestamp(mtime, tz=timezone.utc).isoformat()
 
-        posts.append({
-            "image": "photos/" + filename,
-            "caption": caption,
-            "date": date,
-        })
+            rel_path = os.path.relpath(image_path, os.path.dirname(PHOTOS_DIR))
+            rel_path = rel_path.replace(os.sep, "/")
+
+            posts.append({
+                "image": rel_path,
+                "caption": caption,
+                "date": date,
+            })
 
     posts.sort(key=lambda p: p["date"], reverse=True)
 
