@@ -279,7 +279,11 @@ a {
   position: relative;
   aspect-ratio: 1 / 1;
   display: flex;
-  align-items: center;
+  /* Bottom-aligned (not centered) on purpose: a tall/portrait photo grows
+     upward, away from its own caption/event/date sitting directly below —
+     centering would grow it both ways and cover that text. Horizontal stays
+     centered since there's nothing below-specific to protect on that axis. */
+  align-items: flex-end;
   justify-content: center;
   overflow: visible;
 }
