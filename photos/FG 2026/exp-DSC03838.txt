@@ -1,1 +1,3 @@
+event: FG 2026
 featured: no
+people: @gaygurtt, @husko_estin, @warzywuff
