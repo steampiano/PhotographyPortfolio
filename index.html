@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Photography Portfolio</title>
+<meta name="description" content="A photography portfolio.">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a href="index.html" class="logo">Photography</a>
+    <nav class="nav">
+      <a href="index.html" class="active">Gallery</a>
+      <a href="about.html">About</a>
+      <a href="about.html#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="gallery-intro container">
+    <h1>Recent work</h1>
+    <p>A running collection of photos, newest first.</p>
+  </section>
+
+  <section id="gallery" class="gallery container" aria-live="polite">
+    <p class="gallery-empty">Loading photos&hellip;</p>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>&copy; <span id="year"></span></p>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>

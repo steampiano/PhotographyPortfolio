@@ -1,0 +1,7 @@
+{
+  "name": "photography-portfolio",
+  "private": true,
+  "scripts": {
+    "build": "python3 build.py"
+  }
+}
