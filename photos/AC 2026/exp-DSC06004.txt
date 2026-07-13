@@ -1,0 +1,3 @@
+event: AC 2026
+featured: no
+people: @supdawg1e

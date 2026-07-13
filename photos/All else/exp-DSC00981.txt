@@ -1,0 +1,3 @@
+event: Furvine
+featured: no
+people: @norfolker347
