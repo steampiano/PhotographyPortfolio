@@ -1,5 +1,7 @@
-/* Series E is the heavier-stroke cut, used only for the header logo/nav.
-   Series D (thinner) is used for everything else — see body/.logo/.nav a. */
+/* Roadgeek Series E is used only for the header logo/nav. Everything else
+   uses Franklin Gothic Medium — registered as two faces of the same family
+   (normal + italic) so the italic cut only kicks in wherever font-style:
+   italic is actually used, instead of applying everywhere. */
 @font-face {
   font-family: "Roadgeek 2005 Series E";
   src: url("../fonts/Roadgeek2005SeriesE.ttf") format("truetype");
@@ -9,10 +11,18 @@
 }
 
 @font-face {
-  font-family: "Roadgeek 2005 Series D";
-  src: url("../fonts/Roadgeek_2005_Series_D.ttf") format("truetype");
+  font-family: "Franklin Gothic Medium";
+  src: url("../fonts/OPTIFranklinGothic-Medium.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Franklin Gothic Medium";
+  src: url("../fonts/OPTIFranklinGothic-MediumIt.otf") format("opentype");
+  font-weight: 400;
+  font-style: italic;
   font-display: swap;
 }
 
@@ -37,7 +47,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
-  font-family: "Roadgeek 2005 Series D", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Franklin Gothic Medium", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
   line-height: 1.5;
   letter-spacing: -0.01em;
   /* Reserve space so content isn't hidden behind the fixed footer; generous
