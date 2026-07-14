@@ -103,8 +103,7 @@ a {
 /* Underline instead of a heavier weight to mark the current page — same
    faux-bold problem as everywhere else on Roadgeek. */
 .nav a.active {
-  text-decoration: underline;
-  text-underline-offset: 4px;
+  color: #9f8ff0;
 }
 
 .nav a:hover {
