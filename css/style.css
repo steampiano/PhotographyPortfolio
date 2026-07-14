@@ -564,6 +564,37 @@ a {
   object-fit: contain;
   border-radius: 4px;
   background: #1a1a1a;
+  transition: filter 0.3s ease;
+}
+
+/* Shown while the thumbnail is displayed and the full preview is still
+   loading in — a deliberate "loading" cue (the classic blur-up technique),
+   removed once the sharp version swaps in. Slight scale hides the blurred
+   edge from peeking outside the image bounds. */
+.lightbox-img.is-loading {
+  filter: blur(16px);
+  transform: scale(1.03);
+}
+
+.lightbox-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 110;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.lightbox-progress[hidden] {
+  display: none;
+}
+
+.lightbox-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--fg);
+  transition: width 0.15s ease;
 }
 
 .lightbox-meta {

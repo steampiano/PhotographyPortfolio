@@ -292,37 +292,99 @@ let lbIndex = 0;
 // Previews are large (average ~450KB) — fetching+decoding one from scratch on
 // every open/step is what made the lightbox feel laggy. Preloading the
 // adjacent photos ahead of time means stepping next/prev is usually already
-// cached by the time you click.
+// cached by the time you click. Preload fetches are explicitly marked lower
+// priority than the currently-viewed photo's own fetch, so the browser
+// doesn't spend bandwidth on a neighbor at the expense of what's on screen.
 const preloadedPreviews = new Set();
 function preloadPreview(post) {
   if (!post || !post.preview || preloadedPreviews.has(post.preview)) return;
   preloadedPreviews.add(post.preview);
-  const img = new Image();
-  img.src = post.preview;
+  fetch(post.preview, { priority: 'low' }).catch(() => {});
 }
+
+// Fetches a URL with progress reporting (byte-by-byte via a streamed
+// response), so the lightbox can show a real download progress bar instead
+// of an indeterminate spinner. Returns an object URL for the loaded image.
+// `priority: 'high'` is an explicit hint (supported in modern Chrome/Edge;
+// harmlessly ignored elsewhere) that this is the one request that matters
+// most right now — what the viewer is actually looking at.
+async function fetchWithProgress(url, signal, onProgress) {
+  const response = await fetch(url, { signal, priority: 'high' });
+  if (!response.ok || !response.body) throw new Error('fetch failed: ' + response.status);
+  const total = parseInt(response.headers.get('Content-Length') || '0', 10);
+  const reader = response.body.getReader();
+  const chunks = [];
+  let loaded = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    loaded += value.length;
+    if (total) onProgress(loaded / total);
+  }
+  return URL.createObjectURL(new Blob(chunks));
+}
+
+// Tracks the in-flight full-quality fetch so a fast next/prev doesn't leave
+// multiple "current photo" downloads competing for bandwidth — only the
+// photo actually being looked at right now should be fetching at high
+// priority; navigating away cancels whatever was still loading for the old
+// one. Also tracks the object URL so it can be released once superseded.
+let currentLoadController = null;
+let currentObjectUrl = null;
 
 function renderLightbox() {
   const post = lbList[lbIndex];
   if (!post) return;
 
+  if (currentLoadController) currentLoadController.abort();
+  currentLoadController = new AbortController();
+  const { signal } = currentLoadController;
+
   const imgEl = document.getElementById('lightboxImg');
+  const progressEl = document.getElementById('lightboxProgress');
+  const progressBar = document.getElementById('lightboxProgressBar');
   const thumbSrc = post.thumb || post.image;
   const previewSrc = post.preview || thumbSrc;
 
-  // Show the already-cached, lightweight thumbnail immediately so there's no
-  // blank/slow flash, then swap to the sharper preview once it's actually
-  // loaded (same aspect ratio, so no visible size jump when it swaps in).
+  // Show the already-cached, lightweight thumbnail immediately (blurred, as
+  // a deliberate "still loading" cue) so there's no blank/slow flash, then
+  // sharpen to the real preview once it's actually loaded (same aspect
+  // ratio, so no visible size jump when it swaps in).
   imgEl.src = thumbSrc;
   imgEl.alt = post.caption || '';
 
   if (previewSrc !== thumbSrc) {
-    const hiRes = new Image();
-    hiRes.onload = () => {
-      // Only swap in if still viewing this same post (user may have already
-      // stepped to a different photo by the time this finishes loading).
-      if (lbList[lbIndex] === post) imgEl.src = previewSrc;
-    };
-    hiRes.src = previewSrc;
+    imgEl.classList.add('is-loading');
+    progressBar.style.width = '0%';
+    progressEl.hidden = false;
+
+    fetchWithProgress(previewSrc, signal, (fraction) => {
+      progressBar.style.width = (fraction * 100).toFixed(1) + '%';
+    }).then((objectUrl) => {
+      if (lbList[lbIndex] !== post) { URL.revokeObjectURL(objectUrl); return; }
+      if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
+      currentObjectUrl = objectUrl;
+      imgEl.src = objectUrl;
+      imgEl.classList.remove('is-loading');
+      progressEl.hidden = true;
+    }).catch((err) => {
+      if (lbList[lbIndex] !== post || err.name === 'AbortError') return;
+      // Streamed fetch failed for some reason (e.g. no CORS/byte-range
+      // support in some hosting edge case) — fall back to a plain <img>
+      // load; no progress bar, but the photo still displays.
+      const fallback = new Image();
+      fallback.onload = () => {
+        if (lbList[lbIndex] === post) {
+          imgEl.src = previewSrc;
+          imgEl.classList.remove('is-loading');
+        }
+      };
+      fallback.src = previewSrc;
+      progressEl.hidden = true;
+    });
+  } else {
+    imgEl.classList.remove('is-loading');
   }
 
   preloadPreview(lbList[lbIndex - 1]);
@@ -361,6 +423,7 @@ function closeLightbox() {
   lightbox.hidden = true;
   document.body.style.overflow = '';
   document.removeEventListener('keydown', onLightboxKey);
+  if (currentLoadController) currentLoadController.abort();
 }
 
 function lightboxStep(delta) {
