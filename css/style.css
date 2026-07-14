@@ -462,6 +462,22 @@ a {
   margin-top: 20px;
 }
 
+.photo-exif {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 24px;
+  row-gap: 6px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.photo-exif span {
+  color: var(--fg);
+}
+
 /* People handle bubbles (lightbox + dedicated page) — link to Instagram */
 .people-bubble {
   display: inline-block;
@@ -662,6 +678,67 @@ a {
 
 .lightbox-close:hover {
   opacity: 1;
+}
+
+.lightbox-info-btn {
+  position: fixed;
+  top: 18px;
+  left: 22px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--fg);
+  font-size: 0.95rem;
+  font-style: italic;
+  font-family: georgia, serif;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.lightbox-info-btn:hover,
+.lightbox-info-btn[aria-expanded="true"] {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.lightbox-info-btn[hidden] {
+  display: none;
+}
+
+.lightbox-info-panel {
+  position: fixed;
+  top: 58px;
+  left: 22px;
+  z-index: 111;
+  background: rgba(20, 20, 20, 0.95);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 18px;
+  min-width: 160px;
+}
+
+.lightbox-info-panel[hidden] {
+  display: none;
+}
+
+.exif-list {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 6px 16px;
+  font-size: 0.85rem;
+}
+
+.exif-list dt {
+  color: var(--muted);
+}
+
+.exif-list dd {
+  margin: 0;
+  text-align: right;
+  color: var(--fg);
 }
 
 .lightbox-nav {

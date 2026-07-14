@@ -64,7 +64,7 @@ NOT the EXIF ModifyDate tag either. Two things this deliberately avoids:
   instead. DateTimeOriginal (0x9003) always reflects the actual capture
   moment regardless of when/how many times the file was later re-processed.
 
-The EXIF APP1 segment is parsed directly (see exif_capture_date) rather than
+The EXIF APP1 segment is parsed directly (see read_exif) rather than
 via `sips -g creation`, because sips's "creation" surfaces ModifyDate, not
 DateTimeOriginal. Falls back to file mtime only for images with no EXIF data
 at all (e.g. screenshots, graphics).
@@ -146,10 +146,15 @@ EXIF_DATETIME_ORIGINAL = 0x9003
 EXIF_DATETIME_DIGITIZED = 0x9004
 EXIF_SUBIFD_POINTER = 0x8769
 EXIF_MODIFY_DATE = 0x0132  # last edited/exported time, NOT capture time
+EXIF_EXPOSURE_TIME = 0x829A   # shutter speed, RATIONAL (seconds)
+EXIF_FNUMBER = 0x829D         # aperture, RATIONAL
+EXIF_ISO = 0x8827             # ISO speed, SHORT
+EXIF_FOCAL_LENGTH = 0x920A    # focal length, RATIONAL (mm)
 
 
 def _read_ifd(data, offset, byte_order):
-    """Parse one EXIF IFD, returning {tag: value} for ASCII/LONG entries."""
+    """Parse one EXIF IFD, returning {tag: value} for ASCII/SHORT/LONG/RATIONAL
+    entries. RATIONAL values are returned as (numerator, denominator) tuples."""
     fmt = "<" if byte_order == "II" else ">"
     (count,) = struct.unpack_from(fmt + "H", data, offset)
     entries = {}
@@ -164,20 +169,61 @@ def _read_ifd(data, offset, byte_order):
                 (voff,) = struct.unpack_from(fmt + "I", raw_value_field)
                 raw = data[voff: voff + cnt]
             entries[tag] = raw.split(b"\x00", 1)[0].decode("ascii", "replace")
+        elif typ == 3:  # SHORT (e.g. ISOSpeedRatings) — only the first value
+            if cnt * 2 <= 4:
+                entries[tag] = struct.unpack_from(fmt + "H", raw_value_field)[0]
+            else:
+                (voff,) = struct.unpack_from(fmt + "I", raw_value_field)
+                entries[tag] = struct.unpack_from(fmt + "H", data, voff)[0]
         elif typ == 4:  # LONG — used for sub-IFD pointers
             entries[tag] = struct.unpack_from(fmt + "I", raw_value_field)[0]
+        elif typ == 5:  # RATIONAL — always stored via offset (8 bytes)
+            (voff,) = struct.unpack_from(fmt + "I", raw_value_field)
+            entries[tag] = struct.unpack_from(fmt + "II", data, voff)
         pos += 12
     return entries
 
 
-def exif_capture_date(image_path):
-    """Return the photo's true EXIF *capture* date/time (DateTimeOriginal) as
-    a naive ISO string (e.g. "2026-04-23T16:58:07"), or None if unavailable.
+def _format_exif_fields(exif_ifd):
+    """Turn raw Exif SubIFD values into human-readable shooting info
+    (aperture, shutter speed, ISO, focal length). Omits any field whose tag
+    wasn't present or has a zero denominator (as some cameras write when a
+    value is unknown)."""
+    fields = {}
 
-    Deliberately naive (no timezone/offset) since EXIF stores local camera
-    wall-clock time with no timezone info — treating it as naive means the
-    browser displays this exact calendar date/time regardless of the
-    viewer's own timezone, rather than shifting it during UTC conversion.
+    fnumber = exif_ifd.get(EXIF_FNUMBER)
+    if fnumber and fnumber[1]:
+        fields["aperture"] = f"f/{fnumber[0] / fnumber[1]:g}"
+
+    exposure = exif_ifd.get(EXIF_EXPOSURE_TIME)
+    if exposure and exposure[1]:
+        secs = exposure[0] / exposure[1]
+        if secs > 0:
+            fields["shutter"] = f"1/{round(1 / secs)}s" if secs < 1 else f"{secs:g}s"
+
+    iso = exif_ifd.get(EXIF_ISO)
+    if iso:
+        fields["iso"] = f"ISO {iso}"
+
+    focal_length = exif_ifd.get(EXIF_FOCAL_LENGTH)
+    if focal_length and focal_length[1]:
+        fields["focal_length"] = f"{focal_length[0] / focal_length[1]:g}mm"
+
+    return fields
+
+
+def read_exif(image_path):
+    """Return (date, fields) for a photo's EXIF data:
+
+    - date: the true EXIF *capture* date/time (DateTimeOriginal) as a naive
+      ISO string (e.g. "2026-04-23T16:58:07"), or None if unavailable.
+      Deliberately naive (no timezone/offset) since EXIF stores local camera
+      wall-clock time with no timezone info — treating it as naive means the
+      browser displays this exact calendar date/time regardless of the
+      viewer's own timezone, rather than shifting it during UTC conversion.
+    - fields: a dict of human-readable shooting info (aperture, shutter,
+      iso, focal_length) for whichever tags were present — see
+      _format_exif_fields. {} if none were found.
 
     Parses the EXIF APP1 segment directly rather than shelling out to `sips`,
     because `sips -g creation` actually surfaces the ModifyDate tag (0x0132—
@@ -191,10 +237,10 @@ def exif_capture_date(image_path):
         with open(image_path, "rb") as f:
             data = f.read()
     except OSError:
-        return None
+        return None, {}
 
     if data[0:2] != b"\xff\xd8":
-        return None
+        return None, {}
 
     exif_data = None
     pos = 2
@@ -215,35 +261,37 @@ def exif_capture_date(image_path):
         pos += 2 + seg_len
 
     if not exif_data or len(exif_data) < 8:
-        return None
+        return None, {}
 
     try:
         byte_order = exif_data[0:2].decode("ascii")
         if byte_order not in ("II", "MM"):
-            return None
+            return None, {}
         fmt = "<" if byte_order == "II" else ">"
         (ifd0_offset,) = struct.unpack_from(fmt + "I", exif_data, 4)
         ifd0 = _read_ifd(exif_data, ifd0_offset, byte_order)
 
         value = None
+        fields = {}
         exif_ifd_ptr = ifd0.get(EXIF_SUBIFD_POINTER)
         if exif_ifd_ptr:
             exif_ifd = _read_ifd(exif_data, exif_ifd_ptr, byte_order)
             value = exif_ifd.get(EXIF_DATETIME_ORIGINAL) or exif_ifd.get(EXIF_DATETIME_DIGITIZED)
+            fields = _format_exif_fields(exif_ifd)
         if not value:
             # Last resort: ModifyDate is better than nothing (still beats
             # falling back to the filesystem mtime, which git checkouts reset).
             value = ifd0.get(EXIF_MODIFY_DATE)
     except (struct.error, IndexError):
-        return None
+        return None, {}
 
     if not value:
-        return None
+        return None, fields
     m = re.match(r"^(\d{4}):(\d{2}):(\d{2})\s+(\d{2}):(\d{2}):(\d{2})$", value.strip())
     if not m:
-        return None
+        return None, fields
     year, month, day, hour, minute, second = m.groups()
-    return f"{year}-{month}-{day}T{hour}:{minute}:{second}"
+    return f"{year}-{month}-{day}T{hour}:{minute}:{second}", fields
 
 
 def find_profile_photo():
@@ -372,7 +420,7 @@ def main():
             tags = [t.strip() for t in meta.get("tags", "").split(",") if t.strip()]
             people = [p.strip() for p in meta.get("people", "").split(",") if p.strip()]
 
-            date = exif_capture_date(image_path)
+            date, exif_fields = read_exif(image_path)
             if date is None:
                 # Fallback for images with no EXIF (e.g. screenshots, SVGs).
                 # Note: unlike EXIF, this is NOT stable across a fresh git
@@ -399,6 +447,8 @@ def main():
                 "tags": tags,
                 "featured": featured,
             }
+            if exif_fields:
+                post["exif"] = exif_fields
             if featured:
                 idx = order_index_for(filename, featured_order)
                 if idx is not None:

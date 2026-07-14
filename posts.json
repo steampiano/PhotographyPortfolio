@@ -11,6 +11,12 @@
     ],
     "tags": [],
     "featured": true,
+    "exif": {
+      "aperture": "f/1.4",
+      "shutter": "1/250s",
+      "iso": "ISO 800",
+      "focal_length": "50mm"
+    },
     "order": 0
   },
   {
@@ -24,7 +30,13 @@
       "@supdawg1e"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/1.4",
+      "shutter": "1/250s",
+      "iso": "ISO 800",
+      "focal_length": "50mm"
+    }
   },
   {
     "image": "photos/AC 2026/exp-DSC05997.jpg",
@@ -37,7 +49,13 @@
       "@supdawg1e"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/1.4",
+      "shutter": "1/250s",
+      "iso": "ISO 800",
+      "focal_length": "50mm"
+    }
   },
   {
     "image": "photos/All else/[3x2] exp-DSC04845-2.jpg",
@@ -50,7 +68,13 @@
       "@supdawg1e"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/2.2",
+      "shutter": "1/320s",
+      "iso": "ISO 160",
+      "focal_length": "85mm"
+    }
   },
   {
     "image": "photos/All else/exp-DSC04819.jpg",
@@ -63,7 +87,13 @@
       "@supdawg1e"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/2.8",
+      "shutter": "1/250s",
+      "iso": "ISO 100",
+      "focal_length": "85mm"
+    }
   },
   {
     "image": "photos/All else/exp-DSC03890.jpg",
@@ -76,7 +106,13 @@
       "@pumaimpo"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/1.4",
+      "shutter": "1/125s",
+      "iso": "ISO 3200",
+      "focal_length": "85mm"
+    }
   },
   {
     "image": "photos/FG 2026/exp-DSC03838.jpg",
@@ -91,7 +127,13 @@
       "@warzywuff"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/2.8",
+      "shutter": "1/200s",
+      "iso": "ISO 125",
+      "focal_length": "43mm"
+    }
   },
   {
     "image": "photos/FG 2026/exp-DSC03801.jpg",
@@ -112,7 +154,13 @@
       "@warzywuff"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/3.5",
+      "shutter": "1/200s",
+      "iso": "ISO 125",
+      "focal_length": "33mm"
+    }
   },
   {
     "image": "photos/TFF 2026/exp-DSC03027.jpg",
@@ -126,6 +174,12 @@
     ],
     "tags": [],
     "featured": true,
+    "exif": {
+      "aperture": "f/1.4",
+      "shutter": "1/1000s",
+      "iso": "ISO 160",
+      "focal_length": "50mm"
+    },
     "order": 7
   },
   {
@@ -139,7 +193,13 @@
       "@itsoofinsta"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/1.6",
+      "shutter": "1/1000s",
+      "iso": "ISO 100",
+      "focal_length": "50mm"
+    }
   },
   {
     "image": "photos/TFF 2026/exp-DSC02985.jpg",
@@ -152,7 +212,13 @@
       "@collie.clovis"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/1.6",
+      "shutter": "1/125s",
+      "iso": "ISO 100",
+      "focal_length": "50mm"
+    }
   },
   {
     "image": "photos/TFF 2026/exp-DSC02958.jpg",
@@ -165,7 +231,13 @@
       "@collie.clovis"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/1.8",
+      "shutter": "1/125s",
+      "iso": "ISO 320",
+      "focal_length": "50mm"
+    }
   },
   {
     "image": "photos/TFF 2026/exp-DSC02922.jpg",
@@ -179,6 +251,12 @@
     ],
     "tags": [],
     "featured": true,
+    "exif": {
+      "aperture": "f/1.4",
+      "shutter": "1/125s",
+      "iso": "ISO 400",
+      "focal_length": "50mm"
+    },
     "order": 4
   },
   {
@@ -192,7 +270,13 @@
       "@itsoofinsta"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/1.6",
+      "shutter": "1/125s",
+      "iso": "ISO 200",
+      "focal_length": "50mm"
+    }
   },
   {
     "image": "photos/TFF 2026/exp-DSC02824.jpg",
@@ -205,7 +289,13 @@
       "@norfolker347"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/1.4",
+      "shutter": "1/100s",
+      "iso": "ISO 250",
+      "focal_length": "50mm"
+    }
   },
   {
     "image": "photos/TFF 2026/exp-DSC02679.jpg",
@@ -219,7 +309,13 @@
       "@beanssecurity"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/1.8",
+      "shutter": "1/80s",
+      "iso": "ISO 640",
+      "focal_length": "85mm"
+    }
   },
   {
     "image": "photos/TFF 2026/exp-DSC02636.jpg",
@@ -232,7 +328,13 @@
       "@beanssecurity"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/1.4",
+      "shutter": "1/125s",
+      "iso": "ISO 640",
+      "focal_length": "85mm"
+    }
   },
   {
     "image": "photos/TFF 2026/exp-DSC02607.jpg",
@@ -245,7 +347,13 @@
       "@teeganblu"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/1.4",
+      "shutter": "1/125s",
+      "iso": "ISO 500",
+      "focal_length": "85mm"
+    }
   },
   {
     "image": "photos/GSFC 2026/exp-DSC01727.jpg",
@@ -260,7 +368,13 @@
       "@kichitheshibe"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/1.6",
+      "shutter": "1/80s",
+      "iso": "ISO 800",
+      "focal_length": "50mm"
+    }
   },
   {
     "image": "photos/GSFC 2026/exp-DSC01537.jpg",
@@ -273,7 +387,13 @@
       "@norfolker347"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/1.6",
+      "shutter": "1/60s",
+      "iso": "ISO 5000",
+      "focal_length": "50mm"
+    }
   },
   {
     "image": "photos/All else/exp-DSC00981.jpg",
@@ -286,7 +406,13 @@
       "@norfolker347"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/2",
+      "shutter": "1/3200s",
+      "iso": "ISO 100",
+      "focal_length": "50mm"
+    }
   },
   {
     "image": "photos/All else/exp-DSC00950.jpg",
@@ -299,7 +425,13 @@
       "@cryingghosts"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/1.6",
+      "shutter": "1/3200s",
+      "iso": "ISO 100",
+      "focal_length": "50mm"
+    }
   },
   {
     "image": "photos/All else/exp-DSC00889.jpg",
@@ -312,7 +444,13 @@
       "@cryingghosts"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/2",
+      "shutter": "1/2500s",
+      "iso": "ISO 100",
+      "focal_length": "50mm"
+    }
   },
   {
     "image": "photos/All else/exp-DSC00774.jpg",
@@ -325,7 +463,13 @@
       "@sushiwhynot"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/2",
+      "shutter": "1/6400s",
+      "iso": "ISO 100",
+      "focal_length": "50mm"
+    }
   },
   {
     "image": "photos/All else/exp-DSC00204.jpg",
@@ -338,7 +482,13 @@
       "@pumaimpo"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/1.4",
+      "shutter": "1/60s",
+      "iso": "ISO 2500",
+      "focal_length": "50mm"
+    }
   },
   {
     "image": "photos/Echo Park/exp-DSC08803.jpg",
@@ -352,6 +502,12 @@
     ],
     "tags": [],
     "featured": true,
+    "exif": {
+      "aperture": "f/2",
+      "shutter": "1/400s",
+      "iso": "ISO 50",
+      "focal_length": "50mm"
+    },
     "order": 6
   },
   {
@@ -366,6 +522,12 @@
     ],
     "tags": [],
     "featured": true,
+    "exif": {
+      "aperture": "f/5.6",
+      "shutter": "1/500s",
+      "iso": "ISO 100",
+      "focal_length": "50mm"
+    },
     "order": 2
   },
   {
@@ -379,7 +541,13 @@
       "@donniefloof"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/5.6",
+      "shutter": "1/500s",
+      "iso": "ISO 100",
+      "focal_length": "50mm"
+    }
   },
   {
     "image": "photos/Echo Park/exp-DSC08549.jpg",
@@ -396,7 +564,13 @@
       "@junodile"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/5.6",
+      "shutter": "1/500s",
+      "iso": "ISO 100",
+      "focal_length": "50mm"
+    }
   },
   {
     "image": "photos/All else/exp-DSC08479.jpg",
@@ -409,7 +583,13 @@
       "@spike__fox"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/3.2",
+      "shutter": "1/400s",
+      "iso": "ISO 50",
+      "focal_length": "50mm"
+    }
   },
   {
     "image": "photos/All else/exp-DSC08198.jpg",
@@ -422,7 +602,13 @@
       "@spacey.universes"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/1.4",
+      "shutter": "1/125s",
+      "iso": "ISO 64",
+      "focal_length": "50mm"
+    }
   },
   {
     "image": "photos/All else/exp-DSC08194.jpg",
@@ -436,6 +622,12 @@
     ],
     "tags": [],
     "featured": true,
+    "exif": {
+      "aperture": "f/1.6",
+      "shutter": "1/125s",
+      "iso": "ISO 64",
+      "focal_length": "50mm"
+    },
     "order": 3
   },
   {
@@ -449,7 +641,13 @@
       "@tarnwags"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/1.4",
+      "shutter": "1/80s",
+      "iso": "ISO 250",
+      "focal_length": "50mm"
+    }
   },
   {
     "image": "photos/FC 2026/exp-_F2A0029.jpg",
@@ -465,7 +663,13 @@
       "@supdawg1e"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/4.5",
+      "shutter": "1/125s",
+      "iso": "ISO 125",
+      "focal_length": "75mm"
+    }
   },
   {
     "image": "photos/FC 2026/exp-_F2A0001.jpg",
@@ -479,6 +683,12 @@
     ],
     "tags": [],
     "featured": true,
+    "exif": {
+      "aperture": "f/5.6",
+      "shutter": "1/125s",
+      "iso": "ISO 125",
+      "focal_length": "300mm"
+    },
     "order": 8
   },
   {
@@ -492,7 +702,13 @@
       "@puppybunz_"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/4",
+      "shutter": "1/100s",
+      "iso": "ISO 125",
+      "focal_length": "75mm"
+    }
   },
   {
     "image": "photos/FC 2026/exp-_F2A9863.jpg",
@@ -505,7 +721,13 @@
       "@scaddams5"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/5.6",
+      "shutter": "1/160s",
+      "iso": "ISO 250",
+      "focal_length": "75mm"
+    }
   },
   {
     "image": "photos/FC 2026/exp-DSC02746.jpg",
@@ -519,7 +741,13 @@
       "@supdawg1e"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/1.6",
+      "shutter": "1/80s",
+      "iso": "ISO 160",
+      "focal_length": "50mm"
+    }
   },
   {
     "image": "photos/FC 2026/exp-DSC02577.jpg",
@@ -533,6 +761,12 @@
     ],
     "tags": [],
     "featured": true,
+    "exif": {
+      "aperture": "f/1.4",
+      "shutter": "1/125s",
+      "iso": "ISO 160",
+      "focal_length": "50mm"
+    },
     "order": 1
   },
   {
@@ -546,7 +780,13 @@
       "@cryingghosts"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/2",
+      "shutter": "1/125s",
+      "iso": "ISO 160",
+      "focal_length": "50mm"
+    }
   },
   {
     "image": "photos/FC 2026/exp-DSC02501.jpg",
@@ -559,7 +799,13 @@
       "@scaddams5"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/1.6",
+      "shutter": "1/30s",
+      "iso": "ISO 500",
+      "focal_length": "50mm"
+    }
   },
   {
     "image": "photos/MFF 2025/exp-DSC01693.jpg",
@@ -572,7 +818,13 @@
       "@norfolker347"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/1.8",
+      "shutter": "1/100s",
+      "iso": "ISO 500",
+      "focal_length": "16mm"
+    }
   },
   {
     "image": "photos/MFF 2025/exp-DSC01689.jpg",
@@ -585,7 +837,13 @@
       "@norfolker347"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/1.8",
+      "shutter": "1/100s",
+      "iso": "ISO 500",
+      "focal_length": "16mm"
+    }
   },
   {
     "image": "photos/MFF 2025/exp-DSC01666.jpg",
@@ -598,7 +856,13 @@
       "@derixdeer"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/1.8",
+      "shutter": "1/100s",
+      "iso": "ISO 320",
+      "focal_length": "16mm"
+    }
   },
   {
     "image": "photos/MFF 2025/exp-DSC01644.jpg",
@@ -611,7 +875,13 @@
       "@derixdeer"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/1.8",
+      "shutter": "1/100s",
+      "iso": "ISO 320",
+      "focal_length": "16mm"
+    }
   },
   {
     "image": "photos/MFF 2025/exp-DSC01634.jpg",
@@ -624,7 +894,13 @@
       "@derixdeer"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/1.8",
+      "shutter": "1/100s",
+      "iso": "ISO 320",
+      "focal_length": "16mm"
+    }
   },
   {
     "image": "photos/All else/blur-exp-DSC00659-HDR.jpg",
@@ -650,7 +926,13 @@
       "@pumaimpo"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/2.8",
+      "shutter": "1/8s",
+      "iso": "ISO 50",
+      "focal_length": "28mm"
+    }
   },
   {
     "image": "photos/All else/exp-DSC09847-2.jpg",
@@ -663,7 +945,13 @@
       "@pumaimpo"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "exif": {
+      "aperture": "f/2.8",
+      "shutter": "1/8s",
+      "iso": "ISO 50",
+      "focal_length": "59mm"
+    }
   },
   {
     "image": "photos/All else/exp-DSC09824-2.jpg",
@@ -677,6 +965,12 @@
     ],
     "tags": [],
     "featured": true,
+    "exif": {
+      "aperture": "f/2.8",
+      "shutter": "1/8s",
+      "iso": "ISO 50",
+      "focal_length": "30mm"
+    },
     "order": 5
   }
 ]

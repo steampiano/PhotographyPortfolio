@@ -14,6 +14,28 @@ function formatDate(iso) {
   });
 }
 
+// Turns a post's `exif` object (already human-readable strings from
+// build.py, e.g. {aperture: "f/1.4", iso: "ISO 800"}) into ordered
+// [label, value] pairs for display. The "ISO " prefix is stripped here since
+// it's redundant next to an "ISO" label; build.py keeps it in the raw value
+// because that copy is also used standalone (no label) on the photo page.
+function exifDisplayFields(exif) {
+  if (!exif) return [];
+  const order = [
+    ['focal_length', 'Focal length'],
+    ['aperture', 'Aperture'],
+    ['shutter', 'Shutter'],
+    ['iso', 'ISO'],
+  ];
+  const pairs = [];
+  for (const [key, label] of order) {
+    if (!exif[key]) continue;
+    const value = key === 'iso' ? exif[key].replace(/^ISO\s*/, '') : exif[key];
+    pairs.push([label, value]);
+  }
+  return pairs;
+}
+
 // On hover/touch-active, a thumbnail expands to its real (uncropped) aspect
 // ratio and grows so that BOTH dimensions exceed the square resting size — the
 // SHORT axis grows to SHORT_SCALE and the long axis scales up proportionally
@@ -417,6 +439,27 @@ function renderLightbox() {
   document.getElementById('lightboxFull').href =
     'photo.html?src=' + encodeURIComponent(post.image);
 
+  // Shooting info (aperture/shutter/ISO/focal length) is tucked behind the
+  // info button rather than shown by default, since it's secondary to the
+  // photo itself. Close/reset it on every navigation so it doesn't linger
+  // open with stale data over the next photo.
+  const infoBtn = document.getElementById('lightboxInfoBtn');
+  const infoPanel = document.getElementById('lightboxInfoPanel');
+  const exifList = document.getElementById('lightboxExifList');
+  exifList.innerHTML = '';
+  for (const [label, value] of exifDisplayFields(post.exif)) {
+    const dt = document.createElement('dt');
+    dt.textContent = label;
+    const dd = document.createElement('dd');
+    dd.textContent = value;
+    exifList.appendChild(dt);
+    exifList.appendChild(dd);
+  }
+  const hasExif = !!(post.exif && Object.keys(post.exif).length);
+  infoBtn.hidden = !hasExif;
+  infoPanel.hidden = true;
+  infoBtn.setAttribute('aria-expanded', 'false');
+
   // Dim nav arrows at the ends.
   document.getElementById('lightboxPrev').disabled = lbIndex <= 0;
   document.getElementById('lightboxNext').disabled = lbIndex >= lbList.length - 1;
@@ -455,6 +498,16 @@ if (lightbox) {
   document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
   document.getElementById('lightboxPrev').addEventListener('click', () => lightboxStep(-1));
   document.getElementById('lightboxNext').addEventListener('click', () => lightboxStep(1));
+
+  const infoBtn = document.getElementById('lightboxInfoBtn');
+  const infoPanel = document.getElementById('lightboxInfoPanel');
+  infoBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = !infoPanel.hidden;
+    infoPanel.hidden = isOpen;
+    infoBtn.setAttribute('aria-expanded', String(!isOpen));
+  });
+
   // Click on the backdrop (not the figure or controls) closes.
   lightbox.addEventListener('click', (e) => {
     if (e.target === lightbox) closeLightbox();

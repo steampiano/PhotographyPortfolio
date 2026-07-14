@@ -67,6 +67,33 @@ if (!src) {
       dateEl.className = 'photo-date';
       dateEl.textContent = formatDate(post.date);
       content.appendChild(dateEl);
+
+      const exifOrder = [
+        ['focal_length', 'Focal length'],
+        ['aperture', 'Aperture'],
+        ['shutter', 'Shutter'],
+        ['iso', 'ISO'],
+      ];
+      const exifPairs = post.exif
+        ? exifOrder.filter(([key]) => post.exif[key])
+        : [];
+      if (exifPairs.length) {
+        const exifEl = document.createElement('div');
+        exifEl.className = 'photo-exif';
+        for (const [key, label] of exifPairs) {
+          const item = document.createElement('div');
+          item.textContent = label + ': ';
+          const value = document.createElement('span');
+          // Strip the redundant "ISO " prefix from build.py's raw value
+          // since the label already says "ISO".
+          value.textContent = key === 'iso'
+            ? post.exif[key].replace(/^ISO\s*/, '')
+            : post.exif[key];
+          item.appendChild(value);
+          exifEl.appendChild(item);
+        }
+        content.appendChild(exifEl);
+      }
     })
     .catch(() => {
       content.innerHTML = '<p class="gallery-empty">Could not load photo data.</p>';
