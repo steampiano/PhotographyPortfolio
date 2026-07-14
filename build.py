@@ -50,19 +50,31 @@ ever breaks.
 
 Photo date
 ----------
-Each photo's date comes from its embedded EXIF capture time (when available),
-NOT the file's filesystem modification time. This matters because Vercel
-builds from a fresh git checkout, and git checkout resets every file's mtime
-to the moment of checkout — so mtime-based dates would make every photo show
-the deploy date instead of when it was actually taken. EXIF is stored in the
-file's own bytes, so it survives git perfectly. Only falls back to mtime for
-images with no EXIF data (e.g. screenshots, graphics).
+Each photo's date comes from its embedded EXIF DateTimeOriginal tag (the true
+capture time) when available, NOT the file's filesystem modification time and
+NOT the EXIF ModifyDate tag either. Two things this deliberately avoids:
+
+- mtime: Vercel builds from a fresh git checkout, and git checkout resets
+  every file's mtime to the moment of checkout — mtime-based dates would make
+  every photo show the deploy date instead of when it was actually taken.
+- EXIF ModifyDate (0x0132): this is when a tool like Lightroom last exported
+  the file, not when the shutter fired. It only matches the real capture time
+  if a photo is exported right after shooting — re-editing/re-exporting a
+  photo later (e.g. revisiting an older shoot) silently shows the export date
+  instead. DateTimeOriginal (0x9003) always reflects the actual capture
+  moment regardless of when/how many times the file was later re-processed.
+
+The EXIF APP1 segment is parsed directly (see exif_capture_date) rather than
+via `sips -g creation`, because sips's "creation" surfaces ModifyDate, not
+DateTimeOriginal. Falls back to file mtime only for images with no EXIF data
+at all (e.g. screenshots, graphics).
 """
 
 import json
 import os
 import re
 import shutil
+import struct
 import subprocess
 from datetime import datetime, timezone
 
@@ -130,24 +142,104 @@ def derivative_for(image_path, rel_path, ext, out_dir, dir_name, max_px, quality
     return rel_path  # fallback: full image
 
 
+EXIF_DATETIME_ORIGINAL = 0x9003
+EXIF_DATETIME_DIGITIZED = 0x9004
+EXIF_SUBIFD_POINTER = 0x8769
+EXIF_MODIFY_DATE = 0x0132  # last edited/exported time, NOT capture time
+
+
+def _read_ifd(data, offset, byte_order):
+    """Parse one EXIF IFD, returning {tag: value} for ASCII/LONG entries."""
+    fmt = "<" if byte_order == "II" else ">"
+    (count,) = struct.unpack_from(fmt + "H", data, offset)
+    entries = {}
+    pos = offset + 2
+    for _ in range(count):
+        tag, typ, cnt = struct.unpack_from(fmt + "HHI", data, pos)
+        raw_value_field = data[pos + 8:pos + 12]
+        if typ == 2:  # ASCII string
+            if cnt <= 4:
+                raw = raw_value_field[:cnt]
+            else:
+                (voff,) = struct.unpack_from(fmt + "I", raw_value_field)
+                raw = data[voff: voff + cnt]
+            entries[tag] = raw.split(b"\x00", 1)[0].decode("ascii", "replace")
+        elif typ == 4:  # LONG — used for sub-IFD pointers
+            entries[tag] = struct.unpack_from(fmt + "I", raw_value_field)[0]
+        pos += 12
+    return entries
+
+
 def exif_capture_date(image_path):
-    """Return the photo's EXIF capture date/time as a naive ISO string
-    (e.g. "2026-04-23T16:58:07"), or None if the image has no EXIF date.
+    """Return the photo's true EXIF *capture* date/time (DateTimeOriginal) as
+    a naive ISO string (e.g. "2026-04-23T16:58:07"), or None if unavailable.
 
     Deliberately naive (no timezone/offset) since EXIF stores local camera
     wall-clock time with no timezone info — treating it as naive means the
     browser displays this exact calendar date/time regardless of the
     viewer's own timezone, rather than shifting it during UTC conversion.
+
+    Parses the EXIF APP1 segment directly rather than shelling out to `sips`,
+    because `sips -g creation` actually surfaces the ModifyDate tag (0x0132—
+    when a tool like Lightroom last exported the file) rather than
+    DateTimeOriginal (0x9003 — when the shutter actually fired). Those only
+    match if a photo is exported right after shooting; re-editing/re-exporting
+    a photo later (common when revisiting older shoots) silently shows the
+    re-export date instead of the real capture date.
     """
-    if SIPS is None:
+    try:
+        with open(image_path, "rb") as f:
+            data = f.read()
+    except OSError:
         return None
-    result = subprocess.run(
-        [SIPS, "-g", "creation", image_path],
-        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
-    )
-    if result.returncode != 0:
+
+    if data[0:2] != b"\xff\xd8":
         return None
-    m = re.search(r"creation:\s*(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})", result.stdout)
+
+    exif_data = None
+    pos = 2
+    while pos < len(data) - 4:
+        if data[pos] != 0xFF:
+            break
+        marker = data[pos + 1]
+        if marker == 0xE1:  # APP1
+            seg_len = struct.unpack_from(">H", data, pos + 2)[0]
+            seg = data[pos + 4: pos + 2 + seg_len]
+            if seg[:6] == b"Exif\x00\x00":
+                exif_data = seg[6:]
+            break
+        if marker in (0xD8, 0xD9) or 0xD0 <= marker <= 0xD7:
+            pos += 2
+            continue
+        seg_len = struct.unpack_from(">H", data, pos + 2)[0]
+        pos += 2 + seg_len
+
+    if not exif_data or len(exif_data) < 8:
+        return None
+
+    try:
+        byte_order = exif_data[0:2].decode("ascii")
+        if byte_order not in ("II", "MM"):
+            return None
+        fmt = "<" if byte_order == "II" else ">"
+        (ifd0_offset,) = struct.unpack_from(fmt + "I", exif_data, 4)
+        ifd0 = _read_ifd(exif_data, ifd0_offset, byte_order)
+
+        value = None
+        exif_ifd_ptr = ifd0.get(EXIF_SUBIFD_POINTER)
+        if exif_ifd_ptr:
+            exif_ifd = _read_ifd(exif_data, exif_ifd_ptr, byte_order)
+            value = exif_ifd.get(EXIF_DATETIME_ORIGINAL) or exif_ifd.get(EXIF_DATETIME_DIGITIZED)
+        if not value:
+            # Last resort: ModifyDate is better than nothing (still beats
+            # falling back to the filesystem mtime, which git checkouts reset).
+            value = ifd0.get(EXIF_MODIFY_DATE)
+    except (struct.error, IndexError):
+        return None
+
+    if not value:
+        return None
+    m = re.match(r"^(\d{4}):(\d{2}):(\d{2})\s+(\d{2}):(\d{2}):(\d{2})$", value.strip())
     if not m:
         return None
     year, month, day, hour, minute, second = m.groups()
