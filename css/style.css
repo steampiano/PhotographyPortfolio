@@ -41,8 +41,12 @@ body {
   }
 }
 
+/* font-weight stays at Roadgeek's one loaded weight (400) throughout — it
+   has no real bold cut, so any heavier weight just gets browser-synthesized
+   (faux bold), which crams/distorts the letterforms instead of looking
+   properly bold. */
 h1, h2, .logo {
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: -0.02em;
 }
 
@@ -74,8 +78,7 @@ a {
 }
 
 .logo {
-  font-weight: 600;
-  font-size: 1.1rem;
+  font-size: 1.4rem;
   text-decoration: none;
   color: var(--fg);
   transition: color 0.15s ease;
@@ -93,12 +96,15 @@ a {
 .nav a {
   text-decoration: none;
   color: var(--fg);
-  font-size: 0.95rem;
+  font-size: 1.15rem;
   transition: color 0.15s ease;
 }
 
+/* Underline instead of a heavier weight to mark the current page — same
+   faux-bold problem as everywhere else on Roadgeek. */
 .nav a.active {
-  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
 .nav a:hover {
@@ -441,7 +447,6 @@ a {
   align-items: center;
   gap: 14px;
   font-size: 1.4rem;
-  font-weight: 600;
   color: var(--fg);
   text-decoration: none;
   border: 1px solid var(--border);
