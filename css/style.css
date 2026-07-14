@@ -275,7 +275,10 @@ a {
 
 .gallery .post-link:hover,
 .gallery .post-link.touch-active {
-  z-index: 20;
+  /* Above sibling grid photos so the expanded one isn't covered by its
+     neighbors, but below the sticky header (z-index: 10) so a photo in the
+     top row expanding upward goes behind the header instead of over it. */
+  z-index: 5;
 }
 
 .gallery .post img {
