@@ -3,7 +3,10 @@
   --fg: #f2f2f0;
   --muted: #9a9a9a;
   --border: #232323;
-  --max-width: 1100px;
+  /* Scales with the viewport instead of a flat cap, so wide desktop screens
+     make real use of the extra width instead of leaving big dead margins;
+     still caps out on very large displays so lines/rows don't get absurd. */
+  --max-width: min(1600px, 94vw);
 }
 
 * { box-sizing: border-box; }
@@ -380,13 +383,30 @@ a {
   flex-wrap: wrap;
 }
 
-.about-photo {
+.about-photo-wrap {
   width: min(340px, 100%);
+  flex: 0 0 auto;
+}
+
+.about-photo {
+  display: block;
+  width: 100%;
   aspect-ratio: 2 / 3;
   border-radius: 10px;
-  flex: 0 0 auto;
   object-fit: cover;
   background: #1a1a1a;
+}
+
+.about-photo-credit {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.about-photo-credit:hover {
+  color: var(--fg);
 }
 
 .about-text {
