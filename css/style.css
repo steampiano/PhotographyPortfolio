@@ -39,7 +39,11 @@ body {
   color: var(--fg);
   font-family: "Roadgeek 2005 Series D", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
   line-height: 1.5;
-  letter-spacing: -0.01em;
+  /* Roadgeek is a highway-sign face — already tight and uniform by design
+     for at-a-glance legibility, not dense paragraph reading. The negative
+     letter-spacing tuned for the old system-sans stack made it worse, so
+     body text gets normal spacing instead. */
+  letter-spacing: normal;
   /* Reserve space so content isn't hidden behind the fixed footer; generous
      enough to cover the footer wrapping to two lines on narrow screens. */
   padding-bottom: 74px;
@@ -57,7 +61,7 @@ body {
    properly bold. */
 h1, h2, .logo {
   font-weight: 400;
-  letter-spacing: -0.02em;
+  letter-spacing: normal;
 }
 
 a {
