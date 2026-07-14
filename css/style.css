@@ -425,14 +425,14 @@ a {
 .next-con {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  font-size: 1.2rem;
+  gap: 14px;
+  font-size: 1.4rem;
   font-weight: 600;
   color: var(--fg);
   text-decoration: none;
   border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 10px 18px;
+  border-radius: 8px;
+  padding: 14px 22px;
   background: rgba(255, 255, 255, 0.04);
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
@@ -450,16 +450,19 @@ a {
    transparent artwork) to solid white with a filter works for both regardless
    of source format or format-specific tricks. */
 .next-con-logo {
-  width: 22px;
-  height: 22px;
+  width: 34px;
+  height: 34px;
   filter: brightness(0) invert(1);
 }
 
 /* Wider aspect ratio than the square ASC icon, so height is fixed and width
-   follows naturally instead of stretching to a square. */
+   follows naturally instead of stretching to a square. The ASC mark's own
+   "Anthro SoCal" script subtext eats into its square box, so it needs a
+   noticeably bigger box than FC's bold wordmark to read as the same visual
+   size — matching pixel heights alone isn't enough. */
 .next-con-logo.fc-logo {
   width: auto;
-  height: 20px;
+  height: 28px;
 }
 
 .photo-page {
