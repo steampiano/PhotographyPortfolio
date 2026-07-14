@@ -11,6 +11,10 @@
   --fg: #f2f2f0;
   --muted: #9a9a9a;
   --border: #232323;
+  /* Small metadata text (event badges, dates, people tags, EXIF) uses
+     Helvetica instead of the site's Roadgeek 2005 display font — Roadgeek
+     is a highway-sign face and gets harder to scan at small caption sizes. */
+  --meta-font: "Helvetica Neue", Helvetica, Arial, sans-serif;
   /* Scales with the viewport instead of a flat cap, so wide desktop screens
      make real use of the extra width instead of leaving big dead margins;
      still caps out on very large displays so lines/rows don't get absurd. */
@@ -331,6 +335,7 @@ a {
 .post-event {
   display: inline-block;
   margin-top: 10px;
+  font-family: var(--meta-font);
   font-size: 0.72rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -348,6 +353,7 @@ a {
 
 .post .post-date {
   display: block;
+  font-family: var(--meta-font);
   font-size: 0.78rem;
   color: #666;
   margin-top: 4px;
@@ -509,6 +515,7 @@ a {
   display: inline-block;
   margin-top: 20px;
   margin-bottom: 0;
+  font-family: var(--meta-font);
   font-size: 0.75rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -526,6 +533,7 @@ a {
 .photo-date {
   margin-top: 6px;
   color: var(--muted);
+  font-family: var(--meta-font);
   font-size: 0.9rem;
 }
 
@@ -544,6 +552,7 @@ a {
   flex-wrap: wrap;
   column-gap: 24px;
   row-gap: 6px;
+  font-family: var(--meta-font);
   font-size: 0.9rem;
   color: var(--muted);
 }
@@ -555,6 +564,7 @@ a {
 /* People handle bubbles (lightbox + dedicated page) — link to Instagram */
 .people-bubble {
   display: inline-block;
+  font-family: var(--meta-font);
   font-size: 0.85rem;
   color: var(--fg);
   background: rgba(255, 255, 255, 0.08);
@@ -728,6 +738,7 @@ a {
   gap: 14px;
   align-items: center;
   color: var(--muted);
+  font-family: var(--meta-font);
   font-size: 0.85rem;
 }
 
@@ -816,6 +827,7 @@ a {
   display: grid;
   grid-template-columns: auto auto;
   gap: 6px 16px;
+  font-family: var(--meta-font);
   font-size: 0.85rem;
 }
 
