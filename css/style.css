@@ -455,6 +455,11 @@ a {
   filter: brightness(0) invert(1);
 }
 
+.next-con-logo.asc-logo {
+  width: 46px;
+  height: 46px;
+}
+
 /* Wider aspect ratio than the square ASC icon, so height is fixed and width
    follows naturally instead of stretching to a square. The ASC mark's own
    "Anthro SoCal" script subtext eats into its square box, so it needs a
