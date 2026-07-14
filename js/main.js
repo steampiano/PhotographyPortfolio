@@ -322,6 +322,10 @@ function setupEventFilter(posts, onChange) {
 const lightbox = document.getElementById('lightbox');
 let lbList = [];
 let lbIndex = 0;
+// Persists across next/prev within a lightbox session (reset on close) so
+// stepping to another photo keeps the panel open, just with fresh EXIF data,
+// instead of snapping shut every time.
+let infoPanelOpen = false;
 
 // Previews are large (average ~450KB) — fetching+decoding one from scratch on
 // every open/step is what made the lightbox feel laggy. Preloading the
@@ -441,8 +445,9 @@ function renderLightbox() {
 
   // Shooting info (aperture/shutter/ISO/focal length) is tucked behind the
   // info button rather than shown by default, since it's secondary to the
-  // photo itself. Close/reset it on every navigation so it doesn't linger
-  // open with stale data over the next photo.
+  // photo itself. If the panel is already open, it stays open across
+  // next/prev — only the EXIF data itself refreshes — rather than snapping
+  // shut every time you step to another photo.
   const infoBtn = document.getElementById('lightboxInfoBtn');
   const infoPanel = document.getElementById('lightboxInfoPanel');
   const exifList = document.getElementById('lightboxExifList');
@@ -457,8 +462,9 @@ function renderLightbox() {
   }
   const hasExif = !!(post.exif && Object.keys(post.exif).length);
   infoBtn.hidden = !hasExif;
-  infoPanel.hidden = true;
-  infoBtn.setAttribute('aria-expanded', 'false');
+  if (!hasExif) infoPanelOpen = false;
+  infoPanel.classList.toggle('is-open', infoPanelOpen);
+  infoBtn.setAttribute('aria-expanded', String(infoPanelOpen));
 
   // Dim nav arrows at the ends.
   document.getElementById('lightboxPrev').disabled = lbIndex <= 0;
@@ -479,6 +485,7 @@ function closeLightbox() {
   document.body.style.overflow = '';
   document.removeEventListener('keydown', onLightboxKey);
   if (currentLoadController) currentLoadController.abort();
+  infoPanelOpen = false;
 }
 
 function lightboxStep(delta) {
@@ -503,9 +510,9 @@ if (lightbox) {
   const infoPanel = document.getElementById('lightboxInfoPanel');
   infoBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    const isOpen = !infoPanel.hidden;
-    infoPanel.hidden = isOpen;
-    infoBtn.setAttribute('aria-expanded', String(!isOpen));
+    infoPanelOpen = !infoPanelOpen;
+    infoPanel.classList.toggle('is-open', infoPanelOpen);
+    infoBtn.setAttribute('aria-expanded', String(infoPanelOpen));
   });
 
   // Click on the backdrop (not the figure or controls) closes.
