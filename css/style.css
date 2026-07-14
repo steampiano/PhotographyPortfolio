@@ -117,15 +117,22 @@ a {
 .featured-item {
   position: relative;
   flex: 0 0 auto;
-  border-radius: 4px;
-  overflow: hidden;
 }
 
+/* Rounded directly on the image (not clipped via overflow:hidden on the
+   whole .featured-item, which also wraps the caption/date below it) — that
+   made the parent's rounded corners sit way past the caption, past the
+   image's own bottom edge, so the hover box-shadow's ring showed up
+   unclipped/square right where the image meets its caption. A box-shadow
+   follows whatever border-radius is set on the same element it's applied
+   to, so rounding the img itself keeps all four corners (and the shadow)
+   consistent without needing to clip anything. */
 .featured-item img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 4px;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -436,21 +443,23 @@ a {
   color: #dc3055;
 }
 
+/* currentColor doesn't inherit into an SVG loaded via <img src>  — it's an
+   isolated image document, not part of the page's live CSS cascade — so the
+   ASC mark rendered black despite fill="currentColor" in the source file and
+   `color` set here. Forcing it (and the FurCon PNG, which is plain black-on-
+   transparent artwork) to solid white with a filter works for both regardless
+   of source format or format-specific tricks. */
 .next-con-logo {
   width: 22px;
   height: 22px;
-  color: var(--fg);
+  filter: brightness(0) invert(1);
 }
 
-/* The FurCon logo is a plain black-on-transparent PNG (no SVG/currentColor
-   available from the source site), so it's forced to solid white with a
-   filter instead — otherwise black artwork would vanish against the badge's
-   dark background. Wider aspect ratio than the square ASC icon, so height is
-   fixed and width follows naturally instead of stretching to a square. */
+/* Wider aspect ratio than the square ASC icon, so height is fixed and width
+   follows naturally instead of stretching to a square. */
 .next-con-logo.fc-logo {
   width: auto;
   height: 20px;
-  filter: brightness(0) invert(1);
 }
 
 .photo-page {
