@@ -1,7 +1,7 @@
 @font-face {
-  font-family: "Deansgate Condensed";
-  src: url("../fonts/DeansgateCondensed-Bold.ttf") format("truetype");
-  font-weight: 700;
+  font-family: "Roadgeek 2005";
+  src: url("../fonts/Roadgeek2005SeriesE.ttf") format("truetype");
+  font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
@@ -23,7 +23,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
-  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Roadgeek 2005", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
   line-height: 1.5;
   letter-spacing: -0.01em;
   /* Reserve space so content isn't hidden behind the fixed footer; generous
@@ -38,7 +38,6 @@ body {
 }
 
 h1, h2, .logo {
-  font-family: "Deansgate Condensed", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
