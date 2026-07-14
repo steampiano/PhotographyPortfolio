@@ -106,6 +106,7 @@ a {
 
 .featured-item {
   position: relative;
+  flex: 0 0 auto;
   border-radius: 4px;
   overflow: hidden;
 }
