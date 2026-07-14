@@ -157,35 +157,47 @@ function setupFeaturedRow(featuredPosts) {
     const containerWidth = row.clientWidth;
     if (!containerWidth) return;
     const rowHeight = targetRowHeight(containerWidth);
+    const MAX_SCALE = 1.3;
 
-    let rowItems = [];
-    let rowNaturalWidth = 0;
+    let i = 0;
+    while (i < items.length) {
+      // Grow the row one photo at a time. Once adding the next photo would
+      // overflow the container, pick whichever of "stop here" or "include
+      // it" lands closer to the target row height, instead of always
+      // overflowing-then-shrinking. That's what made full rows consistently
+      // shorter than the stretched-out trailing row.
+      let sumRatios = items[i].ratio;
+      let count = 1;
+      let j = i + 1;
 
-    function flushRow(isTrailing) {
-      if (!rowItems.length) return;
-      const totalGap = GAP * (rowItems.length - 1);
-      let scale = (containerWidth - totalGap) / rowNaturalWidth;
-      // Don't stretch a short trailing row (e.g. the last 1-2 photos left
-      // over) to an absurd size just to fill the line.
-      if (isTrailing) scale = Math.min(scale, 1.35);
+      while (j < items.length) {
+        const sumWithNext = sumRatios + items[j].ratio;
+        const widthWithNext = rowHeight * sumWithNext + GAP * count;
+        if (widthWithNext >= containerWidth) {
+          const scaleWithout = (containerWidth - GAP * (count - 1)) / (rowHeight * sumRatios);
+          const scaleWith = (containerWidth - GAP * count) / (rowHeight * sumWithNext);
+          if (Math.abs(scaleWith - 1) < Math.abs(scaleWithout - 1)) {
+            sumRatios = sumWithNext;
+            count++;
+          }
+          break;
+        }
+        sumRatios = sumWithNext;
+        count++;
+        j++;
+      }
+
+      const rowItems = items.slice(i, i + count);
+      const totalGap = GAP * (count - 1);
+      const scale = Math.min((containerWidth - totalGap) / (rowHeight * sumRatios), MAX_SCALE);
       const h = rowHeight * scale;
       for (const it of rowItems) {
         it.figure.style.width = (h * it.ratio) + 'px';
         it.img.style.height = h + 'px';
       }
-      rowItems = [];
-      rowNaturalWidth = 0;
-    }
 
-    items.forEach((it, i) => {
-      rowItems.push(it);
-      rowNaturalWidth += rowHeight * it.ratio;
-      const totalGap = GAP * (rowItems.length - 1);
-      const rowIsFull = rowNaturalWidth + totalGap >= containerWidth;
-      const isLastItem = i === items.length - 1;
-      if (rowIsFull) flushRow(false);
-      else if (isLastItem) flushRow(true);
-    });
+      i += count;
+    }
   }
 
   // Real aspect ratios are needed before laying out — wait for each thumb to
