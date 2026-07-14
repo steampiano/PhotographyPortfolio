@@ -1,6 +1,16 @@
+/* Series E is the heavier-stroke cut, used only for the header logo/nav.
+   Series D (thinner) is used for everything else — see body/.logo/.nav a. */
 @font-face {
-  font-family: "Roadgeek 2005";
+  font-family: "Roadgeek 2005 Series E";
   src: url("../fonts/Roadgeek2005SeriesE.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Roadgeek 2005 Series D";
+  src: url("../fonts/Roadgeek_2005_Series_D.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -27,7 +37,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
-  font-family: "Roadgeek 2005", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Roadgeek 2005 Series D", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
   line-height: 1.5;
   letter-spacing: -0.01em;
   /* Reserve space so content isn't hidden behind the fixed footer; generous
@@ -78,6 +88,7 @@ a {
 }
 
 .logo {
+  font-family: "Roadgeek 2005 Series E", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 1.4rem;
   text-decoration: none;
   color: var(--fg);
@@ -94,14 +105,13 @@ a {
 }
 
 .nav a {
+  font-family: "Roadgeek 2005 Series E", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
   text-decoration: none;
   color: var(--fg);
   font-size: 1.15rem;
   transition: color 0.15s ease;
 }
 
-/* Underline instead of a heavier weight to mark the current page — same
-   faux-bold problem as everywhere else on Roadgeek. */
 .nav a.active {
   color: #9f8ff0;
 }
