@@ -92,66 +92,35 @@ a {
   margin: 0 0 20px;
 }
 
-.carousel {
-  position: relative;
+/* Featured: a "justified" row — each photo keeps its own true aspect ratio
+   (no cropping), sized in JS so the row's photos exactly fill the container
+   width at a shared height, wrapping to another row if there isn't room for
+   all of them. This replaces a horizontal-scroll carousel, which fought with
+   mixed-orientation photos (carousels assume same-size slides) and needed a
+   lot of CSS patching (clipping, edge fades) to hover-expand within it. */
+.featured-row {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
 }
 
-.carousel-track {
-  display: flex;
-  gap: 20px;
-  overflow-x: auto;
-  scroll-snap-type: x proximity;
-  scroll-behavior: smooth;
-  /* A horizontal scroller also clips vertical overflow, so a hovered photo
-     that grows taller than a slide would get cut off. This top/bottom padding
-     gives the expansion vertical room inside the scrollport. Photos are
-     bottom-anchored (see .post-link), so most of the room is on top. */
-  padding: 150px 0 40px;
-  /* Pull the track back up so the top padding (expansion headroom) doesn't
-     leave a big empty gap at rest — the padding just overlaps the space below
-     the heading, which only gets used when a tall photo is hovered. */
-  margin-top: -120px;
-  scrollbar-width: none;
-  /* Fade the left/right edges out gradually instead of a hard cut, so photos
-     dissolve toward the arrows rather than hitting a "curtain of black". */
-  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 56px, #000 calc(100% - 56px), transparent 100%);
-  mask-image: linear-gradient(to right, transparent 0, #000 56px, #000 calc(100% - 56px), transparent 100%);
+.featured-item {
+  position: relative;
+  border-radius: 4px;
+  overflow: hidden;
 }
 
-.carousel-track::-webkit-scrollbar {
-  display: none;
+.featured-item img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.carousel-slide {
-  flex: 0 0 auto;
-  width: min(345px, 55vw);
-  scroll-snap-align: start;
-}
-
-.carousel-btn {
-  flex: 0 0 auto;
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--fg);
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  font-size: 1.1rem;
-  cursor: pointer;
-  line-height: 1;
-}
-
-.carousel-btn:hover {
-  background: var(--border);
-}
-
-.carousel-btn:disabled {
-  opacity: 0.25;
-  cursor: default;
-  pointer-events: none;
+.featured-item:hover img {
+  transform: scale(1.035);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3), 0 16px 36px rgba(0, 0, 0, 0.7);
 }
 
 .gallery-intro {
@@ -261,8 +230,9 @@ a {
   background: #1a1a1a;
 }
 
-/* Square, cropped thumbnails in the grid and Featured carousel for an even
-   layout. (The lightbox and dedicated page keep the true aspect ratio.)
+/* Square, cropped thumbnails in the Recent Work grid for an even layout.
+   (The Featured row, lightbox, and dedicated page all keep the true aspect
+   ratio — only this grid crops to a square.)
 
    On hover (desktop) or finger-drag (mobile, via touch-active below), each
    thumbnail grows to its own --expand-w/--expand-ratio — custom properties
@@ -289,8 +259,7 @@ a {
    of "border-box" on <img>, and even fixed-pixel inline transforms had zero
    effect) — flexbox sidesteps transform entirely and centers exactly, with
    zero drift, verified across every photo on the site. */
-.gallery .post-link,
-.carousel-slide .post-link {
+.gallery .post-link {
   position: relative;
   aspect-ratio: 1 / 1;
   display: flex;
@@ -304,14 +273,11 @@ a {
 }
 
 .gallery .post-link:hover,
-.gallery .post-link.touch-active,
-.carousel-slide .post-link:hover,
-.carousel-slide .post-link.touch-active {
+.gallery .post-link.touch-active {
   z-index: 20;
 }
 
-.gallery .post img,
-.carousel-slide .post img {
+.gallery .post img {
   position: absolute;
   width: 100%;
   height: auto;
@@ -321,9 +287,7 @@ a {
 }
 
 .gallery .post-link:hover img,
-.gallery .post-link.touch-active img,
-.carousel-slide .post-link:hover img,
-.carousel-slide .post-link.touch-active img {
+.gallery .post-link.touch-active img {
   width: var(--expand-w, 112%);
   height: auto;
   aspect-ratio: var(--expand-ratio, 1 / 1);

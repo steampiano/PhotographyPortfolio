@@ -48,7 +48,7 @@ function buildHandleBubble(handle) {
   return bubble;
 }
 
-function buildPostFigure(post, source) {
+function buildPostFigure(post) {
   const figure = document.createElement('figure');
   figure.className = 'post';
 
@@ -60,8 +60,7 @@ function buildPostFigure(post, source) {
   link.addEventListener('click', (e) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
     e.preventDefault();
-    const list = source === 'featured' ? FEATURED : GRID;
-    const idx = list.findIndex((p) => p.image === post.image);
+    const idx = GRID.findIndex((p) => p.image === post.image);
     if (idx !== -1) openLightbox(list, idx);
   });
 
@@ -77,6 +76,13 @@ function buildPostFigure(post, source) {
   link.appendChild(img);
   figure.appendChild(link);
 
+  appendPostMeta(figure, post);
+  return figure;
+}
+
+// Event badge + caption + date, shared by both the Recent Work grid and the
+// Featured row.
+function appendPostMeta(figure, post) {
   if (post.event) {
     const eventEl = document.createElement('span');
     eventEl.className = 'post-event';
@@ -94,65 +100,115 @@ function buildPostFigure(post, source) {
   dateEl.className = 'post-date';
   dateEl.textContent = formatDate(post.date);
   figure.appendChild(dateEl);
+}
 
+// A Featured-row item: unlike grid figures, this shows the photo at its true
+// aspect ratio (sized by the justified-row layout below), no square crop and
+// no hover-expand — there's no crop mismatch here to expand out of.
+function buildFeaturedItem(post) {
+  const figure = document.createElement('figure');
+  figure.className = 'post featured-item';
+
+  const link = document.createElement('a');
+  link.className = 'post-link';
+  link.href = 'photo.html?src=' + encodeURIComponent(post.image);
+  link.addEventListener('click', (e) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+    e.preventDefault();
+    const idx = FEATURED.findIndex((p) => p.image === post.image);
+    if (idx !== -1) openLightbox(FEATURED, idx);
+  });
+
+  const img = document.createElement('img');
+  img.src = post.thumb || post.image;
+  img.alt = post.caption || (post.people ? post.people.join(', ') : '');
+  link.appendChild(img);
+  figure.appendChild(link);
+
+  appendPostMeta(figure, post);
   return figure;
 }
 
-function setupCarousel(featuredPosts) {
+// Featured: a "justified" row. Each photo keeps its true aspect ratio; a
+// target row height is picked, each photo's natural width at that height is
+// summed, and the whole row is scaled up/down so it exactly fills the
+// container width — the classic Flickr/Google-Photos justified-gallery
+// technique. Rows fill greedily left-to-right, wrapping once a row is full.
+function setupFeaturedRow(featuredPosts) {
   const section = document.getElementById('highlights-section');
-  const track = document.getElementById('carouselTrack');
-  const prevBtn = document.getElementById('carouselPrev');
-  const nextBtn = document.getElementById('carouselNext');
-  if (!section || !track || !featuredPosts.length) return;
+  const row = document.getElementById('featuredRow');
+  if (!section || !row || !featuredPosts.length) return;
 
   section.hidden = false;
-  track.innerHTML = '';
-  for (const post of featuredPosts) {
-    const slide = document.createElement('div');
-    slide.className = 'carousel-slide';
-    slide.appendChild(buildPostFigure(post, 'featured'));
-    track.appendChild(slide);
-  }
+  row.innerHTML = '';
 
-  const slides = () => [...track.children];
-
-  // Explicit current index gives reliable arrow stepping (not thrown off by an
-  // in-flight smooth scroll); manual swipes resync it once scrolling settles.
-  let index = 0;
-
-  function nearestIndex() {
-    const list = slides();
-    let best = 0, bestDist = Infinity;
-    list.forEach((el, i) => {
-      const d = Math.abs(el.offsetLeft - track.scrollLeft);
-      if (d < bestDist) { bestDist = d; best = i; }
-    });
-    return best;
-  }
-
-  function goTo(i) {
-    const list = slides();
-    index = Math.max(0, Math.min(i, list.length - 1));
-    track.scrollTo({ left: list[index].offsetLeft, behavior: 'smooth' });
-  }
-
-  // Dim/disable an arrow when there's nothing further in that direction.
-  function updateArrows() {
-    const maxScroll = track.scrollWidth - track.clientWidth;
-    prevBtn.disabled = track.scrollLeft <= 2;
-    nextBtn.disabled = track.scrollLeft >= maxScroll - 2;
-  }
-
-  let resyncTimer;
-  prevBtn.addEventListener('click', () => goTo(index - 1));
-  nextBtn.addEventListener('click', () => goTo(index + 1));
-  track.addEventListener('scroll', () => {
-    window.requestAnimationFrame(updateArrows);
-    clearTimeout(resyncTimer);
-    resyncTimer = setTimeout(() => { index = nearestIndex(); }, 120);
+  const GAP = 12;
+  const items = featuredPosts.map((post) => {
+    const figure = buildFeaturedItem(post);
+    row.appendChild(figure);
+    return { figure, img: figure.querySelector('img'), ratio: 1 };
   });
-  window.addEventListener('resize', updateArrows);
-  updateArrows();
+
+  function targetRowHeight(containerWidth) {
+    return containerWidth < 560 ? 170 : 260;
+  }
+
+  function layout() {
+    const containerWidth = row.clientWidth;
+    if (!containerWidth) return;
+    const rowHeight = targetRowHeight(containerWidth);
+
+    let rowItems = [];
+    let rowNaturalWidth = 0;
+
+    function flushRow(isTrailing) {
+      if (!rowItems.length) return;
+      const totalGap = GAP * (rowItems.length - 1);
+      let scale = (containerWidth - totalGap) / rowNaturalWidth;
+      // Don't stretch a short trailing row (e.g. the last 1-2 photos left
+      // over) to an absurd size just to fill the line.
+      if (isTrailing) scale = Math.min(scale, 1.35);
+      const h = rowHeight * scale;
+      for (const it of rowItems) {
+        it.figure.style.width = (h * it.ratio) + 'px';
+        it.img.style.height = h + 'px';
+      }
+      rowItems = [];
+      rowNaturalWidth = 0;
+    }
+
+    items.forEach((it, i) => {
+      rowItems.push(it);
+      rowNaturalWidth += rowHeight * it.ratio;
+      const totalGap = GAP * (rowItems.length - 1);
+      const rowIsFull = rowNaturalWidth + totalGap >= containerWidth;
+      const isLastItem = i === items.length - 1;
+      if (rowIsFull) flushRow(false);
+      else if (isLastItem) flushRow(true);
+    });
+  }
+
+  // Real aspect ratios are needed before laying out — wait for each thumb to
+  // load (they're already being fetched for display, so this adds no extra
+  // requests, just a short wait for dimensions).
+  Promise.all(items.map((it) => new Promise((resolve) => {
+    if (it.img.complete && it.img.naturalWidth) {
+      it.ratio = it.img.naturalWidth / it.img.naturalHeight;
+      resolve();
+    } else {
+      it.img.addEventListener('load', () => {
+        it.ratio = (it.img.naturalWidth / it.img.naturalHeight) || 1;
+        resolve();
+      }, { once: true });
+      it.img.addEventListener('error', resolve, { once: true });
+    }
+  }))).then(layout);
+
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(layout, 150);
+  });
 }
 
 // Renders the Recent Work grid, showing only posts whose event is in the
@@ -169,7 +225,7 @@ function renderGrid(posts, selectedEvents) {
     return;
   }
   for (const post of visible) {
-    gallery.appendChild(buildPostFigure(post, 'grid'));
+    gallery.appendChild(buildPostFigure(post));
   }
 }
 
@@ -348,7 +404,7 @@ function setupTouchExpand() {
     if (!touch) return;
     const el = document.elementFromPoint(touch.clientX, touch.clientY);
     const link = el && el.closest('.post-link');
-    const inScope = link && (link.closest('.gallery') || link.closest('.carousel-slide'));
+    const inScope = link && link.closest('.gallery');
     setActive(inScope ? link : null);
   }, { passive: true });
 
@@ -373,7 +429,7 @@ if (gallery) {
         if (bo != null) return 1;
         return 0;
       });
-      setupCarousel(FEATURED);
+      setupFeaturedRow(FEATURED);
 
       if (!posts.length) {
         gallery.innerHTML = '<p class="gallery-empty">No photos yet.</p>';
