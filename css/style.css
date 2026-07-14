@@ -526,6 +526,13 @@ a {
   padding: 10px 0;
   color: var(--muted);
   font-size: 0.8rem;
+  /* Forces its own compositing layer, which helps mobile Safari keep a fixed
+     element visually anchored while its dynamic address bar animates
+     show/hide during scroll (most noticeable right near the top of the
+     page) — without this, some browsers visibly jump/lag the fixed element
+     during that animation. */
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 .footer-inner {
