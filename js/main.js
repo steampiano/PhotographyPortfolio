@@ -83,7 +83,7 @@ function buildPostFigure(post) {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
     e.preventDefault();
     const idx = GRID.findIndex((p) => p.image === post.image);
-    if (idx !== -1) openLightbox(list, idx);
+    if (idx !== -1) openLightbox(GRID, idx);
   });
 
   const img = document.createElement('img');
