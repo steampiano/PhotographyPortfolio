@@ -440,6 +440,13 @@ a {
   line-height: 1.65;
 }
 
+/* Slightly larger than the surrounding paragraphs — at 1.15rem, Roadgeek's
+   tight glyph spacing next to its wider word gaps made individual words
+   harder to pick out at a glance; sizing up helps them read as distinct. */
+.using-photos-note {
+  font-size: 1.3rem;
+}
+
 .about-prose {
   max-width: 640px;
 }
