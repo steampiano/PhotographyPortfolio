@@ -121,13 +121,29 @@ if (!src) {
           label.textContent = handle;
           bubble.appendChild(label);
 
+          const avatarSrc = 'avatars/' + cleanHandle.toLowerCase() + '.jpg';
+
+          // Larger decorative hover preview of the same avatar — see
+          // main.js's buildHandleBubble for why it's pointer-events: none
+          // and why its src is only set once the small avatar confirms the
+          // image exists.
+          const preview = document.createElement('span');
+          preview.className = 'people-bubble-preview';
+          const previewImg = document.createElement('img');
+          previewImg.alt = '';
+          preview.appendChild(previewImg);
+
           const avatar = document.createElement('img');
           avatar.className = 'people-bubble-avatar';
           avatar.alt = '';
-          avatar.addEventListener('load', () => bubble.classList.remove('no-avatar'), { once: true });
+          avatar.addEventListener('load', () => {
+            bubble.classList.remove('no-avatar');
+            previewImg.src = avatarSrc;
+          }, { once: true });
           avatar.addEventListener('error', () => avatar.remove(), { once: true });
-          avatar.src = 'avatars/' + cleanHandle.toLowerCase() + '.jpg';
+          avatar.src = avatarSrc;
           bubble.appendChild(avatar);
+          bubble.appendChild(preview);
 
           peopleEl.appendChild(bubble);
         }

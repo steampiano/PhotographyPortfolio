@@ -61,8 +61,8 @@ function applyExpandSize(img) {
 }
 
 // A handle bubble linking to the matching Instagram profile. Tries to show
-// that person's cached avatar (see build.py's fetch_avatar) as the pill's
-// right-side cap; if none exists yet (or the image 404s), falls back to a
+// that person's cached avatar (see build.py's fetch_avatar) as a small icon
+// in the pill; if none exists yet (or the image 404s), falls back to a
 // plain text-only pill via the .no-avatar class.
 function buildHandleBubble(handle) {
   const cleanHandle = handle.replace(/^@/, '');
@@ -77,13 +77,32 @@ function buildHandleBubble(handle) {
   label.textContent = handle;
   bubble.appendChild(label);
 
+  const avatarSrc = 'avatars/' + cleanHandle.toLowerCase() + '.jpg';
+
+  // A larger, purely decorative preview of the same avatar that fades in on
+  // hover (see CSS) — pointer-events: none there, so it can never itself
+  // become a hover/click target. The pill's own hit area never changes
+  // size, so hovering stays exact no matter how big this preview is drawn.
+  // Its src is only set once the small avatar below confirms the image
+  // actually exists, so a missing avatar doesn't trigger a second wasted
+  // request for it.
+  const preview = document.createElement('span');
+  preview.className = 'people-bubble-preview';
+  const previewImg = document.createElement('img');
+  previewImg.alt = '';
+  preview.appendChild(previewImg);
+
   const avatar = document.createElement('img');
   avatar.className = 'people-bubble-avatar';
   avatar.alt = '';
-  avatar.addEventListener('load', () => bubble.classList.remove('no-avatar'), { once: true });
+  avatar.addEventListener('load', () => {
+    bubble.classList.remove('no-avatar');
+    previewImg.src = avatarSrc;
+  }, { once: true });
   avatar.addEventListener('error', () => avatar.remove(), { once: true });
-  avatar.src = 'avatars/' + cleanHandle.toLowerCase() + '.jpg';
+  avatar.src = avatarSrc;
   bubble.appendChild(avatar);
+  bubble.appendChild(preview);
 
   return bubble;
 }

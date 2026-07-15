@@ -773,12 +773,15 @@ a {
 }
 
 /* People handle bubbles (lightbox + dedicated page) — link to Instagram.
-   The avatar (see build.py's fetch_avatar / avatars/<handle>.jpg) sits at
-   the right edge, sized to match the pill's own height so its curve reads
-   as the pill's rounded cap rather than a separate circle bolted on.
-   Hovering scales the *whole* pill from its own center — that one
-   transform grows the text, the avatar, and the pill shape all together,
-   in place, without shifting neighboring bubbles or the pill's position. */
+   The pill itself never changes size on hover — every earlier version that
+   scaled the whole pill (or just its avatar) up grew its hit area into
+   neighboring bubbles' space when several sit close together in a row,
+   which made hovering near the boundary between two handles feel
+   inaccurate. Instead hover just recolors the pill for feedback, and a
+   separate, much larger preview of the same avatar (.people-bubble-preview
+   below) fades in floating above it — pointer-events: none, so that
+   preview can never itself be hovered/clicked and can't affect hit-testing
+   no matter how big it's drawn. */
 .people-bubble {
   position: relative;
   display: inline-flex;
@@ -792,8 +795,7 @@ a {
   padding: 4px 4px 4px 12px;
   text-decoration: none;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, transform 0.2s ease,
-    box-shadow 0.2s ease, border-color 0.2s ease;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 /* No cached avatar (yet) — even right-side padding instead of a gap where
@@ -819,26 +821,48 @@ a {
 }
 
 .people-bubble:hover {
-  /* Scaling the avatar on its own (a prior version of this rule) grew it
-     past the pill's own scaled hit-area, so the visible avatar and the
-     actually-hoverable region no longer matched — moving the mouse onto
-     what looked like the avatar could miss the bubble or catch a neighbor
-     instead, and the avatar's rounded edge no longer lined up with the
-     pill's own rounded cap. One transform on the whole pill keeps the
-     avatar-caps-the-pill alignment exact at any scale and keeps the
-     hoverable area pixel-matched to what's drawn, since transform scales
-     hit-testing geometry along with appearance. 1.8x lands the avatar
-     around 40px — enough to actually read a face — without text
-     ballooning past a normal reading size. */
-  background: rgba(20, 20, 20, 0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.18);
   color: #dc3055;
   border-color: rgba(255, 255, 255, 0.5);
-  transform: scale(1.8);
-  transform-origin: center;
+}
+
+/* Sits out of flow and out of the hit-testing path entirely (position:
+   absolute + pointer-events: none), so it can be sized for a genuinely
+   readable face without growing the pill, shifting neighbors, or ever
+   being hoverable/clickable itself. */
+.people-bubble-preview {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  width: 76px;
+  height: 76px;
+  transform: translateX(-50%) scale(0.85);
+  transform-origin: bottom center;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.5);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
-  z-index: 5;
+  background: #1a1a1a;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 20;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.people-bubble-preview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.people-bubble.no-avatar .people-bubble-preview {
+  display: none;
+}
+
+.people-bubble:hover .people-bubble-preview {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
 }
 
 .site-footer {
