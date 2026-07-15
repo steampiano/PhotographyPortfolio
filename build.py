@@ -72,6 +72,7 @@ at all (e.g. screenshots, graphics).
 
 import colorsys
 import json
+import math
 import os
 import re
 import shutil
@@ -471,20 +472,26 @@ def compute_avatar_color(image_path):
     CSS color string (or None if anything goes wrong) — used as that
     person's handle-pill border/text color on the site.
 
-    A plain average (an earlier version of this function, and still what
-    sips's own resize-to-1x1 gives you for free) tends toward mud: a
+    A plain average (the original version of this function, and still
+    what sips's own resize-to-1x1 gives you for free) tends toward mud: a
     photo's varied hues cancel out in the mean, so the result reads as a
-    flat, barely-there gray-brown next to the site's white text — exactly
-    the "hard to see" complaint that prompted this rewrite. Instead this
-    downsamples to a small grid (still via sips, still just a resize —
-    see _decode_png_pixels for why decoding it needs hand-rolled PNG
-    unfiltering), scores every pixel by saturation (excluding near-black/
-    near-white outliers, which are usually blown highlights or shadow and
-    not "the photo's color"), and averages the most saturated ones. That
-    surfaces an actual vivid color that exists somewhere in the photo
-    instead of a synthetic blend of all of them — verified against real
-    avatars to give noticeably more distinct, recognizable-as-that-photo
-    colors than the flat average did.
+    flat, barely-there gray-brown next to the site's white text. Averaging
+    the most-saturated pixels regardless of hue (an intermediate version)
+    fixed the mud but could still blend two genuinely different vivid
+    colors — a photo with both strong teal and strong orange — into a
+    third color that isn't really "in" the photo at all.
+
+    This downsamples to a small grid (still via sips, still just a
+    resize — see _decode_png_pixels for the hand-rolled PNG unfiltering
+    decoding it needs), buckets every candidate pixel by hue, and picks
+    whichever hue has the most total (saturation x center-weight) mass —
+    i.e. one dominant color family, not a blend across families. The
+    final color is a weighted average of that bucket's own pixels
+    (weighted the same way), so it's still pulled toward that family's
+    most vivid, central members rather than diluted by its own duller
+    ones. Center-weighting matters because avatars are usually a
+    centered headshot — a vivid color confined to a background corner
+    shouldn't outweigh a duller one worn by the actual subject.
     """
     if SIPS is None:
         return None
@@ -500,14 +507,21 @@ def compute_avatar_color(image_path):
             decoded = _decode_png_pixels(grid_path)
             if not decoded:
                 return None
-            _width, _height, pixels = decoded
+            width, height, pixels = decoded
+            if not width or not height:
+                return None
+            cx, cy = (width - 1) / 2, (height - 1) / 2
+            max_dist = math.hypot(cx, cy) or 1
 
-            def scored(candidates):
+            def candidates_for(pixels_iter, min_l, max_l):
                 out = []
-                for r, g, b in candidates:
-                    _h, l, s = colorsys.rgb_to_hls(r / 255, g / 255, b / 255)
-                    if 0.15 <= l <= 0.85:
-                        out.append((s, (r, g, b)))
+                for i, (r, g, b) in enumerate(pixels_iter):
+                    h, l, s = colorsys.rgb_to_hls(r / 255, g / 255, b / 255)
+                    if not (min_l <= l <= max_l):
+                        continue
+                    x, y = i % width, i // width
+                    center_weight = 1.0 - 0.6 * (math.hypot(x - cx, y - cy) / max_dist)
+                    out.append((h, s * center_weight, (r, g, b)))
                 return out
 
             # Almost every real photo has plenty of pixels in the mid
@@ -515,14 +529,29 @@ def compute_avatar_color(image_path):
             # (including near-black/white) rather than giving up entirely
             # on the rare avatar that doesn't (e.g. a near-monochrome
             # photo) — some accent color beats none.
-            candidates = scored(pixels) or scored([(r, g, b) for r, g, b in pixels])
+            candidates = candidates_for(pixels, 0.15, 0.85) or candidates_for(pixels, 0, 1)
             if not candidates:
                 return None
-            candidates.sort(key=lambda c: c[0], reverse=True)
-            top = candidates[:12]
-            r = sum(c[1][0] for c in top) // len(top)
-            g = sum(c[1][1] for c in top) // len(top)
-            b = sum(c[1][2] for c in top) // len(top)
+
+            num_buckets = 16
+            bucket_scores = [0.0] * num_buckets
+            for h, weight, _rgb in candidates:
+                bucket_scores[int(h * num_buckets) % num_buckets] += weight
+            winning_bucket = max(range(num_buckets), key=lambda i: bucket_scores[i])
+
+            members = [c for c in candidates if int(c[0] * num_buckets) % num_buckets == winning_bucket]
+            total_weight = sum(m[1] for m in members)
+            if total_weight <= 0:
+                # Every member had ~zero saturation x center-weight (only
+                # possible via the near-black/white fallback path) — a
+                # plain average is the only sane option left.
+                r = sum(m[2][0] for m in members) // len(members)
+                g = sum(m[2][1] for m in members) // len(members)
+                b = sum(m[2][2] for m in members) // len(members)
+            else:
+                r = int(sum(m[2][0] * m[1] for m in members) / total_weight)
+                g = int(sum(m[2][1] * m[1] for m in members) / total_weight)
+                b = int(sum(m[2][2] * m[1] for m in members) / total_weight)
             return f"rgb({r}, {g}, {b})"
         except Exception:
             return None
