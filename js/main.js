@@ -22,6 +22,7 @@ function formatDate(iso) {
 function exifDisplayFields(exif) {
   if (!exif) return [];
   const order = [
+    ['camera', 'Camera'],
     ['focal_length', 'Focal length'],
     ['aperture', 'Aperture'],
     ['shutter', 'Shutter'],

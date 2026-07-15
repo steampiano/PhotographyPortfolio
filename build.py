@@ -149,6 +149,8 @@ def derivative_for(image_path, rel_path, ext, out_dir, dir_name, max_px, quality
     return rel_path  # fallback: full image
 
 
+EXIF_MAKE = 0x010F            # camera manufacturer, ASCII (IFD0)
+EXIF_MODEL = 0x0110           # camera model, ASCII (IFD0)
 EXIF_DATETIME_ORIGINAL = 0x9003
 EXIF_DATETIME_DIGITIZED = 0x9004
 EXIF_SUBIFD_POINTER = 0x8769
@@ -157,6 +159,26 @@ EXIF_EXPOSURE_TIME = 0x829A   # shutter speed, RATIONAL (seconds)
 EXIF_FNUMBER = 0x829D         # aperture, RATIONAL
 EXIF_ISO = 0x8827             # ISO speed, SHORT
 EXIF_FOCAL_LENGTH = 0x920A    # focal length, RATIONAL (mm)
+
+# EXIF Model is often a cryptic internal product code rather than the
+# marketing name (e.g. Sony reports "ILCE-7M4" for the Alpha 7 IV) — map
+# known codes to a friendly name; falls back to "<Make> <Model>" otherwise.
+CAMERA_MODEL_NAMES = {
+    "ILCE-7M4": "Sony Alpha 7 IV",
+}
+
+
+def _format_camera_name(make, model):
+    if not model:
+        return None
+    model = model.strip()
+    friendly = CAMERA_MODEL_NAMES.get(model)
+    if friendly:
+        return friendly
+    make = (make or "").strip()
+    if make and not model.upper().startswith(make.upper()):
+        return f"{make.title()} {model}"
+    return model
 
 
 def _read_ifd(data, offset, byte_order):
@@ -280,11 +302,14 @@ def read_exif(image_path):
 
         value = None
         fields = {}
+        camera = _format_camera_name(ifd0.get(EXIF_MAKE), ifd0.get(EXIF_MODEL))
+        if camera:
+            fields["camera"] = camera
         exif_ifd_ptr = ifd0.get(EXIF_SUBIFD_POINTER)
         if exif_ifd_ptr:
             exif_ifd = _read_ifd(exif_data, exif_ifd_ptr, byte_order)
             value = exif_ifd.get(EXIF_DATETIME_ORIGINAL) or exif_ifd.get(EXIF_DATETIME_DIGITIZED)
-            fields = _format_exif_fields(exif_ifd)
+            fields.update(_format_exif_fields(exif_ifd))
         if not value:
             # Last resort: ModifyDate is better than nothing (still beats
             # falling back to the filesystem mtime, which git checkouts reset).

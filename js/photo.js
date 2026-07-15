@@ -140,6 +140,7 @@ if (!src) {
       content.appendChild(dateEl);
 
       const exifOrder = [
+        ['camera', 'Camera'],
         ['focal_length', 'Focal length'],
         ['aperture', 'Aperture'],
         ['shutter', 'Shutter'],
