@@ -804,20 +804,7 @@ a {
   transition: background 0.15s ease, color 0.15s ease;
 }
 
-/* .preview-active is a JS-managed class (see buildHandleBubble), not a
-   second way to write :hover — it's added immediately on mouseenter like
-   :hover, but removed only after a short delay on mouseleave, rather than
-   the instant the pointer leaves the pill's small box. That grace period
-   is what actually keeps the floating preview below open long enough to
-   look at (see .people-bubble-preview) — an earlier version tried to
-   solve the same problem by giving the pill a big invisible hit-area
-   reaching up to the preview instead, but that box would collide with a
-   bubble in the row above once several bubbles wrap onto multiple lines
-   (up to 9 people are tagged in some photos, with only 8px between
-   wrapped rows) — a purely time-based grace period has no such spatial
-   collision risk regardless of how many rows wrap. */
-.people-bubble:hover,
-.people-bubble.preview-active {
+.people-bubble:hover {
   background: rgba(255, 255, 255, 0.18);
   color: #dc3055;
 }
@@ -856,8 +843,7 @@ a {
   display: none;
 }
 
-.people-bubble:hover .people-bubble-preview,
-.people-bubble.preview-active .people-bubble-preview {
+.people-bubble:hover .people-bubble-preview {
   opacity: 1;
   transform: translateX(-50%) scale(1);
 }

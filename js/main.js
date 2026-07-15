@@ -106,31 +106,7 @@ function buildHandleBubble(handle) {
   preview.appendChild(previewImg);
   bubble.appendChild(preview);
 
-  attachPreviewHoverGrace(bubble);
-
   return bubble;
-}
-
-// A plain :hover on the pill ends the instant the pointer leaves its small
-// box — usually well before the mouse actually reaches the much bigger
-// preview floating above it. .preview-active (toggled here, styled in CSS)
-// adds a short grace period after the pointer leaves before the preview is
-// allowed to close, long enough to move the mouse up and actually look at
-// it, without needing to expand the pill's real hit area (which would risk
-// overlapping a bubble in the row above once several wrap onto multiple
-// lines — up to 9 people are tagged in some photos).
-function attachPreviewHoverGrace(bubble) {
-  let hideTimer = null;
-  bubble.addEventListener('mouseenter', () => {
-    if (hideTimer) {
-      clearTimeout(hideTimer);
-      hideTimer = null;
-    }
-    bubble.classList.add('preview-active');
-  });
-  bubble.addEventListener('mouseleave', () => {
-    hideTimer = setTimeout(() => bubble.classList.remove('preview-active'), 350);
-  });
 }
 
 function buildPostFigure(post) {

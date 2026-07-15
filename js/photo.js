@@ -18,24 +18,6 @@ fetch('avatars/colors.json').then((res) => (res.ok ? res.json() : {})).then((dat
   AVATAR_COLORS = data;
 }).catch(() => {});
 
-// See main.js's attachPreviewHoverGrace for why this exists (a grace
-// period after the pointer leaves the pill, instead of a plain :hover, so
-// there's time to move the mouse up onto the bigger avatar preview above
-// it before it closes).
-function attachPreviewHoverGrace(bubble) {
-  let hideTimer = null;
-  bubble.addEventListener('mouseenter', () => {
-    if (hideTimer) {
-      clearTimeout(hideTimer);
-      hideTimer = null;
-    }
-    bubble.classList.add('preview-active');
-  });
-  bubble.addEventListener('mouseleave', () => {
-    hideTimer = setTimeout(() => bubble.classList.remove('preview-active'), 350);
-  });
-}
-
 // Streams a URL with real download progress (same technique as the
 // lightbox), returning an object URL once fully loaded.
 async function fetchWithProgress(url, onProgress) {
@@ -161,8 +143,6 @@ if (!src) {
           previewImg.src = 'avatars/' + cleanHandle.toLowerCase() + '.jpg';
           preview.appendChild(previewImg);
           bubble.appendChild(preview);
-
-          attachPreviewHoverGrace(bubble);
 
           peopleEl.appendChild(bubble);
         }
