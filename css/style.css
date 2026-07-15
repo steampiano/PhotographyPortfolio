@@ -84,11 +84,15 @@ body {
   }
 }
 
-/* font-weight stays at Roadgeek's one loaded weight (400) throughout — it
-   has no real bold cut, so any heavier weight just gets browser-synthesized
-   (faux bold), which crams/distorts the letterforms instead of looking
-   properly bold. */
+/* Every section heading (About Me, Upcoming Conventions, My Gear, Featured,
+   Recent work, etc.) shares the header logo's Roadgeek 2005 Series E
+   display font rather than the body's Overpass, so headings read as a
+   consistent family across the site. font-weight stays at Roadgeek's one
+   loaded weight (400) throughout — it has no real bold cut, so any heavier
+   weight just gets browser-synthesized (faux bold), which crams/distorts
+   the letterforms instead of looking properly bold. */
 h1, h2, .logo {
+  font-family: "Roadgeek 2005 Series E", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-weight: 400;
   letter-spacing: normal;
 }
@@ -121,7 +125,6 @@ a {
 }
 
 .logo {
-  font-family: "Roadgeek 2005 Series E", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 1.4rem;
   text-decoration: none;
   color: var(--fg);
