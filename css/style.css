@@ -663,24 +663,60 @@ a {
   color: var(--fg);
 }
 
-/* People handle bubbles (lightbox + dedicated page) — link to Instagram */
+/* People handle bubbles (lightbox + dedicated page) — link to Instagram.
+   The avatar (see build.py's fetch_avatar / avatars/<handle>.jpg) sits at
+   the right edge, sized to match the pill's own height so its curve reads
+   as the pill's rounded cap rather than a separate circle bolted on.
+   Hovering scales the *whole* pill from its own center — that one
+   transform grows the text, the avatar, and the pill shape all together,
+   in place, without shifting neighboring bubbles or the pill's position. */
 .people-bubble {
-  display: inline-block;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
   font-family: var(--meta-font);
   font-size: 0.85rem;
   color: var(--fg);
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--border);
   border-radius: 999px;
-  padding: 4px 12px;
+  padding: 4px 4px 4px 12px;
   text-decoration: none;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.2s ease,
+    box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+/* No cached avatar (yet) — even right-side padding instead of a gap where
+   the avatar would sit. */
+.people-bubble.no-avatar {
+  padding: 4px 12px;
+}
+
+.people-bubble-label {
+  padding-right: 8px;
+}
+
+.people-bubble.no-avatar .people-bubble-label {
+  padding-right: 0;
+}
+
+.people-bubble-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: 0 0 auto;
 }
 
 .people-bubble:hover {
   background: rgba(255, 255, 255, 0.18);
   color: #dc3055;
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.25);
+  transform-origin: center;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
+  z-index: 5;
 }
 
 .site-footer {

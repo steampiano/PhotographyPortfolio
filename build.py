@@ -76,12 +76,16 @@ import re
 import shutil
 import struct
 import subprocess
+import time
+import urllib.error
+import urllib.request
 from datetime import datetime, timezone
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PHOTOS_DIR = os.path.join(BASE_DIR, "photos")
 THUMBS_DIR = os.path.join(BASE_DIR, "thumbs")
 PREVIEWS_DIR = os.path.join(BASE_DIR, "previews")
+AVATARS_DIR = os.path.join(BASE_DIR, "avatars")
 # A second, independent source tree for non-fursuit work (landscapes, etc.),
 # rendered on its own page (other-work.html) instead of the main gallery.
 # Same folder-for-filing-only / .txt-caption rules as photos/, just with no
@@ -327,6 +331,76 @@ def read_exif(image_path):
     return f"{year}-{month}-{day}T{hour}:{minute}:{second}", fields
 
 
+# Spoofs Instagram's own Android app to reach the same public
+# "web_profile_info" endpoint the mobile app itself uses — no login needed,
+# and it only returns what's already visible on the person's public profile
+# page. Undocumented/unofficial, so treat failures as routine: skip and move
+# on rather than breaking the whole build over one handle.
+INSTAGRAM_USER_AGENT = (
+    "Instagram 337.0.0.0.77 Android (28/9; 420dpi; 1080x1920; samsung; "
+    "SM-G611F; on7xreflte; samsungexynos7870; en_US; 493419337)"
+)
+
+
+def fetch_avatar(handle, force=False):
+    """Download a handle's Instagram profile picture to avatars/<handle>.jpg.
+
+    Skips the network entirely if already cached, unless force=True (used by
+    tools/refresh_avatars.py to pick up profile picture changes). Best-effort
+    only: any failure (handle not found, network error, endpoint blocked)
+    is silently skipped, since a stale/missing avatar just means the bubble
+    falls back to plain text on the site — never worth failing the build.
+    """
+    clean = handle.strip().lstrip("@").lower()
+    if not clean:
+        return False
+
+    out_path = os.path.join(AVATARS_DIR, f"{clean}.jpg")
+    if os.path.exists(out_path) and not force:
+        return False
+
+    info_url = f"https://i.instagram.com/api/v1/users/web_profile_info/?username={clean}"
+    try:
+        req = urllib.request.Request(info_url, headers={"User-Agent": INSTAGRAM_USER_AGENT})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read())
+        pic_url = data["data"]["user"]["profile_pic_url_hd"]
+    except (urllib.error.URLError, TimeoutError, KeyError, TypeError, ValueError, json.JSONDecodeError):
+        return False
+
+    try:
+        img_req = urllib.request.Request(pic_url, headers={"User-Agent": INSTAGRAM_USER_AGENT})
+        with urllib.request.urlopen(img_req, timeout=10) as resp:
+            img_data = resp.read()
+    except (urllib.error.URLError, TimeoutError):
+        return False
+
+    os.makedirs(AVATARS_DIR, exist_ok=True)
+    with open(out_path, "wb") as f:
+        f.write(img_data)
+    return True
+
+
+def fetch_avatars_for(posts, force=False):
+    """Fetch avatars for every unique handle tagged across all posts.
+    Returns the count actually (re)downloaded.
+
+    A short pause between requests only (never before the first one) —
+    the endpoint is unofficial and starts returning 429 Too Many Requests
+    after a handful of rapid-fire calls in testing, so this keeps a normal
+    run (a handle or two at a time) comfortably under that threshold.
+    """
+    handles = sorted({p for post in posts for p in post.get("people", [])})
+    updated = 0
+    for i, handle in enumerate(handles):
+        if i > 0:
+            time.sleep(1.5)
+        if fetch_avatar(handle, force=force):
+            updated += 1
+            print(f"  fetched avatar for {handle}")
+    return updated
+
+
 def find_profile_photo():
     """Find a file named exactly `profile.<ext>` anywhere in photos/.
 
@@ -514,6 +588,12 @@ def main():
         json.dump(posts, f, indent=2)
 
     print(f"Wrote {len(posts)} post(s) to posts.json")
+
+    # Only fetches handles that don't already have a cached avatar (new
+    # people you've just tagged) — cheap on every normal publish. To force
+    # re-fetching everyone (e.g. someone changed their profile picture),
+    # use tools/refresh_avatars.py instead.
+    fetch_avatars_for(posts)
 
 
 if __name__ == "__main__":

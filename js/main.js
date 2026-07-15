@@ -60,14 +60,31 @@ function applyExpandSize(img) {
   img.style.setProperty('--expand-ratio', ratio.toFixed(4));
 }
 
-// A handle bubble linking to the matching Instagram profile.
+// A handle bubble linking to the matching Instagram profile. Tries to show
+// that person's cached avatar (see build.py's fetch_avatar) as the pill's
+// right-side cap; if none exists yet (or the image 404s), falls back to a
+// plain text-only pill via the .no-avatar class.
 function buildHandleBubble(handle) {
+  const cleanHandle = handle.replace(/^@/, '');
   const bubble = document.createElement('a');
-  bubble.className = 'people-bubble';
-  bubble.textContent = handle;
-  bubble.href = 'https://instagram.com/' + handle.replace(/^@/, '');
+  bubble.className = 'people-bubble no-avatar';
+  bubble.href = 'https://instagram.com/' + cleanHandle;
   bubble.target = '_blank';
   bubble.rel = 'noopener noreferrer';
+
+  const label = document.createElement('span');
+  label.className = 'people-bubble-label';
+  label.textContent = handle;
+  bubble.appendChild(label);
+
+  const avatar = document.createElement('img');
+  avatar.className = 'people-bubble-avatar';
+  avatar.alt = '';
+  avatar.addEventListener('load', () => bubble.classList.remove('no-avatar'), { once: true });
+  avatar.addEventListener('error', () => avatar.remove(), { once: true });
+  avatar.src = 'avatars/' + cleanHandle.toLowerCase() + '.jpg';
+  bubble.appendChild(avatar);
+
   return bubble;
 }
 
