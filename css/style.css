@@ -168,7 +168,7 @@ a {
 }
 
 .featured-item:hover img {
-  transform: scale(1.035);
+  transform: scale(1.07);
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3), 0 16px 36px rgba(0, 0, 0, 0.7);
 }
 
