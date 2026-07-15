@@ -562,16 +562,17 @@ if (lightbox) {
     infoBtn.setAttribute('aria-expanded', String(infoPanelOpen));
   });
 
-  // Click on the backdrop (not the image, meta text/links, or controls)
-  // closes. Checking `e.target === lightbox` only caught clicks on the
-  // outermost overlay itself — .lightbox-figure has no fixed size, so it
-  // often renders wider/taller than the image or meta block it wraps,
-  // leaving a dead strip of visible tint right around them (closest to the
-  // image edges) that didn't register as the backdrop. closest() against
-  // the actual content elements instead treats everything else — including
-  // that strip — as backdrop, regardless of which wrapper happens to own it.
+  // Click on the backdrop (not the image, actual text/links, or controls)
+  // closes. Excluding the whole .lightbox-meta block (an earlier version of
+  // this fix) was too broad — .lightbox-people is a flex row with gaps
+  // between the handle bubbles, and .lightbox-meta itself has gaps between
+  // its lines, all of which are still tint even though they sit inside that
+  // wrapper. Targeting the actual leaf content elements (image, links,
+  // paragraphs, the EXIF panel) instead treats every one of those in-between
+  // gaps as backdrop too, while still protecting real text/links from
+  // closing when clicked directly.
   lightbox.addEventListener('click', (e) => {
-    if (e.target.closest('.lightbox-img, .lightbox-meta, button')) return;
+    if (e.target.closest('.lightbox-img, .lightbox-info-panel, a, p, button')) return;
     closeLightbox();
   });
 }

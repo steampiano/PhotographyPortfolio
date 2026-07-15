@@ -438,10 +438,12 @@ a {
 }
 
 .about {
-  max-width: 1000px;
+  max-width: 1150px;
   padding: 56px 24px 80px;
   /* Capped narrower than the site's wide gallery container so the photo +
-     text block doesn't leave a huge dead gap on wide screens. */
+     text block doesn't leave a huge dead gap on wide screens. Widened from
+     1000px so the gear column below has enough room for lens names to sit
+     on one line each (see .gear-columns). */
 }
 
 .about h1 {
@@ -535,7 +537,7 @@ a {
 }
 
 .about-prose {
-  max-width: 900px;
+  max-width: 1040px;
 }
 
 .about-prose p {
@@ -558,8 +560,7 @@ a {
    (not the default wrap) because the two lists' natural widths sometimes
    land within a few px of the container's — wrap would then stack them
    vertically instead of side by side purely by coincidence of text
-   length. flex: 1 1 0 lets each column give up width to the other/wrap
-   its own text rather than forcing the row to overflow. */
+   length. */
 .gear-columns {
   display: flex;
   gap: 24px;
@@ -577,8 +578,32 @@ a {
   font-size: 1.15rem;
   line-height: 1.65;
   color: var(--fg);
-  flex: 1 1 0;
   min-width: 0;
+}
+
+/* The camera list only ever holds one short line, so it takes just the
+   width its own text needs instead of splitting the row evenly — that
+   would otherwise steal room the (much longer) lens names need to fit
+   on one line each. */
+.gear-columns .gear-list:first-child {
+  flex: 0 0 auto;
+}
+
+.gear-columns .gear-list:last-child {
+  flex: 1 1 auto;
+  white-space: nowrap;
+}
+
+/* Below this width there isn't room for the lens column to fit a whole
+   line without the row itself overflowing the viewport — same breakpoint
+   as .about-layout's stacked fallback. Drop back to an even split that
+   wraps each lens's own text instead of forcing horizontal scroll. */
+@media (max-width: 760px) {
+  .gear-columns .gear-list:first-child,
+  .gear-columns .gear-list:last-child {
+    flex: 1 1 0;
+    white-space: normal;
+  }
 }
 
 .next-con-row {
