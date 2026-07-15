@@ -190,6 +190,10 @@ function setupFeaturedRow(featuredPosts) {
   });
 
   function targetRowHeight(containerWidth) {
+    // Below 640 this is one full-slide photo at a time (see layout()'s
+    // carousel branch), not a dense packed row, so it gets a much more
+    // generous height than the old multi-column grid used.
+    if (containerWidth < 640) return 420;
     return containerWidth < 560 ? 170 : 260;
   }
 
@@ -197,6 +201,31 @@ function setupFeaturedRow(featuredPosts) {
     const containerWidth = row.clientWidth;
     if (!containerWidth) return;
     const rowHeight = targetRowHeight(containerWidth);
+
+    // Mobile: the justified multi-per-row packing below can still end up
+    // squeezing two small thumbnails onto a row next to a full-width one,
+    // which reads as cramped/inconsistent on a narrow screen. Below the
+    // carousel breakpoint (matches .featured-row's mobile media query),
+    // skip packing entirely — one photo per "row", each kept at its own
+    // aspect ratio (capped so it never needs its own horizontal scroll
+    // inside what's otherwise a one-swipe-per-photo strip), and the row
+    // itself becomes a horizontally swipeable carousel via CSS.
+    if (containerWidth < 640) {
+      const maxWidth = containerWidth * 0.88;
+      const maxHeight = window.innerHeight * 0.6;
+      for (const it of items) {
+        let h = Math.min(rowHeight, maxHeight);
+        let w = h * it.ratio;
+        if (w > maxWidth) {
+          w = maxWidth;
+          h = w / it.ratio;
+        }
+        it.figure.style.width = w + 'px';
+        it.img.style.height = h + 'px';
+      }
+      return;
+    }
+
     const MAX_SCALE = 1.3;
 
     let i = 0;

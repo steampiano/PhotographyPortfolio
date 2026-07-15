@@ -57,6 +57,32 @@ body {
   }
 }
 
+@media (max-width: 700px) {
+  /* At this width the logo + all three nav links no longer fit in one row
+     without wrapping mid-word/mid-phrase (e.g. "Other" / "Work" splitting
+     across lines) — stacking them into two clean, deliberate rows instead
+     reads far better than letting flexbox wrap them unpredictably. */
+  .header-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+
+  .logo {
+    font-size: 1.15rem;
+  }
+
+  .nav {
+    gap: 16px;
+  }
+
+  .nav a {
+    font-size: 0.95rem;
+  }
+}
+
 /* font-weight stays at Roadgeek's one loaded weight (400) throughout — it
    has no real bold cut, so any heavier weight just gets browser-synthesized
    (faux bold), which crams/distorts the letterforms instead of looking
@@ -145,6 +171,28 @@ a {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+}
+
+/* Below this width, main.js's layout() stops packing multiple photos per
+   row (was squeezing small thumbnails in next to full-width ones) and
+   instead sizes one photo at a time — this turns the row into a proper
+   swipeable one-by-one carousel for that instead of a wrapped grid. */
+@media (max-width: 640px) {
+  .featured-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .featured-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .featured-item {
+    scroll-snap-align: center;
+  }
 }
 
 .featured-item {
