@@ -403,7 +403,7 @@ a {
 }
 
 .about-photo-wrap {
-  width: min(340px, 100%);
+  width: min(360px, 100%);
   flex: 0 0 auto;
 }
 
