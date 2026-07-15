@@ -467,6 +467,13 @@ a {
   min-width: 0;
 }
 
+/* Body camera in its own column, lenses in another to the right. */
+.gear-columns {
+  display: flex;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
 /* Matches .about-text p — same font/size as the About Me bio. */
 .gear-list {
   list-style: none;
