@@ -70,6 +70,7 @@ DateTimeOriginal. Falls back to file mtime only for images with no EXIF data
 at all (e.g. screenshots, graphics).
 """
 
+import colorsys
 import json
 import os
 import re
@@ -403,57 +404,125 @@ def fetch_avatars_for(posts, force=False):
     return updated
 
 
-def compute_avatar_color(image_path):
-    """Best-effort average color of an avatar image, as an "rgb(r, g, b)"
-    CSS color string (or None if anything goes wrong).
+def _decode_png_pixels(path):
+    """Parses an sips-produced PNG by hand into (width, height, [(r,g,b), ...])
+    row-major pixels, or None on anything unexpected. 8-bit grayscale/RGB/RGBA
+    only (what sips actually emits for our downsized avatars) — zlib
+    decompression is standard library, but PNG scanlines are filtered
+    (each row is delta-encoded against the row above and/or the pixel to its
+    left, one of 5 filter types chosen per row) and there's no stdlib
+    "unfilter" — so that part's implemented directly from the PNG spec.
+    """
+    data = open(path, "rb").read()
+    if data[:8] != b"\x89PNG\r\n\x1a\n":
+        return None
+    pos = 8
+    width = height = bit_depth = color_type = None
+    idat = b""
+    while pos + 8 <= len(data):
+        length = struct.unpack(">I", data[pos:pos + 4])[0]
+        ctype = data[pos + 4:pos + 8]
+        chunk = data[pos + 8:pos + 8 + length]
+        if ctype == b"IHDR":
+            width, height, bit_depth, color_type = struct.unpack(">IIBB", chunk[:10])
+        elif ctype == b"IDAT":
+            idat += chunk
+        pos += 8 + length + 4
+    if bit_depth != 8 or width is None:
+        return None
+    channels = {2: 3, 6: 4, 0: 1}.get(color_type)
+    if channels is None:
+        return None
 
-    Rather than pull in an imaging library, this asks sips to downsample
-    the image to a single pixel — a resize filter's job when shrinking to
-    1x1 is, by construction, a weighted average of every source pixel — and
-    then reads that one pixel straight out of the resulting PNG. A 1x1 PNG
-    is small enough to parse by hand: the IDAT chunk is just a zlib-
-    compressed filter byte followed by that pixel's channel bytes, and
-    zlib decompression is already in the standard library, so no
-    dependency beyond sips itself (already required elsewhere in this
-    file) is needed.
+    raw = zlib.decompress(idat)
+    stride = width * channels
+    pixels = []
+    prev_row = bytes(stride)
+    pos = 0
+    for _y in range(height):
+        filter_type = raw[pos]
+        pos += 1
+        row = bytearray(raw[pos:pos + stride])
+        pos += stride
+        for x in range(stride):
+            left = row[x - channels] if x >= channels else 0
+            up = prev_row[x]
+            up_left = prev_row[x - channels] if x >= channels else 0
+            if filter_type == 1:  # Sub
+                row[x] = (row[x] + left) & 0xFF
+            elif filter_type == 2:  # Up
+                row[x] = (row[x] + up) & 0xFF
+            elif filter_type == 3:  # Average
+                row[x] = (row[x] + (left + up) // 2) & 0xFF
+            elif filter_type == 4:  # Paeth
+                p = left + up - up_left
+                pa, pb, pc = abs(p - left), abs(p - up), abs(p - up_left)
+                predictor = left if pa <= pb and pa <= pc else (up if pb <= pc else up_left)
+                row[x] = (row[x] + predictor) & 0xFF
+            # filter_type 0 (None) needs no change.
+        prev_row = row
+        for i in range(0, stride, channels):
+            pixels.append((row[i], row[i + 1], row[i + 2]) if channels >= 3 else (row[i],) * 3)
+    return width, height, pixels
+
+
+def compute_avatar_color(image_path):
+    """A characteristic accent color for an avatar, as an "rgb(r, g, b)"
+    CSS color string (or None if anything goes wrong) — used as that
+    person's handle-pill border/text color on the site.
+
+    A plain average (an earlier version of this function, and still what
+    sips's own resize-to-1x1 gives you for free) tends toward mud: a
+    photo's varied hues cancel out in the mean, so the result reads as a
+    flat, barely-there gray-brown next to the site's white text — exactly
+    the "hard to see" complaint that prompted this rewrite. Instead this
+    downsamples to a small grid (still via sips, still just a resize —
+    see _decode_png_pixels for why decoding it needs hand-rolled PNG
+    unfiltering), scores every pixel by saturation (excluding near-black/
+    near-white outliers, which are usually blown highlights or shadow and
+    not "the photo's color"), and averages the most saturated ones. That
+    surfaces an actual vivid color that exists somewhere in the photo
+    instead of a synthetic blend of all of them — verified against real
+    avatars to give noticeably more distinct, recognizable-as-that-photo
+    colors than the flat average did.
     """
     if SIPS is None:
         return None
     with tempfile.TemporaryDirectory() as tmp:
-        tiny_path = os.path.join(tmp, "tiny.png")
+        grid_path = os.path.join(tmp, "grid.png")
         result = subprocess.run(
-            [SIPS, "-s", "format", "png", "-z", "1", "1", image_path, "--out", tiny_path],
+            [SIPS, "-s", "format", "png", "-z", "20", "20", image_path, "--out", grid_path],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
-        if result.returncode != 0 or not os.path.exists(tiny_path):
+        if result.returncode != 0 or not os.path.exists(grid_path):
             return None
         try:
-            data = open(tiny_path, "rb").read()
-            if data[:8] != b"\x89PNG\r\n\x1a\n":
+            decoded = _decode_png_pixels(grid_path)
+            if not decoded:
                 return None
-            pos = 8
-            color_type = None
-            idat = b""
-            while pos + 8 <= len(data):
-                length = struct.unpack(">I", data[pos:pos + 4])[0]
-                ctype = data[pos + 4:pos + 8]
-                chunk = data[pos + 8:pos + 8 + length]
-                if ctype == b"IHDR":
-                    width, height, bit_depth, color_type = struct.unpack(">IIBB", chunk[:10])
-                    if (width, height, bit_depth) != (1, 1, 8):
-                        return None
-                elif ctype == b"IDAT":
-                    idat += chunk
-                pos += 8 + length + 4
-            raw = zlib.decompress(idat)  # [filter_byte, channel0, channel1, ...]
-            if color_type == 2 and len(raw) >= 4:  # RGB
-                r, g, b = raw[1], raw[2], raw[3]
-            elif color_type == 6 and len(raw) >= 5:  # RGBA
-                r, g, b = raw[1], raw[2], raw[3]
-            elif color_type == 0 and len(raw) >= 2:  # grayscale
-                r = g = b = raw[1]
-            else:
+            _width, _height, pixels = decoded
+
+            def scored(candidates):
+                out = []
+                for r, g, b in candidates:
+                    _h, l, s = colorsys.rgb_to_hls(r / 255, g / 255, b / 255)
+                    if 0.15 <= l <= 0.85:
+                        out.append((s, (r, g, b)))
+                return out
+
+            # Almost every real photo has plenty of pixels in the mid
+            # lightness range, but fall back to scoring everything
+            # (including near-black/white) rather than giving up entirely
+            # on the rare avatar that doesn't (e.g. a near-monochrome
+            # photo) — some accent color beats none.
+            candidates = scored(pixels) or scored([(r, g, b) for r, g, b in pixels])
+            if not candidates:
                 return None
+            candidates.sort(key=lambda c: c[0], reverse=True)
+            top = candidates[:12]
+            r = sum(c[1][0] for c in top) // len(top)
+            g = sum(c[1][1] for c in top) // len(top)
+            b = sum(c[1][2] for c in top) // len(top)
             return f"rgb({r}, {g}, {b})"
         except Exception:
             return None

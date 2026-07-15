@@ -797,7 +797,7 @@ a {
   align-items: center;
   font-family: var(--meta-font);
   font-size: 0.85rem;
-  color: var(--fg);
+  color: var(--accent, var(--fg));
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--accent, var(--border));
   border-radius: 999px;
