@@ -165,6 +165,7 @@ EXIF_FOCAL_LENGTH = 0x920A    # focal length, RATIONAL (mm)
 # known codes to a friendly name; falls back to "<Make> <Model>" otherwise.
 CAMERA_MODEL_NAMES = {
     "ILCE-7M4": "Sony Alpha 7 IV",
+    "ILCE-7M2": "Sony Alpha 7 II",
 }
 
 
