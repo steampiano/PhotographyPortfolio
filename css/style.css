@@ -1,5 +1,5 @@
-/* Series E is the heavier-stroke cut, used only for the header logo/nav.
-   Series D (thinner) is used for everything else — see body/.logo/.nav a. */
+/* Used only for the header logo/nav. Body text uses Overpass instead (see
+   below) — Series D's stroke weight read too thick for paragraph copy. */
 @font-face {
   font-family: "Roadgeek 2005 Series E";
   src: url("../fonts/Roadgeek2005SeriesE.ttf") format("truetype");
@@ -8,10 +8,15 @@
   font-display: swap;
 }
 
+/* A variable font (one file covers the whole weight range) reinterpreting
+   US Highway Gothic — the same lineage Roadgeek draws from — redrawn for
+   on-screen body text instead of at-a-distance signage. Keeps a similar
+   road-sign character without Roadgeek's heavy stroke or Helvetica's
+   blandness. Open source (SIL OFL), self-hosted like the other fonts here. */
 @font-face {
-  font-family: "Roadgeek 2005 Series D";
-  src: url("../fonts/Roadgeek_2005_Series_D.ttf") format("truetype");
-  font-weight: 400;
+  font-family: "Overpass";
+  src: url("../fonts/Overpass-Variable.woff2") format("woff2-variations");
+  font-weight: 100 900;
   font-style: normal;
   font-display: swap;
 }
@@ -37,12 +42,9 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
-  font-family: "Roadgeek 2005 Series D", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Overpass", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 340;
   line-height: 1.5;
-  /* Roadgeek is a highway-sign face — already tight and uniform by design
-     for at-a-glance legibility, not dense paragraph reading. The negative
-     letter-spacing tuned for the old system-sans stack made it worse, so
-     body text gets normal spacing instead. */
   letter-spacing: normal;
   /* Reserve space so content isn't hidden behind the fixed footer; generous
      enough to cover the footer wrapping to two lines on narrow screens. */
