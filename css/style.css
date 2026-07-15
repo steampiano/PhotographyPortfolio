@@ -150,6 +150,14 @@ a {
   flex: 0 0 auto;
 }
 
+/* Without this, the hovered item's scaled-up overflow paints behind
+   whichever neighbor comes later in DOM order (default stacking is by
+   source order for same z-index), making the expansion look like it's
+   growing underneath the photo to its right instead of over it. */
+.featured-item:hover {
+  z-index: 1;
+}
+
 /* Rounded directly on the image (not clipped via overflow:hidden on the
    whole .featured-item, which also wraps the caption/date below it) — that
    made the parent's rounded corners sit way past the caption, past the
