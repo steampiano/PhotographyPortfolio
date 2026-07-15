@@ -26,6 +26,13 @@ if (!src) {
       const people = post.people || [];
       document.title = (post.caption || people.join(', ') || 'Photo') + ' | Photography Portfolio';
 
+      // Send "back" to whichever gallery this photo actually belongs to.
+      const backLink = document.querySelector('.back-link');
+      if (backLink && post.collection === 'other') {
+        backLink.href = 'other-work.html';
+        backLink.textContent = '← Back to other work';
+      }
+
       content.innerHTML = '';
 
       const img = document.createElement('img');

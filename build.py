@@ -82,6 +82,13 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PHOTOS_DIR = os.path.join(BASE_DIR, "photos")
 THUMBS_DIR = os.path.join(BASE_DIR, "thumbs")
 PREVIEWS_DIR = os.path.join(BASE_DIR, "previews")
+# A second, independent source tree for non-fursuit work (landscapes, etc.),
+# rendered on its own page (other-work.html) instead of the main gallery.
+# Same folder-for-filing-only / .txt-caption rules as photos/, just with no
+# Featured row or featured-order.txt support — see scan_photos().
+OTHER_PHOTOS_DIR = os.path.join(BASE_DIR, "other-photos")
+OTHER_THUMBS_DIR = os.path.join(BASE_DIR, "thumbs-other")
+OTHER_PREVIEWS_DIR = os.path.join(BASE_DIR, "previews-other")
 OUTPUT_FILE = os.path.join(BASE_DIR, "posts.json")
 FEATURED_ORDER_FILE = os.path.join(PHOTOS_DIR, "meta", "featured-order.txt")
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"}
@@ -115,7 +122,7 @@ def make_derivative(image_path, out_path, max_px, quality):
     return result.returncode == 0 and os.path.exists(out_path)
 
 
-def derivative_for(image_path, rel_path, ext, out_dir, dir_name, max_px, quality):
+def derivative_for(image_path, rel_path, ext, out_dir, dir_name, max_px, quality, source_dir):
     """Return the web path to use for a derivative (thumb or preview) of a photo.
 
     Generates it if sips is available and it's missing or stale; reuses an
@@ -126,9 +133,9 @@ def derivative_for(image_path, rel_path, ext, out_dir, dir_name, max_px, quality
     if ext == ".svg":
         return rel_path
 
-    rel_from_photos = os.path.relpath(image_path, PHOTOS_DIR)
-    out_path = os.path.join(out_dir, rel_from_photos)
-    out_rel = os.path.join(dir_name, rel_from_photos).replace(os.sep, "/")
+    rel_from_source = os.path.relpath(image_path, source_dir)
+    out_path = os.path.join(out_dir, rel_from_source)
+    out_rel = os.path.join(dir_name, rel_from_source).replace(os.sep, "/")
 
     needs_build = (
         not os.path.exists(out_path)
@@ -382,21 +389,20 @@ def order_index_for(filename, order_list):
     return None
 
 
-def main():
+def scan_photos(source_dir, thumbs_dir, thumbs_name, previews_dir, previews_name,
+                 collection, featured_order):
+    """Walk one photos source tree and return its list of post dicts.
+
+    `collection` tags every post (e.g. "fursuit" or "other") so the front end
+    knows which page it belongs to. `featured_order` only matters for
+    collections that have a Featured row — pass [] for ones that don't.
+    """
     posts = []
-    featured_order = load_featured_order()
+    if not os.path.isdir(source_dir):
+        return posts
 
-    profile_source = find_profile_photo()
-    if profile_source:
-        needs_build = (
-            not os.path.exists(PROFILE_WEB_PATH)
-            or os.path.getmtime(profile_source) > os.path.getmtime(PROFILE_WEB_PATH)
-        )
-        if needs_build:
-            make_derivative(profile_source, PROFILE_WEB_PATH, PROFILE_MAX_PX, PROFILE_QUALITY)
-
-    for root, dirs, filenames in os.walk(PHOTOS_DIR):
-        # photos/meta/ holds config and generated assets (featured-order.txt,
+    for root, dirs, filenames in os.walk(source_dir):
+        # meta/ holds config and generated assets (featured-order.txt,
         # profile-web.jpg, etc.) — never gallery content.
         dirs[:] = [d for d in dirs if d.lower() != "meta"]
         if os.path.basename(root).lower() == "meta":
@@ -428,13 +434,13 @@ def main():
                 mtime = os.path.getmtime(image_path)
                 date = datetime.fromtimestamp(mtime, tz=timezone.utc).isoformat()
 
-            rel_path = os.path.relpath(image_path, os.path.dirname(PHOTOS_DIR))
+            rel_path = os.path.relpath(image_path, BASE_DIR)
             rel_path = rel_path.replace(os.sep, "/")
 
-            thumb = derivative_for(image_path, rel_path, ext, THUMBS_DIR, "thumbs",
-                                    THUMB_MAX_PX, THUMB_QUALITY)
-            preview = derivative_for(image_path, rel_path, ext, PREVIEWS_DIR, "previews",
-                                      PREVIEW_MAX_PX, PREVIEW_QUALITY)
+            thumb = derivative_for(image_path, rel_path, ext, thumbs_dir, thumbs_name,
+                                    THUMB_MAX_PX, THUMB_QUALITY, source_dir)
+            preview = derivative_for(image_path, rel_path, ext, previews_dir, previews_name,
+                                      PREVIEW_MAX_PX, PREVIEW_QUALITY, source_dir)
 
             post = {
                 "image": rel_path,
@@ -446,6 +452,7 @@ def main():
                 "people": people,
                 "tags": tags,
                 "featured": featured,
+                "collection": collection,
             }
             if exif_fields:
                 post["exif"] = exif_fields
@@ -454,6 +461,26 @@ def main():
                 if idx is not None:
                     post["order"] = idx
             posts.append(post)
+
+    return posts
+
+
+def main():
+    featured_order = load_featured_order()
+
+    profile_source = find_profile_photo()
+    if profile_source:
+        needs_build = (
+            not os.path.exists(PROFILE_WEB_PATH)
+            or os.path.getmtime(profile_source) > os.path.getmtime(PROFILE_WEB_PATH)
+        )
+        if needs_build:
+            make_derivative(profile_source, PROFILE_WEB_PATH, PROFILE_MAX_PX, PROFILE_QUALITY)
+
+    posts = scan_photos(PHOTOS_DIR, THUMBS_DIR, "thumbs", PREVIEWS_DIR, "previews",
+                        "fursuit", featured_order)
+    posts += scan_photos(OTHER_PHOTOS_DIR, OTHER_THUMBS_DIR, "thumbs-other",
+                         OTHER_PREVIEWS_DIR, "previews-other", "other", [])
 
     posts.sort(key=lambda p: p["date"], reverse=True)
 

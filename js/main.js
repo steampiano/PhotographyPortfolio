@@ -550,9 +550,15 @@ function setupTouchExpand() {
 if (gallery) {
   setupTouchExpand();
 
+  // Which collection this page shows (defaults to "fursuit" for older pages
+  // that don't set the attribute) — posts.json holds every collection
+  // together, tagged per-post, so each page filters to its own slice.
+  const pageCollection = gallery.dataset.collection || 'fursuit';
+
   fetch('posts.json')
     .then((res) => res.json())
-    .then((posts) => {
+    .then((allPosts) => {
+      const posts = allPosts.filter((p) => (p.collection || 'fursuit') === pageCollection);
       FEATURED = posts.filter((p) => p.featured);
       // Photos listed in photos/meta/featured-order.txt (which carry an `order`
       // index) come first in that order; the rest keep date order (the array

@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Photography Portfolio</title>
-<meta name="description" content="A photography portfolio.">
+<title>Other Work | Photography Portfolio</title>
+<meta name="description" content="Non-fursuit photography — landscapes and other work.">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -13,22 +13,17 @@
   <div class="container header-inner">
     <a href="index.html" class="logo">Photos by @aspy7777</a>
     <nav class="nav">
-      <a href="index.html" class="active">Gallery</a>
-      <a href="other-work.html">Other Work</a>
+      <a href="index.html">Gallery</a>
+      <a href="other-work.html" class="active">Other Work</a>
       <a href="about.html">About</a>
     </nav>
   </div>
 </header>
 
 <main>
-  <section id="highlights-section" class="highlights-section container" hidden>
-    <h2>Featured</h2>
-    <div class="featured-row" id="featuredRow"></div>
-  </section>
-
   <section class="gallery-intro container">
-    <h1>Recent work</h1>
-    <p>A running collection of photos, newest first.</p>
+    <h1>Other work</h1>
+    <p>Landscapes and other non-fursuit photography, newest first.</p>
     <div class="event-filter" id="eventFilter" hidden>
       <button type="button" class="event-filter-btn" id="eventFilterBtn" aria-expanded="false" aria-haspopup="true">
         Filter by event <span class="event-filter-caret">&#9662;</span>
@@ -37,7 +32,7 @@
     </div>
   </section>
 
-  <section id="gallery" class="gallery container" data-collection="fursuit" aria-live="polite">
+  <section id="gallery" class="gallery container" data-collection="other" aria-live="polite">
     <p class="gallery-empty">Loading photos&hellip;</p>
   </section>
 </main>
