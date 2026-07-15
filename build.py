@@ -466,8 +466,18 @@ def write_avatar_colors():
     (not just ones just (re)fetched this run), so it stays complete even
     if an avatar was added by hand or a color needs to catch up. Cheap
     enough to just redo in full each time — a 1x1 sips resize per file.
+
+    A no-op if sips isn't available: this same build.py also runs as
+    Vercel's build step (npm run build), on Linux, where sips (macOS-only)
+    doesn't exist. Without this guard, that deploy-time run would silently
+    overwrite the real, correctly-computed colors.json — generated locally
+    where sips does exist, and already committed to git — with an empty
+    {}, since every compute_avatar_color call would fail. Skipping entirely
+    here leaves the committed file as Vercel serves it, untouched.
     """
     if not os.path.isdir(AVATARS_DIR):
+        return
+    if SIPS is None:
         return
     colors = {}
     for filename in sorted(os.listdir(AVATARS_DIR)):
