@@ -842,10 +842,6 @@ a {
   object-fit: cover;
 }
 
-.people-bubble.no-avatar .people-bubble-preview {
-  display: none;
-}
-
 .people-bubble:hover .people-bubble-preview {
   opacity: 1;
   transform: translateX(-50%) scale(1);

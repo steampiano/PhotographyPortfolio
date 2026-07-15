@@ -79,6 +79,7 @@ if (!src) {
       const img = document.createElement('img');
       img.className = 'photo-full';
       img.alt = post.caption || people.join(', ');
+      img.decoding = 'async';
 
       const thumbSrc = post.thumb || post.image;
       const fullSrc = post.image;
@@ -118,7 +119,7 @@ if (!src) {
         for (const handle of people) {
           const cleanHandle = handle.replace(/^@/, '');
           const bubble = document.createElement('a');
-          bubble.className = 'people-bubble no-avatar';
+          bubble.className = 'people-bubble';
           bubble.href = 'https://instagram.com/' + cleanHandle;
           bubble.target = '_blank';
           bubble.rel = 'noopener noreferrer';
@@ -131,18 +132,24 @@ if (!src) {
           const accent = AVATAR_COLORS[cleanHandle.toLowerCase()];
           if (accent) bubble.style.setProperty('--accent', accent);
 
-          // Larger decorative hover preview of the avatar — see main.js's
-          // buildHandleBubble for why it's pointer-events: none and why its
-          // own load/error decides whether an avatar exists at all.
-          const preview = document.createElement('span');
-          preview.className = 'people-bubble-preview';
-          const previewImg = document.createElement('img');
-          previewImg.alt = '';
-          previewImg.addEventListener('load', () => bubble.classList.remove('no-avatar'), { once: true });
-          previewImg.addEventListener('error', () => preview.remove(), { once: true });
-          previewImg.src = 'avatars/' + cleanHandle.toLowerCase() + '.jpg';
-          preview.appendChild(previewImg);
-          bubble.appendChild(preview);
+          // Larger decorative hover preview of the avatar, only fetched on
+          // first hover — see main.js's buildHandleBubble for why.
+          if (accent) {
+            const preview = document.createElement('span');
+            preview.className = 'people-bubble-preview';
+            const previewImg = document.createElement('img');
+            previewImg.alt = '';
+            previewImg.decoding = 'async';
+            preview.appendChild(previewImg);
+            bubble.appendChild(preview);
+
+            let avatarLoaded = false;
+            bubble.addEventListener('mouseenter', () => {
+              if (avatarLoaded) return;
+              avatarLoaded = true;
+              previewImg.src = 'avatars/' + cleanHandle.toLowerCase() + '.jpg';
+            });
+          }
 
           peopleEl.appendChild(bubble);
         }

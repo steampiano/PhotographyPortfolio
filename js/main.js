@@ -72,12 +72,11 @@ function applyExpandSize(img) {
 // A handle bubble linking to the matching Instagram profile. Just the
 // handle text — border color hints at the photo (see AVATAR_COLORS) and
 // hovering reveals the actual picture (see .people-bubble-preview); if no
-// avatar exists (or the image 404s), falls back to a plain neutral-border
-// pill via the .no-avatar class.
+// avatar is cached for this handle, it's just a plain neutral-border pill.
 function buildHandleBubble(handle) {
   const cleanHandle = handle.replace(/^@/, '');
   const bubble = document.createElement('a');
-  bubble.className = 'people-bubble no-avatar';
+  bubble.className = 'people-bubble';
   bubble.href = 'https://instagram.com/' + cleanHandle;
   bubble.target = '_blank';
   bubble.rel = 'noopener noreferrer';
@@ -90,21 +89,30 @@ function buildHandleBubble(handle) {
   const accent = AVATAR_COLORS[cleanHandle.toLowerCase()];
   if (accent) bubble.style.setProperty('--accent', accent);
 
-  // A larger, purely decorative preview of the avatar that fades in on
-  // hover (see CSS) — pointer-events: none there, so it can never itself
-  // become a hover/click target. The pill's own hit area never changes
-  // size, so hovering stays exact no matter how big this preview is drawn.
-  // Its own load/error also decides whether an avatar exists at all —
-  // there's no separate small thumbnail anymore to check that for it.
-  const preview = document.createElement('span');
-  preview.className = 'people-bubble-preview';
-  const previewImg = document.createElement('img');
-  previewImg.alt = '';
-  previewImg.addEventListener('load', () => bubble.classList.remove('no-avatar'), { once: true });
-  previewImg.addEventListener('error', () => preview.remove(), { once: true });
-  previewImg.src = 'avatars/' + cleanHandle.toLowerCase() + '.jpg';
-  preview.appendChild(previewImg);
-  bubble.appendChild(preview);
+  // Only build a preview at all for handles AVATAR_COLORS already confirms
+  // have a cached avatar (that map only has entries for images that exist —
+  // see build.py's write_avatar_colors), and don't fetch the image itself
+  // until the pill is actually hovered. Some photos tag up to 9 people;
+  // downloading every one of their avatars up front, on the off chance any
+  // single one gets hovered, wasted a real request per tagged person on
+  // every lightbox open for a decorative feature most visitors never
+  // trigger. avatarLoaded guards against re-setting src on repeat hovers.
+  if (accent) {
+    const preview = document.createElement('span');
+    preview.className = 'people-bubble-preview';
+    const previewImg = document.createElement('img');
+    previewImg.alt = '';
+    previewImg.decoding = 'async';
+    preview.appendChild(previewImg);
+    bubble.appendChild(preview);
+
+    let avatarLoaded = false;
+    bubble.addEventListener('mouseenter', () => {
+      if (avatarLoaded) return;
+      avatarLoaded = true;
+      previewImg.src = 'avatars/' + cleanHandle.toLowerCase() + '.jpg';
+    });
+  }
 
   return bubble;
 }
@@ -129,6 +137,7 @@ function buildPostFigure(post) {
   img.src = post.thumb || post.image;
   img.alt = post.caption || (post.people ? post.people.join(', ') : '');
   img.loading = 'lazy';
+  img.decoding = 'async';
   if (img.complete && img.naturalWidth) {
     applyExpandSize(img);
   } else {
@@ -183,6 +192,12 @@ function buildFeaturedItem(post) {
   const img = document.createElement('img');
   img.src = post.thumb || post.image;
   img.alt = post.caption || (post.people ? post.people.join(', ') : '');
+  // No loading="lazy" here (unlike the grid figure above) — layout()
+  // below explicitly waits for every one of these to load so it can read
+  // their real naturalWidth/Height for the justified-row math; lazily
+  // deferring an off-screen carousel slide would stall that wait instead
+  // of just skipping ahead.
+  img.decoding = 'async';
   link.appendChild(img);
   figure.appendChild(link);
 
