@@ -11,6 +11,7 @@
     ],
     "tags": [],
     "featured": true,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.4",
       "shutter": "1/250s",
@@ -31,6 +32,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.4",
       "shutter": "1/250s",
@@ -50,11 +52,156 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.4",
       "shutter": "1/250s",
       "iso": "ISO 800",
       "focal_length": "50mm"
+    }
+  },
+  {
+    "image": "other-photos/exp-DSC05781-DxO_DeepPRIME 3.jpg",
+    "thumb": "thumbs-other/exp-DSC05781-DxO_DeepPRIME 3.jpg",
+    "preview": "previews-other/exp-DSC05781-DxO_DeepPRIME 3.jpg",
+    "caption": "",
+    "date": "2026-06-05T18:17:55",
+    "event": "",
+    "people": [],
+    "tags": [],
+    "featured": false,
+    "collection": "other",
+    "exif": {
+      "aperture": "f/2.8",
+      "shutter": "1/160s",
+      "iso": "ISO 4000",
+      "focal_length": "28mm"
+    }
+  },
+  {
+    "image": "other-photos/exp-DSC05690.jpg",
+    "thumb": "thumbs-other/exp-DSC05690.jpg",
+    "preview": "previews-other/exp-DSC05690.jpg",
+    "caption": "",
+    "date": "2026-06-01T10:36:40",
+    "event": "",
+    "people": [],
+    "tags": [],
+    "featured": false,
+    "collection": "other",
+    "exif": {
+      "aperture": "f/7.1",
+      "shutter": "1/1000s",
+      "iso": "ISO 100",
+      "focal_length": "75mm"
+    }
+  },
+  {
+    "image": "other-photos/exp-DSC05680-HDR.jpg",
+    "thumb": "thumbs-other/exp-DSC05680-HDR.jpg",
+    "preview": "previews-other/exp-DSC05680-HDR.jpg",
+    "caption": "",
+    "date": "2026-05-31T15:27:02",
+    "event": "",
+    "people": [],
+    "tags": [],
+    "featured": false,
+    "collection": "other",
+    "exif": {
+      "aperture": "f/2.8",
+      "shutter": "1/1600s",
+      "iso": "ISO 160",
+      "focal_length": "85mm"
+    }
+  },
+  {
+    "image": "other-photos/exp-DSC05233.jpg",
+    "thumb": "thumbs-other/exp-DSC05233.jpg",
+    "preview": "previews-other/exp-DSC05233.jpg",
+    "caption": "",
+    "date": "2026-05-31T11:35:59",
+    "event": "",
+    "people": [],
+    "tags": [],
+    "featured": false,
+    "collection": "other",
+    "exif": {
+      "aperture": "f/7.1",
+      "shutter": "1/200s",
+      "iso": "ISO 100",
+      "focal_length": "85mm"
+    }
+  },
+  {
+    "image": "other-photos/exp-DSC05124.jpg",
+    "thumb": "thumbs-other/exp-DSC05124.jpg",
+    "preview": "previews-other/exp-DSC05124.jpg",
+    "caption": "",
+    "date": "2026-05-30T13:55:24",
+    "event": "",
+    "people": [],
+    "tags": [],
+    "featured": false,
+    "collection": "other",
+    "exif": {
+      "aperture": "f/2.8",
+      "shutter": "1/1600s",
+      "iso": "ISO 100",
+      "focal_length": "50mm"
+    }
+  },
+  {
+    "image": "other-photos/exp-DSC04996.jpg",
+    "thumb": "thumbs-other/exp-DSC04996.jpg",
+    "preview": "previews-other/exp-DSC04996.jpg",
+    "caption": "",
+    "date": "2026-05-30T11:16:45",
+    "event": "",
+    "people": [],
+    "tags": [],
+    "featured": false,
+    "collection": "other",
+    "exif": {
+      "aperture": "f/3.2",
+      "shutter": "1/1000s",
+      "iso": "ISO 100",
+      "focal_length": "85mm"
+    }
+  },
+  {
+    "image": "other-photos/exp-DSC04971.jpg",
+    "thumb": "thumbs-other/exp-DSC04971.jpg",
+    "preview": "previews-other/exp-DSC04971.jpg",
+    "caption": "",
+    "date": "2026-05-30T11:08:10",
+    "event": "",
+    "people": [],
+    "tags": [],
+    "featured": false,
+    "collection": "other",
+    "exif": {
+      "aperture": "f/1.6",
+      "shutter": "1/640s",
+      "iso": "ISO 200",
+      "focal_length": "85mm"
+    }
+  },
+  {
+    "image": "other-photos/exp-DSC04939.jpg",
+    "thumb": "thumbs-other/exp-DSC04939.jpg",
+    "preview": "previews-other/exp-DSC04939.jpg",
+    "caption": "",
+    "date": "2026-05-30T11:02:08",
+    "event": "",
+    "people": [],
+    "tags": [],
+    "featured": false,
+    "collection": "other",
+    "exif": {
+      "aperture": "f/1.6",
+      "shutter": "1/640s",
+      "iso": "ISO 640",
+      "focal_length": "85mm"
     }
   },
   {
@@ -69,6 +216,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/2.2",
       "shutter": "1/320s",
@@ -88,6 +236,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/2.8",
       "shutter": "1/250s",
@@ -107,6 +256,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.4",
       "shutter": "1/125s",
@@ -128,6 +278,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/2.8",
       "shutter": "1/200s",
@@ -155,6 +306,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/3.5",
       "shutter": "1/200s",
@@ -174,6 +326,7 @@
     ],
     "tags": [],
     "featured": true,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.4",
       "shutter": "1/1000s",
@@ -194,6 +347,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.6",
       "shutter": "1/1000s",
@@ -213,6 +367,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.6",
       "shutter": "1/125s",
@@ -232,6 +387,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.8",
       "shutter": "1/125s",
@@ -251,6 +407,7 @@
     ],
     "tags": [],
     "featured": true,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.4",
       "shutter": "1/125s",
@@ -271,6 +428,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.6",
       "shutter": "1/125s",
@@ -290,6 +448,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.4",
       "shutter": "1/100s",
@@ -310,6 +469,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.8",
       "shutter": "1/80s",
@@ -329,6 +489,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.4",
       "shutter": "1/125s",
@@ -348,10 +509,47 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.4",
       "shutter": "1/125s",
       "iso": "ISO 500",
+      "focal_length": "85mm"
+    }
+  },
+  {
+    "image": "other-photos/seaside_again(1).jpg",
+    "thumb": "thumbs-other/seaside_again(1).jpg",
+    "preview": "previews-other/seaside_again(1).jpg",
+    "caption": "",
+    "date": "2026-03-20T22:37:50",
+    "event": "",
+    "people": [],
+    "tags": [],
+    "featured": false,
+    "collection": "other",
+    "exif": {
+      "aperture": "f/1.4",
+      "shutter": "1/15s",
+      "iso": "ISO 400",
+      "focal_length": "85mm"
+    }
+  },
+  {
+    "image": "other-photos/seaside_again(0).jpg",
+    "thumb": "thumbs-other/seaside_again(0).jpg",
+    "preview": "previews-other/seaside_again(0).jpg",
+    "caption": "",
+    "date": "2026-03-20T22:35:42",
+    "event": "",
+    "people": [],
+    "tags": [],
+    "featured": false,
+    "collection": "other",
+    "exif": {
+      "aperture": "f/1.4",
+      "shutter": "1/15s",
+      "iso": "ISO 640",
       "focal_length": "85mm"
     }
   },
@@ -369,6 +567,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.6",
       "shutter": "1/80s",
@@ -388,6 +587,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.6",
       "shutter": "1/60s",
@@ -407,6 +607,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/2",
       "shutter": "1/3200s",
@@ -426,6 +627,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.6",
       "shutter": "1/3200s",
@@ -445,6 +647,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/2",
       "shutter": "1/2500s",
@@ -464,6 +667,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/2",
       "shutter": "1/6400s",
@@ -483,6 +687,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.4",
       "shutter": "1/60s",
@@ -502,6 +707,7 @@
     ],
     "tags": [],
     "featured": true,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/2",
       "shutter": "1/400s",
@@ -522,6 +728,7 @@
     ],
     "tags": [],
     "featured": true,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/5.6",
       "shutter": "1/500s",
@@ -542,6 +749,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/5.6",
       "shutter": "1/500s",
@@ -565,6 +773,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/5.6",
       "shutter": "1/500s",
@@ -584,6 +793,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/3.2",
       "shutter": "1/400s",
@@ -603,6 +813,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.4",
       "shutter": "1/125s",
@@ -622,6 +833,7 @@
     ],
     "tags": [],
     "featured": true,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.6",
       "shutter": "1/125s",
@@ -642,6 +854,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.4",
       "shutter": "1/80s",
@@ -664,6 +877,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/4.5",
       "shutter": "1/125s",
@@ -683,6 +897,7 @@
     ],
     "tags": [],
     "featured": true,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/5.6",
       "shutter": "1/125s",
@@ -703,6 +918,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/4",
       "shutter": "1/100s",
@@ -722,6 +938,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/5.6",
       "shutter": "1/160s",
@@ -742,10 +959,53 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.6",
       "shutter": "1/80s",
       "iso": "ISO 160",
+      "focal_length": "50mm"
+    }
+  },
+  {
+    "image": "photos/FC 2026/exp-DSC02702.jpg",
+    "thumb": "thumbs/FC 2026/exp-DSC02702.jpg",
+    "preview": "previews/FC 2026/exp-DSC02702.jpg",
+    "caption": "",
+    "date": "2026-01-17T19:53:15",
+    "event": "FC 2026",
+    "people": [
+      "@uhhstoof",
+      "@issun_wolfie"
+    ],
+    "tags": [],
+    "featured": false,
+    "collection": "fursuit",
+    "exif": {
+      "aperture": "f/1.4",
+      "shutter": "1/40s",
+      "iso": "ISO 250",
+      "focal_length": "50mm"
+    }
+  },
+  {
+    "image": "photos/FC 2026/exp-DSC02649.jpg",
+    "thumb": "thumbs/FC 2026/exp-DSC02649.jpg",
+    "preview": "previews/FC 2026/exp-DSC02649.jpg",
+    "caption": "",
+    "date": "2026-01-17T19:48:12",
+    "event": "FC 2026",
+    "people": [
+      "@uhhstoof",
+      "@issun_wolfie"
+    ],
+    "tags": [],
+    "featured": false,
+    "collection": "fursuit",
+    "exif": {
+      "aperture": "f/2.8",
+      "shutter": "1/25s",
+      "iso": "ISO 500",
       "focal_length": "50mm"
     }
   },
@@ -761,6 +1021,7 @@
     ],
     "tags": [],
     "featured": true,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.4",
       "shutter": "1/125s",
@@ -781,6 +1042,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/2",
       "shutter": "1/125s",
@@ -800,6 +1062,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.6",
       "shutter": "1/30s",
@@ -819,6 +1082,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.8",
       "shutter": "1/100s",
@@ -838,6 +1102,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.8",
       "shutter": "1/100s",
@@ -857,6 +1122,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.8",
       "shutter": "1/100s",
@@ -876,6 +1142,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.8",
       "shutter": "1/100s",
@@ -895,6 +1162,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/1.8",
       "shutter": "1/100s",
@@ -913,7 +1181,26 @@
       "@olivaceous.orchid"
     ],
     "tags": [],
-    "featured": false
+    "featured": false,
+    "collection": "fursuit"
+  },
+  {
+    "image": "other-photos/10-09-2025.jpg",
+    "thumb": "thumbs-other/10-09-2025.jpg",
+    "preview": "previews-other/10-09-2025.jpg",
+    "caption": "",
+    "date": "2025-10-07T22:01:18",
+    "event": "",
+    "people": [],
+    "tags": [],
+    "featured": false,
+    "collection": "other",
+    "exif": {
+      "aperture": "f/2.8",
+      "shutter": "1/6s",
+      "iso": "ISO 400",
+      "focal_length": "53mm"
+    }
   },
   {
     "image": "photos/All else/exp-DSC09855-2.jpg",
@@ -927,6 +1214,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/2.8",
       "shutter": "1/8s",
@@ -946,6 +1234,7 @@
     ],
     "tags": [],
     "featured": false,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/2.8",
       "shutter": "1/8s",
@@ -965,6 +1254,7 @@
     ],
     "tags": [],
     "featured": true,
+    "collection": "fursuit",
     "exif": {
       "aperture": "f/2.8",
       "shutter": "1/8s",
