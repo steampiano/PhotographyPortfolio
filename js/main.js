@@ -60,9 +60,19 @@ function applyExpandSize(img) {
   img.style.setProperty('--expand-ratio', ratio.toFixed(4));
 }
 
+// A small "photo available" glyph shown in the resting pill (see CSS
+// .people-bubble-icon) — a generic hint that hovering reveals this
+// person's actual profile picture, rather than a shrunken, redundant copy
+// of that same picture sitting right next to its own full-size preview.
+const PHOTO_ICON_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="3" y="5" width="18" height="14" rx="2.5"/>
+  <circle cx="8.5" cy="10.5" r="1.4"/>
+  <path d="M21 15.5l-5-5-4 4-2-2-5 5"/>
+</svg>`;
+
 // A handle bubble linking to the matching Instagram profile. Tries to show
-// that person's cached avatar (see build.py's fetch_avatar) as a small icon
-// in the pill; if none exists yet (or the image 404s), falls back to a
+// that person's cached avatar (see build.py's fetch_avatar) as a larger
+// preview on hover; if none exists yet (or the image 404s), falls back to a
 // plain text-only pill via the .no-avatar class.
 function buildHandleBubble(handle) {
   const cleanHandle = handle.replace(/^@/, '');
@@ -77,31 +87,25 @@ function buildHandleBubble(handle) {
   label.textContent = handle;
   bubble.appendChild(label);
 
-  const avatarSrc = 'avatars/' + cleanHandle.toLowerCase() + '.jpg';
+  const icon = document.createElement('span');
+  icon.className = 'people-bubble-icon';
+  icon.innerHTML = PHOTO_ICON_SVG;
+  bubble.appendChild(icon);
 
-  // A larger, purely decorative preview of the same avatar that fades in on
+  // A larger, purely decorative preview of the avatar that fades in on
   // hover (see CSS) — pointer-events: none there, so it can never itself
   // become a hover/click target. The pill's own hit area never changes
   // size, so hovering stays exact no matter how big this preview is drawn.
-  // Its src is only set once the small avatar below confirms the image
-  // actually exists, so a missing avatar doesn't trigger a second wasted
-  // request for it.
+  // Its own load/error also decides whether an avatar exists at all —
+  // there's no separate small thumbnail anymore to check that for it.
   const preview = document.createElement('span');
   preview.className = 'people-bubble-preview';
   const previewImg = document.createElement('img');
   previewImg.alt = '';
+  previewImg.addEventListener('load', () => bubble.classList.remove('no-avatar'), { once: true });
+  previewImg.addEventListener('error', () => preview.remove(), { once: true });
+  previewImg.src = 'avatars/' + cleanHandle.toLowerCase() + '.jpg';
   preview.appendChild(previewImg);
-
-  const avatar = document.createElement('img');
-  avatar.className = 'people-bubble-avatar';
-  avatar.alt = '';
-  avatar.addEventListener('load', () => {
-    bubble.classList.remove('no-avatar');
-    previewImg.src = avatarSrc;
-  }, { once: true });
-  avatar.addEventListener('error', () => avatar.remove(), { once: true });
-  avatar.src = avatarSrc;
-  bubble.appendChild(avatar);
   bubble.appendChild(preview);
 
   return bubble;

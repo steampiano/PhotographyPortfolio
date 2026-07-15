@@ -778,7 +778,7 @@ a {
    neighboring bubbles' space when several sit close together in a row,
    which made hovering near the boundary between two handles feel
    inaccurate. Instead hover just recolors the pill for feedback, and a
-   separate, much larger preview of the same avatar (.people-bubble-preview
+   separate, much larger preview of the actual avatar (.people-bubble-preview
    below) fades in floating above it — pointer-events: none, so that
    preview can never itself be hovered/clicked and can't affect hit-testing
    no matter how big it's drawn. */
@@ -786,44 +786,51 @@ a {
   position: relative;
   display: inline-flex;
   align-items: center;
+  gap: 6px;
   font-family: var(--meta-font);
   font-size: 0.85rem;
   color: var(--fg);
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--border);
   border-radius: 999px;
-  padding: 4px 4px 4px 12px;
+  padding: 6px 12px;
   text-decoration: none;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-}
-
-/* No cached avatar (yet) — even right-side padding instead of a gap where
-   the avatar would sit. */
-.people-bubble.no-avatar {
-  padding: 4px 12px;
-}
-
-.people-bubble-label {
-  padding-right: 8px;
-}
-
-.people-bubble.no-avatar .people-bubble-label {
-  padding-right: 0;
-}
-
-.people-bubble-avatar {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex: 0 0 auto;
 }
 
 .people-bubble:hover {
   background: rgba(255, 255, 255, 0.18);
   color: #dc3055;
   border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* A resting-state hint that hovering reveals this person's actual profile
+   picture (see .people-bubble-preview) — a generic "photo" glyph rather
+   than a shrunken copy of the avatar itself, which read as a pointless
+   duplicate of the much bigger preview one hover away. Hidden entirely
+   when there's no cached avatar to reveal (.no-avatar), so the hint never
+   promises a picture that isn't there. */
+.people-bubble-icon {
+  display: inline-flex;
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  color: var(--muted);
+  transition: color 0.15s ease;
+}
+
+.people-bubble-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.people-bubble:hover .people-bubble-icon {
+  color: #dc3055;
+}
+
+.people-bubble.no-avatar .people-bubble-icon {
+  display: none;
 }
 
 /* Sits out of flow and out of the hit-testing path entirely (position:

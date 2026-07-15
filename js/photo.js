@@ -11,6 +11,15 @@ function formatDate(iso) {
   });
 }
 
+// A small "photo available" glyph shown in the resting pill — see
+// main.js's PHOTO_ICON_SVG for why this exists instead of a shrunken copy
+// of the avatar itself.
+const PHOTO_ICON_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="3" y="5" width="18" height="14" rx="2.5"/>
+  <circle cx="8.5" cy="10.5" r="1.4"/>
+  <path d="M21 15.5l-5-5-4 4-2-2-5 5"/>
+</svg>`;
+
 // Streams a URL with real download progress (same technique as the
 // lightbox), returning an object URL once fully loaded.
 async function fetchWithProgress(url, onProgress) {
@@ -121,28 +130,22 @@ if (!src) {
           label.textContent = handle;
           bubble.appendChild(label);
 
-          const avatarSrc = 'avatars/' + cleanHandle.toLowerCase() + '.jpg';
+          const icon = document.createElement('span');
+          icon.className = 'people-bubble-icon';
+          icon.innerHTML = PHOTO_ICON_SVG;
+          bubble.appendChild(icon);
 
-          // Larger decorative hover preview of the same avatar — see
-          // main.js's buildHandleBubble for why it's pointer-events: none
-          // and why its src is only set once the small avatar confirms the
-          // image exists.
+          // Larger decorative hover preview of the avatar — see main.js's
+          // buildHandleBubble for why it's pointer-events: none and why its
+          // own load/error decides whether an avatar exists at all.
           const preview = document.createElement('span');
           preview.className = 'people-bubble-preview';
           const previewImg = document.createElement('img');
           previewImg.alt = '';
+          previewImg.addEventListener('load', () => bubble.classList.remove('no-avatar'), { once: true });
+          previewImg.addEventListener('error', () => preview.remove(), { once: true });
+          previewImg.src = 'avatars/' + cleanHandle.toLowerCase() + '.jpg';
           preview.appendChild(previewImg);
-
-          const avatar = document.createElement('img');
-          avatar.className = 'people-bubble-avatar';
-          avatar.alt = '';
-          avatar.addEventListener('load', () => {
-            bubble.classList.remove('no-avatar');
-            previewImg.src = avatarSrc;
-          }, { once: true });
-          avatar.addEventListener('error', () => avatar.remove(), { once: true });
-          avatar.src = avatarSrc;
-          bubble.appendChild(avatar);
           bubble.appendChild(preview);
 
           peopleEl.appendChild(bubble);
