@@ -11,6 +11,25 @@ function formatDate(iso) {
   });
 }
 
+// Streams a URL with real download progress (same technique as the
+// lightbox), returning an object URL once fully loaded.
+async function fetchWithProgress(url, onProgress) {
+  const response = await fetch(url, { priority: 'high' });
+  if (!response.ok || !response.body) throw new Error('fetch failed: ' + response.status);
+  const total = parseInt(response.headers.get('Content-Length') || '0', 10);
+  const reader = response.body.getReader();
+  const chunks = [];
+  let loaded = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    loaded += value.length;
+    if (total) onProgress(loaded / total);
+  }
+  return URL.createObjectURL(new Blob(chunks));
+}
+
 if (!src) {
   content.innerHTML = '<p class="gallery-empty">No photo specified.</p>';
 } else {
@@ -35,11 +54,56 @@ if (!src) {
 
       content.innerHTML = '';
 
+      // Blur-up: show the already-cached thumbnail immediately (blurred),
+      // then stream in the full-resolution original with a progress bar,
+      // swapping to the sharp version once it's fully loaded — same
+      // technique as the lightbox, so this page doesn't feel like a plain
+      // slow <img> load in comparison.
+      const wrap = document.createElement('div');
+      wrap.className = 'photo-full-wrap';
+
+      const progressEl = document.createElement('div');
+      progressEl.className = 'photo-progress';
+      progressEl.hidden = true;
+      const progressBar = document.createElement('div');
+      progressBar.className = 'photo-progress-bar';
+      progressEl.appendChild(progressBar);
+
       const img = document.createElement('img');
-      img.src = post.image;
-      img.alt = post.caption || people.join(', ');
       img.className = 'photo-full';
-      content.appendChild(img);
+      img.alt = post.caption || people.join(', ');
+
+      const thumbSrc = post.thumb || post.image;
+      const fullSrc = post.image;
+      img.src = thumbSrc;
+
+      wrap.appendChild(progressEl);
+      wrap.appendChild(img);
+      content.appendChild(wrap);
+
+      if (fullSrc !== thumbSrc) {
+        img.classList.add('is-loading');
+        progressBar.style.width = '0%';
+        progressEl.hidden = false;
+
+        fetchWithProgress(fullSrc, (fraction) => {
+          progressBar.style.width = (fraction * 100).toFixed(1) + '%';
+        }).then((objectUrl) => {
+          img.src = objectUrl;
+          img.classList.remove('is-loading');
+          progressEl.hidden = true;
+        }).catch(() => {
+          // Streamed fetch failed for some reason — fall back to a plain
+          // <img> load; no progress bar, but the photo still displays.
+          const fallback = new Image();
+          fallback.onload = () => {
+            img.src = fullSrc;
+            img.classList.remove('is-loading');
+          };
+          fallback.src = fullSrc;
+          progressEl.hidden = true;
+        });
+      }
 
       if (people.length) {
         const peopleEl = document.createElement('div');
