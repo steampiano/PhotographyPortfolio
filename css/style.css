@@ -773,6 +773,12 @@ a {
 }
 
 /* People handle bubbles (lightbox + dedicated page) — link to Instagram.
+   Just the handle text; the border is tinted with that person's own
+   average avatar color (see build.py's compute_avatar_color, applied via
+   the --accent custom property in JS) instead of a generic neutral one,
+   which is the "integration with the profile picture" now that there's no
+   icon or thumbnail in the pill itself.
+
    The pill itself never changes size on hover — every earlier version that
    scaled the whole pill (or just its avatar) up grew its hit area into
    neighboring bubbles' space when several sit close together in a row,
@@ -786,51 +792,34 @@ a {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
   font-family: var(--meta-font);
   font-size: 0.85rem;
   color: var(--fg);
   background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--border);
+  border: 1px solid var(--accent, var(--border));
   border-radius: 999px;
   padding: 6px 12px;
   text-decoration: none;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
-.people-bubble:hover {
+/* .preview-active is a JS-managed class (see buildHandleBubble), not a
+   second way to write :hover — it's added immediately on mouseenter like
+   :hover, but removed only after a short delay on mouseleave, rather than
+   the instant the pointer leaves the pill's small box. That grace period
+   is what actually keeps the floating preview below open long enough to
+   look at (see .people-bubble-preview) — an earlier version tried to
+   solve the same problem by giving the pill a big invisible hit-area
+   reaching up to the preview instead, but that box would collide with a
+   bubble in the row above once several bubbles wrap onto multiple lines
+   (up to 9 people are tagged in some photos, with only 8px between
+   wrapped rows) — a purely time-based grace period has no such spatial
+   collision risk regardless of how many rows wrap. */
+.people-bubble:hover,
+.people-bubble.preview-active {
   background: rgba(255, 255, 255, 0.18);
   color: #dc3055;
-  border-color: rgba(255, 255, 255, 0.5);
-}
-
-/* A resting-state hint that hovering reveals this person's actual profile
-   picture (see .people-bubble-preview) — a generic "photo" glyph rather
-   than a shrunken copy of the avatar itself, which read as a pointless
-   duplicate of the much bigger preview one hover away. Hidden entirely
-   when there's no cached avatar to reveal (.no-avatar), so the hint never
-   promises a picture that isn't there. */
-.people-bubble-icon {
-  display: inline-flex;
-  width: 15px;
-  height: 15px;
-  flex: 0 0 auto;
-  color: var(--muted);
-  transition: color 0.15s ease;
-}
-
-.people-bubble-icon svg {
-  width: 100%;
-  height: 100%;
-}
-
-.people-bubble:hover .people-bubble-icon {
-  color: #dc3055;
-}
-
-.people-bubble.no-avatar .people-bubble-icon {
-  display: none;
 }
 
 /* Sits out of flow and out of the hit-testing path entirely (position:
@@ -867,7 +856,8 @@ a {
   display: none;
 }
 
-.people-bubble:hover .people-bubble-preview {
+.people-bubble:hover .people-bubble-preview,
+.people-bubble.preview-active .people-bubble-preview {
   opacity: 1;
   transform: translateX(-50%) scale(1);
 }

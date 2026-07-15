@@ -11,14 +11,30 @@ function formatDate(iso) {
   });
 }
 
-// A small "photo available" glyph shown in the resting pill — see
-// main.js's PHOTO_ICON_SVG for why this exists instead of a shrunken copy
-// of the avatar itself.
-const PHOTO_ICON_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-  <rect x="3" y="5" width="18" height="14" rx="2.5"/>
-  <circle cx="8.5" cy="10.5" r="1.4"/>
-  <path d="M21 15.5l-5-5-4 4-2-2-5 5"/>
-</svg>`;
+// Per-handle border accent colors — see main.js's identical fetch for why
+// this is kicked off immediately rather than awaited.
+let AVATAR_COLORS = {};
+fetch('avatars/colors.json').then((res) => (res.ok ? res.json() : {})).then((data) => {
+  AVATAR_COLORS = data;
+}).catch(() => {});
+
+// See main.js's attachPreviewHoverGrace for why this exists (a grace
+// period after the pointer leaves the pill, instead of a plain :hover, so
+// there's time to move the mouse up onto the bigger avatar preview above
+// it before it closes).
+function attachPreviewHoverGrace(bubble) {
+  let hideTimer = null;
+  bubble.addEventListener('mouseenter', () => {
+    if (hideTimer) {
+      clearTimeout(hideTimer);
+      hideTimer = null;
+    }
+    bubble.classList.add('preview-active');
+  });
+  bubble.addEventListener('mouseleave', () => {
+    hideTimer = setTimeout(() => bubble.classList.remove('preview-active'), 350);
+  });
+}
 
 // Streams a URL with real download progress (same technique as the
 // lightbox), returning an object URL once fully loaded.
@@ -130,10 +146,8 @@ if (!src) {
           label.textContent = handle;
           bubble.appendChild(label);
 
-          const icon = document.createElement('span');
-          icon.className = 'people-bubble-icon';
-          icon.innerHTML = PHOTO_ICON_SVG;
-          bubble.appendChild(icon);
+          const accent = AVATAR_COLORS[cleanHandle.toLowerCase()];
+          if (accent) bubble.style.setProperty('--accent', accent);
 
           // Larger decorative hover preview of the avatar — see main.js's
           // buildHandleBubble for why it's pointer-events: none and why its
@@ -147,6 +161,8 @@ if (!src) {
           previewImg.src = 'avatars/' + cleanHandle.toLowerCase() + '.jpg';
           preview.appendChild(previewImg);
           bubble.appendChild(preview);
+
+          attachPreviewHoverGrace(bubble);
 
           peopleEl.appendChild(bubble);
         }

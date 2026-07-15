@@ -76,9 +76,11 @@ import re
 import shutil
 import struct
 import subprocess
+import tempfile
 import time
 import urllib.error
 import urllib.request
+import zlib
 from datetime import datetime, timezone
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -401,6 +403,85 @@ def fetch_avatars_for(posts, force=False):
     return updated
 
 
+def compute_avatar_color(image_path):
+    """Best-effort average color of an avatar image, as an "rgb(r, g, b)"
+    CSS color string (or None if anything goes wrong).
+
+    Rather than pull in an imaging library, this asks sips to downsample
+    the image to a single pixel — a resize filter's job when shrinking to
+    1x1 is, by construction, a weighted average of every source pixel — and
+    then reads that one pixel straight out of the resulting PNG. A 1x1 PNG
+    is small enough to parse by hand: the IDAT chunk is just a zlib-
+    compressed filter byte followed by that pixel's channel bytes, and
+    zlib decompression is already in the standard library, so no
+    dependency beyond sips itself (already required elsewhere in this
+    file) is needed.
+    """
+    if SIPS is None:
+        return None
+    with tempfile.TemporaryDirectory() as tmp:
+        tiny_path = os.path.join(tmp, "tiny.png")
+        result = subprocess.run(
+            [SIPS, "-s", "format", "png", "-z", "1", "1", image_path, "--out", tiny_path],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        if result.returncode != 0 or not os.path.exists(tiny_path):
+            return None
+        try:
+            data = open(tiny_path, "rb").read()
+            if data[:8] != b"\x89PNG\r\n\x1a\n":
+                return None
+            pos = 8
+            color_type = None
+            idat = b""
+            while pos + 8 <= len(data):
+                length = struct.unpack(">I", data[pos:pos + 4])[0]
+                ctype = data[pos + 4:pos + 8]
+                chunk = data[pos + 8:pos + 8 + length]
+                if ctype == b"IHDR":
+                    width, height, bit_depth, color_type = struct.unpack(">IIBB", chunk[:10])
+                    if (width, height, bit_depth) != (1, 1, 8):
+                        return None
+                elif ctype == b"IDAT":
+                    idat += chunk
+                pos += 8 + length + 4
+            raw = zlib.decompress(idat)  # [filter_byte, channel0, channel1, ...]
+            if color_type == 2 and len(raw) >= 4:  # RGB
+                r, g, b = raw[1], raw[2], raw[3]
+            elif color_type == 6 and len(raw) >= 5:  # RGBA
+                r, g, b = raw[1], raw[2], raw[3]
+            elif color_type == 0 and len(raw) >= 2:  # grayscale
+                r = g = b = raw[1]
+            else:
+                return None
+            return f"rgb({r}, {g}, {b})"
+        except Exception:
+            return None
+
+
+def write_avatar_colors():
+    """Recomputes avatars/colors.json — a {handle: "rgb(r, g, b)"} map of
+    each cached avatar's average color, used as that person's handle-pill
+    border accent on the site. Covers every .jpg already in avatars/
+    (not just ones just (re)fetched this run), so it stays complete even
+    if an avatar was added by hand or a color needs to catch up. Cheap
+    enough to just redo in full each time — a 1x1 sips resize per file.
+    """
+    if not os.path.isdir(AVATARS_DIR):
+        return
+    colors = {}
+    for filename in sorted(os.listdir(AVATARS_DIR)):
+        if not filename.lower().endswith(".jpg"):
+            continue
+        handle = filename[:-len(".jpg")]
+        color = compute_avatar_color(os.path.join(AVATARS_DIR, filename))
+        if color:
+            colors[handle] = color
+    colors_path = os.path.join(AVATARS_DIR, "colors.json")
+    with open(colors_path, "w", encoding="utf-8") as f:
+        json.dump(colors, f, indent=2, sort_keys=True)
+
+
 def find_profile_photo():
     """Find a file named exactly `profile.<ext>` anywhere in photos/.
 
@@ -594,6 +675,7 @@ def main():
     # re-fetching everyone (e.g. someone changed their profile picture),
     # use tools/refresh_avatars.py instead.
     fetch_avatars_for(posts)
+    write_avatar_colors()
 
 
 if __name__ == "__main__":

@@ -32,6 +32,7 @@ def main():
     handles = sorted({p for post in posts for p in post.get("people", [])})
     print(f"Refreshing {len(handles)} avatar(s)...")
     updated = build.fetch_avatars_for(posts, force=True)
+    build.write_avatar_colors()
     print(f"Done: refreshed {updated}/{len(handles)} avatar(s).")
 
 

@@ -8,6 +8,15 @@ const gallery = document.getElementById('gallery');
 let FEATURED = [];
 let GRID = [];
 
+// Per-handle border accent colors (see build.py's compute_avatar_color) —
+// kicked off immediately since it's a tiny file, so by the time anyone
+// actually opens a lightbox (which requires a prior click) it's
+// essentially always already resolved.
+let AVATAR_COLORS = {};
+fetch('avatars/colors.json').then((res) => (res.ok ? res.json() : {})).then((data) => {
+  AVATAR_COLORS = data;
+}).catch(() => {});
+
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString(undefined, {
     year: 'numeric', month: 'long', day: 'numeric',
@@ -60,20 +69,11 @@ function applyExpandSize(img) {
   img.style.setProperty('--expand-ratio', ratio.toFixed(4));
 }
 
-// A small "photo available" glyph shown in the resting pill (see CSS
-// .people-bubble-icon) — a generic hint that hovering reveals this
-// person's actual profile picture, rather than a shrunken, redundant copy
-// of that same picture sitting right next to its own full-size preview.
-const PHOTO_ICON_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-  <rect x="3" y="5" width="18" height="14" rx="2.5"/>
-  <circle cx="8.5" cy="10.5" r="1.4"/>
-  <path d="M21 15.5l-5-5-4 4-2-2-5 5"/>
-</svg>`;
-
-// A handle bubble linking to the matching Instagram profile. Tries to show
-// that person's cached avatar (see build.py's fetch_avatar) as a larger
-// preview on hover; if none exists yet (or the image 404s), falls back to a
-// plain text-only pill via the .no-avatar class.
+// A handle bubble linking to the matching Instagram profile. Just the
+// handle text — border color hints at the photo (see AVATAR_COLORS) and
+// hovering reveals the actual picture (see .people-bubble-preview); if no
+// avatar exists (or the image 404s), falls back to a plain neutral-border
+// pill via the .no-avatar class.
 function buildHandleBubble(handle) {
   const cleanHandle = handle.replace(/^@/, '');
   const bubble = document.createElement('a');
@@ -87,10 +87,8 @@ function buildHandleBubble(handle) {
   label.textContent = handle;
   bubble.appendChild(label);
 
-  const icon = document.createElement('span');
-  icon.className = 'people-bubble-icon';
-  icon.innerHTML = PHOTO_ICON_SVG;
-  bubble.appendChild(icon);
+  const accent = AVATAR_COLORS[cleanHandle.toLowerCase()];
+  if (accent) bubble.style.setProperty('--accent', accent);
 
   // A larger, purely decorative preview of the avatar that fades in on
   // hover (see CSS) — pointer-events: none there, so it can never itself
@@ -108,7 +106,31 @@ function buildHandleBubble(handle) {
   preview.appendChild(previewImg);
   bubble.appendChild(preview);
 
+  attachPreviewHoverGrace(bubble);
+
   return bubble;
+}
+
+// A plain :hover on the pill ends the instant the pointer leaves its small
+// box — usually well before the mouse actually reaches the much bigger
+// preview floating above it. .preview-active (toggled here, styled in CSS)
+// adds a short grace period after the pointer leaves before the preview is
+// allowed to close, long enough to move the mouse up and actually look at
+// it, without needing to expand the pill's real hit area (which would risk
+// overlapping a bubble in the row above once several wrap onto multiple
+// lines — up to 9 people are tagged in some photos).
+function attachPreviewHoverGrace(bubble) {
+  let hideTimer = null;
+  bubble.addEventListener('mouseenter', () => {
+    if (hideTimer) {
+      clearTimeout(hideTimer);
+      hideTimer = null;
+    }
+    bubble.classList.add('preview-active');
+  });
+  bubble.addEventListener('mouseleave', () => {
+    hideTimer = setTimeout(() => bubble.classList.remove('preview-active'), 350);
+  });
 }
 
 function buildPostFigure(post) {
