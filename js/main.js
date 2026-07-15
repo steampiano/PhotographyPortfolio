@@ -562,9 +562,17 @@ if (lightbox) {
     infoBtn.setAttribute('aria-expanded', String(infoPanelOpen));
   });
 
-  // Click on the backdrop (not the figure or controls) closes.
+  // Click on the backdrop (not the image, meta text/links, or controls)
+  // closes. Checking `e.target === lightbox` only caught clicks on the
+  // outermost overlay itself — .lightbox-figure has no fixed size, so it
+  // often renders wider/taller than the image or meta block it wraps,
+  // leaving a dead strip of visible tint right around them (closest to the
+  // image edges) that didn't register as the backdrop. closest() against
+  // the actual content elements instead treats everything else — including
+  // that strip — as backdrop, regardless of which wrapper happens to own it.
   lightbox.addEventListener('click', (e) => {
-    if (e.target === lightbox) closeLightbox();
+    if (e.target.closest('.lightbox-img, .lightbox-meta, button')) return;
+    closeLightbox();
   });
 }
 

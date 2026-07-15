@@ -26,10 +26,11 @@
   --fg: #f2f2f0;
   --muted: #9a9a9a;
   --border: #232323;
-  /* Small metadata text (event badges, dates, people tags, EXIF) uses
-     Helvetica instead of the site's Roadgeek 2005 display font — Roadgeek
-     is a highway-sign face and gets harder to scan at small caption sizes. */
-  --meta-font: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  /* Small metadata text (event badges, dates, people tags, EXIF) uses the
+     same Overpass font as the About Me body text, rather than the site's
+     Roadgeek 2005 display font — Roadgeek is a highway-sign face and gets
+     harder to scan at small caption sizes. */
+  --meta-font: "Overpass", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
   /* Scales with the viewport instead of a flat cap, so wide desktop screens
      make real use of the extra width instead of leaving big dead margins;
      still caps out on very large displays so lines/rows don't get absurd. */
@@ -456,25 +457,42 @@ a {
 .about-layout {
   display: flex;
   gap: 40px;
-  align-items: flex-start;
+  /* Stretch (not flex-start) so the photo column matches the bio text
+     column's rendered height exactly, whatever length the copy ends up
+     being — see .about-photo below. */
+  align-items: stretch;
   flex-wrap: wrap;
 }
 
 .about-photo-wrap {
   width: min(360px, 100%);
   flex: 0 0 auto;
+  position: relative;
 }
 
 .about-photo {
   display: block;
   width: 100%;
-  aspect-ratio: 2 / 3;
+  /* No fixed aspect-ratio here — height instead comes from the stretched
+     parent (see .about-layout), so the photo's bottom edge lines up with
+     the bio text's last line rather than following its own fixed ratio.
+     Below the wrap breakpoint the photo is alone on its own row, where
+     stretch has nothing to match against, so a fallback ratio is restored
+     there (see the max-width: 760px query further down). */
+  height: 100%;
   border-radius: 10px;
   object-fit: cover;
   background: #1a1a1a;
 }
 
+/* Positioned out of flow (rather than stacked below the image in normal
+   flow) so it doesn't eat into the height the image stretches to — the
+   image's own bottom edge is what lines up with the text, and the credit
+   line just hangs a little below that. */
 .about-photo-credit {
+  position: absolute;
+  left: 0;
+  top: 100%;
   display: block;
   margin-top: 8px;
   font-size: 0.8rem;
@@ -485,6 +503,17 @@ a {
 
 .about-photo-credit:hover {
   color: #dc3055;
+}
+
+/* Below this width .about-layout wraps (the text column's 280px min-width
+   no longer fits beside the 360px photo), so the photo lands alone on its
+   own row with nothing to stretch-match — fall back to a fixed ratio
+   instead of the height collapsing to near-zero. */
+@media (max-width: 760px) {
+  .about-photo {
+    height: auto;
+    aspect-ratio: 2 / 3;
+  }
 }
 
 .about-text {
@@ -525,11 +554,16 @@ a {
   min-width: 0;
 }
 
-/* Body camera in its own column, lenses in another to the right. */
+/* Body camera in its own column, lenses in another to the right. nowrap
+   (not the default wrap) because the two lists' natural widths sometimes
+   land within a few px of the container's — wrap would then stack them
+   vertically instead of side by side purely by coincidence of text
+   length. flex: 1 1 0 lets each column give up width to the other/wrap
+   its own text rather than forcing the row to overflow. */
 .gear-columns {
   display: flex;
-  gap: 40px;
-  flex-wrap: wrap;
+  gap: 24px;
+  flex-wrap: nowrap;
 }
 
 /* Matches .about-text p — same font/size as the About Me bio. */
@@ -543,6 +577,8 @@ a {
   font-size: 1.15rem;
   line-height: 1.65;
   color: var(--fg);
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .next-con-row {
