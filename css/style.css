@@ -816,16 +816,29 @@ a {
   border-radius: 50%;
   object-fit: cover;
   flex: 0 0 auto;
+  transition: transform 0.2s ease;
 }
 
 .people-bubble:hover {
   background: rgba(255, 255, 255, 0.18);
   color: #dc3055;
   border-color: rgba(255, 255, 255, 0.5);
-  transform: scale(1.25);
+  /* A pill-wide scale big enough to make the avatar actually recognizable
+     (22px * ~1.4 * ~2.2 ≈ 68px) would also blow the label text up to an
+     oversized ~1.65rem — legible avatar, illegible-looking badge. Instead
+     the pill itself grows a moderate, comfortably-readable amount, and the
+     avatar gets its own additional scale on top (transforms compose), so
+     it ends up meaningfully bigger than the text growth alone would give
+     it. transform (not width/height) for both, so neither growth reflows
+     neighboring bubbles or shifts the pill's own position. */
+  transform: scale(1.4);
   transform-origin: center;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
   z-index: 5;
+}
+
+.people-bubble:hover .people-bubble-avatar {
+  transform: scale(2.2);
 }
 
 .site-footer {
