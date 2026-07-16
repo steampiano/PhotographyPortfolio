@@ -522,7 +522,12 @@ def compute_avatar_color(image_path):
     # at zero saturation, fading to no discount (1.0) as saturation -> 1.
     natural_hue_lo, natural_hue_hi = 0.02, 0.13
     natural_penalty = 0.5
+    # Applied to the final color only (not the voting weights above) —
+    # multiplies saturation and raises lightness to a floor, both in HLS
+    # space with hue untouched, purely to make the already-chosen color
+    # punchier/more legible against the site's dark background.
     lightness_floor = 0.45
+    saturation_boost = 1.4
 
     with tempfile.TemporaryDirectory() as tmp:
         grid_path = os.path.join(tmp, "grid.png")
@@ -587,8 +592,9 @@ def compute_avatar_color(image_path):
                 b = sum(m[2][2] * m[1] for m in members) / total_weight
 
             h, l, s = colorsys.rgb_to_hls(r / 255, g / 255, b / 255)
-            if l < lightness_floor:
-                r, g, b = (c * 255 for c in colorsys.hls_to_rgb(h, lightness_floor, s))
+            s = min(1.0, s * saturation_boost)
+            l = max(l, lightness_floor)
+            r, g, b = (c * 255 for c in colorsys.hls_to_rgb(h, l, s))
             return f"rgb({int(r)}, {int(g)}, {int(b)})"
         except Exception:
             return None
