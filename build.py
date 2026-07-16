@@ -483,21 +483,30 @@ def compute_avatar_color(image_path):
 
     This downsamples to a small grid (still via sips, still just a
     resize — see _decode_png_pixels for the hand-rolled PNG unfiltering
-    decoding it needs), buckets every candidate pixel by hue, and picks
-    whichever hue has the most total (saturation x center-weight x
-    naturalness) mass — i.e. one dominant color family, not a blend
-    across families. The final color is a weighted average of that
-    bucket's own pixels (weighted the same way), so it's still pulled
-    toward that family's most vivid, central members rather than diluted
-    by its own duller ones. Center-weighting matters because avatars are
-    usually a centered headshot — a vivid color confined to a background
-    corner shouldn't outweigh a duller one worn by the actual subject.
-    "Naturalness" softly discounts skin/earth-tone hues (browns, tans —
-    the range real skin and undyed fur/background actually live in) so a
-    boring, incidentally-large brown region doesn't out-vote a smaller
-    but genuinely vivid dye color elsewhere in the same photo; the
-    discount fades out as saturation rises, since a fully-saturated
-    orange/brown is far more likely a deliberate vivid color than skin.
+    decoding it needs) and keeps only its most saturated fraction of
+    pixels — the "tone choice" is drawn from vivid pixels only, so a
+    photo that's mostly dull background can't quietly out-number a small
+    but genuinely vivid patch before hue voting even starts. Those vivid
+    pixels are then bucketed by hue, and whichever hue has the most total
+    (saturation x center-weight x naturalness) mass wins. Rather than
+    keeping only that single bucket, immediate hue neighbors nearly as
+    well-represented are folded in too (VIVID_NEIGHBOR_RATIO) — a real
+    dominant color easily spans two adjacent buckets near their boundary,
+    and this is what "a handful of similar tones, not a blend of clashing
+    ones" means here: close hues merge, distant/unrelated ones (that
+    didn't win) are simply excluded rather than diluting the average.
+    The final color is a weighted average of that merged group's own
+    pixels (weighted the same way), so it's still pulled toward the most
+    vivid, central members rather than diluted by duller ones within it.
+    Center-weighting matters because avatars are usually a centered
+    headshot — a vivid color confined to a background corner shouldn't
+    outweigh a duller one worn by the actual subject. "Naturalness"
+    softly discounts skin/earth-tone hues (browns, tans — the range real
+    skin and undyed fur/background actually live in) so a boring,
+    incidentally-large brown region doesn't out-vote a smaller but
+    genuinely vivid dye color elsewhere in the same photo; the discount
+    fades out as saturation rises, since a fully-saturated orange/brown
+    is far more likely a deliberate vivid color than skin.
 
     Luminance deliberately is NOT part of that weighting — an earlier
     attempt multiplied the same weight by lightness directly, meaning to
@@ -517,6 +526,15 @@ def compute_avatar_color(image_path):
         return None
 
     num_buckets = 16
+    # Only the most saturated fraction of candidate pixels get a say in
+    # the hue vote at all — see the docstring. There's always at least
+    # min_vivid_pixels of them even for a photo with hardly any color, so
+    # the vote never runs on a near-empty pool.
+    vivid_fraction = 0.2
+    min_vivid_pixels = 20
+    # A neighboring hue bucket merges into the winner if it scored at
+    # least this fraction of the winner's own score.
+    neighbor_merge_ratio = 0.3
     # Skin/undyed-fur/earth tones cluster in this hue range (roughly red-
     # orange through tan/yellow-orange); NATURAL_PENALTY is the discount
     # at zero saturation, fading to no discount (1.0) as saturation -> 1.
@@ -560,7 +578,7 @@ def compute_avatar_color(image_path):
                         if natural_hue_lo <= h <= natural_hue_hi
                         else 1.0
                     )
-                    out.append((h, s * center_weight * naturalness, (r, g, b)))
+                    out.append((h, s, s * center_weight * naturalness, (r, g, b)))
                 return out
 
             # Almost every real photo has plenty of pixels in the mid
@@ -572,24 +590,37 @@ def compute_avatar_color(image_path):
             if not candidates:
                 return None
 
+            # Stage 1: only the most saturated pixels get a vote at all.
+            candidates.sort(key=lambda c: c[1], reverse=True)
+            vivid_count = max(min_vivid_pixels, int(len(candidates) * vivid_fraction))
+            vivid = candidates[:vivid_count]
+
+            # Stage 2: bucket those by hue, pick the best-scoring bucket,
+            # then fold in immediate neighbors that are nearly as strong.
             bucket_scores = [0.0] * num_buckets
-            for h, weight, _rgb in candidates:
+            for h, _s, weight, _rgb in vivid:
                 bucket_scores[int(h * num_buckets) % num_buckets] += weight
             winning_bucket = max(range(num_buckets), key=lambda i: bucket_scores[i])
 
-            members = [c for c in candidates if int(c[0] * num_buckets) % num_buckets == winning_bucket]
-            total_weight = sum(m[1] for m in members)
+            group = {winning_bucket}
+            for neighbor in (winning_bucket - 1, winning_bucket + 1):
+                neighbor %= num_buckets
+                if bucket_scores[neighbor] >= neighbor_merge_ratio * bucket_scores[winning_bucket]:
+                    group.add(neighbor)
+
+            members = [c for c in vivid if (int(c[0] * num_buckets) % num_buckets) in group]
+            total_weight = sum(m[2] for m in members)
             if total_weight <= 0:
                 # Every member had ~zero weight (only possible via the
                 # near-black/white fallback path) — a plain average is
                 # the only sane option left.
-                r = sum(m[2][0] for m in members) / len(members)
-                g = sum(m[2][1] for m in members) / len(members)
-                b = sum(m[2][2] for m in members) / len(members)
+                r = sum(m[3][0] for m in members) / len(members)
+                g = sum(m[3][1] for m in members) / len(members)
+                b = sum(m[3][2] for m in members) / len(members)
             else:
-                r = sum(m[2][0] * m[1] for m in members) / total_weight
-                g = sum(m[2][1] * m[1] for m in members) / total_weight
-                b = sum(m[2][2] * m[1] for m in members) / total_weight
+                r = sum(m[3][0] * m[2] for m in members) / total_weight
+                g = sum(m[3][1] * m[2] for m in members) / total_weight
+                b = sum(m[3][2] * m[2] for m in members) / total_weight
 
             h, l, s = colorsys.rgb_to_hls(r / 255, g / 255, b / 255)
             s = min(1.0, s * saturation_boost)
