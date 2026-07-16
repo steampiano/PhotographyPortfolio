@@ -484,17 +484,46 @@ def compute_avatar_color(image_path):
     This downsamples to a small grid (still via sips, still just a
     resize — see _decode_png_pixels for the hand-rolled PNG unfiltering
     decoding it needs), buckets every candidate pixel by hue, and picks
-    whichever hue has the most total (saturation x center-weight) mass —
-    i.e. one dominant color family, not a blend across families. The
-    final color is a weighted average of that bucket's own pixels
-    (weighted the same way), so it's still pulled toward that family's
-    most vivid, central members rather than diluted by its own duller
-    ones. Center-weighting matters because avatars are usually a
-    centered headshot — a vivid color confined to a background corner
-    shouldn't outweigh a duller one worn by the actual subject.
+    whichever hue has the most total (saturation x center-weight x
+    naturalness) mass — i.e. one dominant color family, not a blend
+    across families. The final color is a weighted average of that
+    bucket's own pixels (weighted the same way), so it's still pulled
+    toward that family's most vivid, central members rather than diluted
+    by its own duller ones. Center-weighting matters because avatars are
+    usually a centered headshot — a vivid color confined to a background
+    corner shouldn't outweigh a duller one worn by the actual subject.
+    "Naturalness" softly discounts skin/earth-tone hues (browns, tans —
+    the range real skin and undyed fur/background actually live in) so a
+    boring, incidentally-large brown region doesn't out-vote a smaller
+    but genuinely vivid dye color elsewhere in the same photo; the
+    discount fades out as saturation rises, since a fully-saturated
+    orange/brown is far more likely a deliberate vivid color than skin.
+
+    Luminance deliberately is NOT part of that weighting — an earlier
+    attempt multiplied the same weight by lightness directly, meaning to
+    just nudge the result brighter, but it actually changed WHICH hue won:
+    a large, barely-saturated bright patch (sky, a wall) could out-score a
+    smaller but darker and much more saturated true accent color, which
+    is backwards (confirmed on @supdawg1e — an actually reddish-brown
+    fursuit — where it picked a washed-out background beige instead).
+    Instead, luminance only adjusts the already-chosen final color
+    afterward: if it comes out darker than LIGHTNESS_FLOOR, it's lightened
+    in HLS space (hue/saturation unchanged) up to that floor. That still
+    gets the "more luminous, more contrast against a dark page" result
+    that prompted this, without that adjustment ever being able to steer
+    the selection toward the wrong color in the first place.
     """
     if SIPS is None:
         return None
+
+    num_buckets = 16
+    # Skin/undyed-fur/earth tones cluster in this hue range (roughly red-
+    # orange through tan/yellow-orange); NATURAL_PENALTY is the discount
+    # at zero saturation, fading to no discount (1.0) as saturation -> 1.
+    natural_hue_lo, natural_hue_hi = 0.02, 0.13
+    natural_penalty = 0.5
+    lightness_floor = 0.45
+
     with tempfile.TemporaryDirectory() as tmp:
         grid_path = os.path.join(tmp, "grid.png")
         result = subprocess.run(
@@ -521,7 +550,12 @@ def compute_avatar_color(image_path):
                         continue
                     x, y = i % width, i // width
                     center_weight = 1.0 - 0.6 * (math.hypot(x - cx, y - cy) / max_dist)
-                    out.append((h, s * center_weight, (r, g, b)))
+                    naturalness = (
+                        natural_penalty + (1 - natural_penalty) * s
+                        if natural_hue_lo <= h <= natural_hue_hi
+                        else 1.0
+                    )
+                    out.append((h, s * center_weight * naturalness, (r, g, b)))
                 return out
 
             # Almost every real photo has plenty of pixels in the mid
@@ -533,7 +567,6 @@ def compute_avatar_color(image_path):
             if not candidates:
                 return None
 
-            num_buckets = 16
             bucket_scores = [0.0] * num_buckets
             for h, weight, _rgb in candidates:
                 bucket_scores[int(h * num_buckets) % num_buckets] += weight
@@ -542,17 +575,21 @@ def compute_avatar_color(image_path):
             members = [c for c in candidates if int(c[0] * num_buckets) % num_buckets == winning_bucket]
             total_weight = sum(m[1] for m in members)
             if total_weight <= 0:
-                # Every member had ~zero saturation x center-weight (only
-                # possible via the near-black/white fallback path) — a
-                # plain average is the only sane option left.
-                r = sum(m[2][0] for m in members) // len(members)
-                g = sum(m[2][1] for m in members) // len(members)
-                b = sum(m[2][2] for m in members) // len(members)
+                # Every member had ~zero weight (only possible via the
+                # near-black/white fallback path) — a plain average is
+                # the only sane option left.
+                r = sum(m[2][0] for m in members) / len(members)
+                g = sum(m[2][1] for m in members) / len(members)
+                b = sum(m[2][2] for m in members) / len(members)
             else:
-                r = int(sum(m[2][0] * m[1] for m in members) / total_weight)
-                g = int(sum(m[2][1] * m[1] for m in members) / total_weight)
-                b = int(sum(m[2][2] * m[1] for m in members) / total_weight)
-            return f"rgb({r}, {g}, {b})"
+                r = sum(m[2][0] * m[1] for m in members) / total_weight
+                g = sum(m[2][1] * m[1] for m in members) / total_weight
+                b = sum(m[2][2] * m[1] for m in members) / total_weight
+
+            h, l, s = colorsys.rgb_to_hls(r / 255, g / 255, b / 255)
+            if l < lightness_floor:
+                r, g, b = (c * 255 for c in colorsys.hls_to_rgb(h, lightness_floor, s))
+            return f"rgb({int(r)}, {int(g)}, {int(b)})"
         except Exception:
             return None
 
