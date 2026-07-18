@@ -181,6 +181,14 @@ a {
   gap: 12px;
 }
 
+/* Wrap-around copies of the first/last photo (see setupFeaturedRow) exist
+   purely for the mobile carousel's infinite-swipe illusion — outside
+   carousel mode they're hidden entirely so the desktop justified layout
+   never shows duplicates. */
+.featured-item.featured-clone {
+  display: none;
+}
+
 /* Below this width, main.js's layout() stops packing multiple photos per
    row (was squeezing small thumbnails in next to full-width ones) and
    instead sizes one photo at a time — this turns the row into a proper
@@ -200,6 +208,10 @@ a {
 
   .featured-item {
     scroll-snap-align: center;
+  }
+
+  .featured-item.featured-clone {
+    display: block;
   }
 }
 

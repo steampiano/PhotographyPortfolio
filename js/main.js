@@ -219,34 +219,71 @@ function setupFeaturedRow(featuredPosts) {
   row.innerHTML = '';
 
   const GAP = 12;
+  // The carousel branch of layout(), the wrap-around clones, and the
+  // teleport logic below must all agree on when "carousel mode" is active,
+  // so they all key off the same media query as .featured-row's mobile CSS
+  // (the row's own clientWidth can dip under 640 while the viewport — and
+  // therefore the CSS — hasn't, e.g. viewport 641-688 minus page padding).
+  const carouselMode = window.matchMedia('(max-width: 640px)');
+
   const items = featuredPosts.map((post) => {
     const figure = buildFeaturedItem(post);
     row.appendChild(figure);
-    return { figure, img: figure.querySelector('img'), ratio: 1 };
+    return { figure, img: figure.querySelector('img'), ratio: 1, clone: false };
   });
 
-  function targetRowHeight(containerWidth) {
-    // Below 640 this is one full-slide photo at a time (see layout()'s
-    // carousel branch), not a dense packed row, so it gets a much more
-    // generous height than the old multi-column grid used.
-    if (containerWidth < 640) return 420;
-    return containerWidth < 560 ? 170 : 260;
+  // Infinite wrap for the mobile carousel: a copy of the last photo sits
+  // before the first (so the very first swipe can go backwards) and a copy
+  // of the first sits after the last. When a swipe settles on one of these
+  // copies, the scroll position is instantly teleported to its real
+  // counterpart (see the scroll listener below) — the classic clone-and-
+  // teleport loop. buildFeaturedItem looks the post up by image when
+  // clicked, so a clone opens the same lightbox slide as the real one.
+  // Hidden outside carousel mode via CSS (.featured-clone) and skipped by
+  // the justified packing, so desktop never sees duplicates.
+  if (featuredPosts.length >= 2) {
+    const lead = buildFeaturedItem(featuredPosts[featuredPosts.length - 1]);
+    lead.classList.add('featured-clone');
+    row.insertBefore(lead, row.firstChild);
+    items.unshift({ figure: lead, img: lead.querySelector('img'), ratio: 1, clone: true });
+
+    const tail = buildFeaturedItem(featuredPosts[0]);
+    tail.classList.add('featured-clone');
+    row.appendChild(tail);
+    items.push({ figure: tail, img: tail.querySelector('img'), ratio: 1, clone: true });
+  }
+  const hasClones = items.length > featuredPosts.length;
+
+  // Instantly scrolls the row so `it` sits centered (its scroll-snap rest
+  // position). getBoundingClientRect instead of offsetLeft because the
+  // figures are position: relative, so offsetLeft isn't row-relative.
+  function centerOn(it) {
+    const rowRect = row.getBoundingClientRect();
+    const rect = it.figure.getBoundingClientRect();
+    row.scrollLeft += (rect.left - rowRect.left) - (row.clientWidth - rect.width) / 2;
+  }
+
+  function targetRowHeight() {
+    // In carousel mode this is one full-slide photo at a time, not a dense
+    // packed row, so it gets a much more generous height than the old
+    // multi-column grid used.
+    if (carouselMode.matches) return 420;
+    return row.clientWidth < 560 ? 170 : 260;
   }
 
   function layout() {
     const containerWidth = row.clientWidth;
     if (!containerWidth) return;
-    const rowHeight = targetRowHeight(containerWidth);
+    const rowHeight = targetRowHeight();
 
     // Mobile: the justified multi-per-row packing below can still end up
     // squeezing two small thumbnails onto a row next to a full-width one,
-    // which reads as cramped/inconsistent on a narrow screen. Below the
-    // carousel breakpoint (matches .featured-row's mobile media query),
-    // skip packing entirely — one photo per "row", each kept at its own
-    // aspect ratio (capped so it never needs its own horizontal scroll
+    // which reads as cramped/inconsistent on a narrow screen. In carousel
+    // mode, skip packing entirely — one photo per "row", each kept at its
+    // own aspect ratio (capped so it never needs its own horizontal scroll
     // inside what's otherwise a one-swipe-per-photo strip), and the row
     // itself becomes a horizontally swipeable carousel via CSS.
-    if (containerWidth < 640) {
+    if (carouselMode.matches) {
       const maxWidth = containerWidth * 0.88;
       const maxHeight = window.innerHeight * 0.6;
       for (const it of items) {
@@ -259,24 +296,28 @@ function setupFeaturedRow(featuredPosts) {
         it.figure.style.width = w + 'px';
         it.img.style.height = h + 'px';
       }
+      // Start on the real first photo — without this the row would open
+      // scrolled to the leading wrap-around copy of the LAST photo.
+      if (hasClones) centerOn(items[1]);
       return;
     }
 
     const MAX_SCALE = 1.3;
+    const realItems = items.filter((it) => !it.clone);
 
     let i = 0;
-    while (i < items.length) {
+    while (i < realItems.length) {
       // Grow the row one photo at a time. Once adding the next photo would
       // overflow the container, pick whichever of "stop here" or "include
       // it" lands closer to the target row height, instead of always
       // overflowing-then-shrinking. That's what made full rows consistently
       // shorter than the stretched-out trailing row.
-      let sumRatios = items[i].ratio;
+      let sumRatios = realItems[i].ratio;
       let count = 1;
       let j = i + 1;
 
-      while (j < items.length) {
-        const sumWithNext = sumRatios + items[j].ratio;
+      while (j < realItems.length) {
+        const sumWithNext = sumRatios + realItems[j].ratio;
         const widthWithNext = rowHeight * sumWithNext + GAP * count;
         if (widthWithNext >= containerWidth) {
           const scaleWithout = (containerWidth - GAP * (count - 1)) / (rowHeight * sumRatios);
@@ -292,7 +333,7 @@ function setupFeaturedRow(featuredPosts) {
         j++;
       }
 
-      const rowItems = items.slice(i, i + count);
+      const rowItems = realItems.slice(i, i + count);
       const totalGap = GAP * (count - 1);
       const scale = Math.min((containerWidth - totalGap) / (rowHeight * sumRatios), MAX_SCALE);
       const h = rowHeight * scale;
@@ -320,6 +361,35 @@ function setupFeaturedRow(featuredPosts) {
       it.img.addEventListener('error', resolve, { once: true });
     }
   }))).then(layout);
+
+  // The wrap-around teleport: once a swipe settles (no scroll events for a
+  // beat — a plain debounce rather than the scrollend event, which iOS
+  // Safari has historically lacked), check which photo ended up centered.
+  // If it's one of the clones, jump instantly to its real counterpart —
+  // the two are pixel-identical at their snap points, so the swap is
+  // invisible and the next swipe continues seamlessly in either direction.
+  let settleTimer;
+  row.addEventListener('scroll', () => {
+    if (!hasClones || !carouselMode.matches) return;
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(() => {
+      const rowRect = row.getBoundingClientRect();
+      const centerX = rowRect.left + rowRect.width / 2;
+      let nearest = null;
+      let nearestDist = Infinity;
+      for (const it of items) {
+        const rect = it.figure.getBoundingClientRect();
+        const dist = Math.abs(rect.left + rect.width / 2 - centerX);
+        if (dist < nearestDist) {
+          nearestDist = dist;
+          nearest = it;
+        }
+      }
+      if (!nearest || !nearest.clone) return;
+      // Leading clone shows the last photo; trailing clone shows the first.
+      centerOn(nearest === items[0] ? items[items.length - 2] : items[1]);
+    }, 120);
+  }, { passive: true });
 
   let resizeTimer;
   window.addEventListener('resize', () => {
