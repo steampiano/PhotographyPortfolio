@@ -62,32 +62,6 @@ body {
   }
 }
 
-@media (max-width: 700px) {
-  /* At this width the logo + all three nav links no longer fit in one row
-     without wrapping mid-word/mid-phrase (e.g. "Other" / "Work" splitting
-     across lines) — stacking them into two clean, deliberate rows instead
-     reads far better than letting flexbox wrap them unpredictably. */
-  .header-inner {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-    padding-top: 14px;
-    padding-bottom: 14px;
-  }
-
-  .logo {
-    font-size: 1.15rem;
-  }
-
-  .nav {
-    gap: 16px;
-  }
-
-  .nav a {
-    font-size: 0.95rem;
-  }
-}
-
 /* Every section heading (About Me, Upcoming Conventions, My Gear, Featured,
    Recent work, etc.) shares the header logo's Roadgeek 2005 Series E
    display font rather than the body's Overpass, so headings read as a
@@ -160,6 +134,41 @@ a {
   color: #9f8ff0;
 }
 
+/* AFTER the base .header-inner/.logo/.nav rules on purpose: media queries
+   add no specificity, so if this block sat earlier in the file (as it once
+   did) every declaration that conflicts with a base rule would lose to it
+   on source order — which silently kept the mobile header at desktop
+   padding and font sizes.
+
+   At this width the logo + all three nav links no longer fit in one row
+   without wrapping mid-word/mid-phrase (e.g. "Other" / "Work" splitting
+   across lines) — stacking them into two clean, deliberate rows instead
+   reads far better than letting flexbox wrap them unpredictably. Padding
+   and gap kept tight: two stacked rows already cost more height than the
+   desktop single row, so every spare pixel here is viewport lost on an
+   already-short phone screen. */
+@media (max-width: 700px) {
+  .header-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .logo {
+    font-size: 1.05rem;
+  }
+
+  .nav {
+    gap: 14px;
+  }
+
+  .nav a {
+    font-size: 0.9rem;
+  }
+}
+
 .highlights-section {
   padding: 32px 24px 24px;
 }
@@ -200,6 +209,10 @@ a {
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    /* Slides vary in height (each keeps its own aspect ratio) — center
+       them on the cross axis so shorter landscape photos float mid-strip
+       instead of hugging the top edge of the tallest slide. */
+    align-items: center;
   }
 
   .featured-row::-webkit-scrollbar {
@@ -351,11 +364,11 @@ a {
   }
 
   /* The extra .post in these selectors isn't decorative — the base
-     `.post figcaption` / `.post .post-date` rules are defined later in
-     this file and tie a plain `.gallery figcaption` on specificity, so
+     `.post .post-caption` / `.post .post-date` rules are defined later in
+     this file and tie a plain `.gallery .post-caption` on specificity, so
      source order would let them win and keep the meta visible. */
   .gallery .post-event,
-  .gallery .post figcaption,
+  .gallery .post .post-caption,
   .gallery .post .post-date {
     display: none;
   }
@@ -465,7 +478,8 @@ a {
   padding: 2px 8px;
 }
 
-.post figcaption {
+.post .post-caption {
+  display: block;
   margin-top: 8px;
   font-size: 0.9rem;
   color: var(--muted);
@@ -477,6 +491,25 @@ a {
   font-size: 0.78rem;
   color: #666;
   margin-top: 4px;
+}
+
+/* The meta block rides along with the hover expansion: the expanded image
+   is horizontally centered on its square, so its left edge sticks out by
+   half the extra width — sliding the meta by that same amount keeps it
+   lined up with the expanded image's bottom-left corner (the bottom edge
+   never moves; the image is bottom-anchored). translateX percentages
+   resolve against the meta block's own width, which equals the square's,
+   so the same --expand-w the image uses gives the exact bleed distance.
+   z-index lifts it above the expanded image's big drop shadow, which
+   otherwise darkens right over this text. */
+.gallery .post-meta {
+  transition: transform 0.25s ease;
+}
+
+.gallery .post-link:hover + .post-meta {
+  position: relative;
+  z-index: 6;
+  transform: translateX(calc((var(--expand-w, 112%) - 100%) / -2));
 }
 
 .about {
@@ -552,12 +585,31 @@ a {
 /* Below this width .about-layout wraps (the text column's 280px min-width
    no longer fits beside the 360px photo), so the photo lands alone on its
    own row with nothing to stretch-match — fall back to a fixed ratio
-   instead of the height collapsing to near-zero. */
+   instead of the height collapsing to near-zero. The wrap is also sized
+   down and centered here: at full container width the 2:3 photo alone
+   filled a phone's entire first screen before any bio text appeared. */
 @media (max-width: 760px) {
   .about-photo {
     height: auto;
     aspect-ratio: 2 / 3;
   }
+
+  .about-photo-wrap {
+    width: min(250px, 78%);
+    margin: 0 auto;
+  }
+}
+
+/* Indented paragraphs for the bio prose — book-style. The two short
+   one-liner paragraphs (the photo-use note and the sign-off) read as
+   standalone statements, not prose flow, so they stay flush. */
+.about-text p {
+  text-indent: 1.5em;
+}
+
+.about-text .using-photos-note,
+.about-text p:last-of-type {
+  text-indent: 0;
 }
 
 .about-text {
@@ -699,6 +751,32 @@ a {
 .next-con-logo.fc-logo {
   width: auto;
   height: 28px;
+}
+
+/* Shrink the convention badges enough that ASC and FC sit side by side on
+   one phone-width row instead of stacking. AFTER the base .next-con rules
+   on purpose — media queries add no specificity, so placed any earlier
+   these would lose to the base declarations on source order. */
+@media (max-width: 760px) {
+  .next-con-row {
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+
+  .next-con {
+    font-size: 1.05rem;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .next-con-logo.asc-logo {
+    width: 42px;
+    height: 42px;
+  }
+
+  .next-con-logo.fc-logo {
+    height: 20px;
+  }
 }
 
 .photo-page {

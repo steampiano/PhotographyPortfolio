@@ -64,9 +64,14 @@ function applyExpandSize(img) {
   // aspect ratio). Percentage `height` is avoided because it doesn't resolve
   // correctly against the containing block for an absolutely positioned
   // <img> in the deploy environment, whereas width% + aspect-ratio does.
+  // Set on the whole figure (not the img) so custom-property inheritance
+  // reaches both the img AND the .post-meta block below it — the meta
+  // slides along with the expansion (see .post-meta's hover CSS) and needs
+  // --expand-w for the same math.
   const widthPct = ratio >= 1 ? shortPct * ratio : shortPct;
-  img.style.setProperty('--expand-w', widthPct.toFixed(2) + '%');
-  img.style.setProperty('--expand-ratio', ratio.toFixed(4));
+  const target = img.closest('figure') || img;
+  target.style.setProperty('--expand-w', widthPct.toFixed(2) + '%');
+  target.style.setProperty('--expand-ratio', ratio.toFixed(4));
 }
 
 // A handle bubble linking to the matching Instagram profile. Just the
@@ -138,38 +143,53 @@ function buildPostFigure(post) {
   img.alt = post.caption || (post.people ? post.people.join(', ') : '');
   img.loading = 'lazy';
   img.decoding = 'async';
+  link.appendChild(img);
+  figure.appendChild(link);
+
+  // After appending, not before — applyExpandSize writes the expansion
+  // custom properties onto the figure via img.closest('figure'), which
+  // is null for a detached img (a cached image can be `complete`
+  // synchronously, before it was ever attached).
   if (img.complete && img.naturalWidth) {
     applyExpandSize(img);
   } else {
     img.addEventListener('load', () => applyExpandSize(img), { once: true });
   }
-  link.appendChild(img);
-  figure.appendChild(link);
 
   appendPostMeta(figure, post);
   return figure;
 }
 
 // Event badge + caption + date, shared by both the Recent Work grid and the
-// Featured row.
+// Featured row. Wrapped in one .post-meta block so the grid's hover CSS can
+// slide all of it as a unit, tracking the expanding image's bottom-left
+// corner.
 function appendPostMeta(figure, post) {
+  const meta = document.createElement('div');
+  meta.className = 'post-meta';
+
   if (post.event) {
     const eventEl = document.createElement('span');
     eventEl.className = 'post-event';
     eventEl.textContent = post.event;
-    figure.appendChild(eventEl);
+    meta.appendChild(eventEl);
   }
 
   if (post.caption) {
-    const caption = document.createElement('figcaption');
+    // A classed span, not <figcaption> — figcaption is only valid as a
+    // direct child of <figure>, and this sits inside the .post-meta div.
+    const caption = document.createElement('span');
+    caption.className = 'post-caption';
     caption.textContent = post.caption;
-    figure.appendChild(caption);
+    meta.appendChild(caption);
   }
 
   const dateEl = document.createElement('span');
   dateEl.className = 'post-date';
   dateEl.textContent = formatDate(post.date);
-  figure.appendChild(dateEl);
+  meta.appendChild(dateEl);
+
+  figure.appendChild(meta);
 }
 
 // A Featured-row item: unlike grid figures, this shows the photo at its true
@@ -232,35 +252,50 @@ function setupFeaturedRow(featuredPosts) {
     return { figure, img: figure.querySelector('img'), ratio: 1, clone: false };
   });
 
-  // Infinite wrap for the mobile carousel: a copy of the last photo sits
-  // before the first (so the very first swipe can go backwards) and a copy
-  // of the first sits after the last. When a swipe settles on one of these
-  // copies, the scroll position is instantly teleported to its real
-  // counterpart (see the scroll listener below) — the classic clone-and-
-  // teleport loop. buildFeaturedItem looks the post up by image when
-  // clicked, so a clone opens the same lightbox slide as the real one.
-  // Hidden outside carousel mode via CSS (.featured-clone) and skipped by
-  // the justified packing, so desktop never sees duplicates.
-  if (featuredPosts.length >= 2) {
-    const lead = buildFeaturedItem(featuredPosts[featuredPosts.length - 1]);
-    lead.classList.add('featured-clone');
-    row.insertBefore(lead, row.firstChild);
-    items.unshift({ figure: lead, img: lead.querySelector('img'), ratio: 1, clone: true });
+  // Infinite wrap for the mobile carousel: copies of the last TWO photos
+  // sit before the first (so the very first swipe can go backwards) and
+  // copies of the first two sit after the last. Whenever the scroll
+  // position lands in a copy's territory it teleports to the real
+  // counterpart (see teleportIfOnClone below) — the classic clone-and-
+  // teleport loop. Two slides of runway per side rather than one: a hard
+  // fling can travel more than a slide past the last real photo before
+  // any teleport gets a chance to run, and with a single clone that meant
+  // hitting the physical end of the strip — a dead wall mid-swipe.
+  // buildFeaturedItem looks the post up by image when clicked, so a clone
+  // opens the same lightbox slide as the real one. Hidden outside carousel
+  // mode via CSS (.featured-clone) and skipped by the justified packing,
+  // so desktop never sees duplicates.
+  const cloneCount = featuredPosts.length >= 2 ? 2 : 0;
+  if (cloneCount) {
+    const firstRealFigure = items[0].figure;
+    const leadEntries = [];
+    for (let i = featuredPosts.length - cloneCount; i < featuredPosts.length; i++) {
+      const fig = buildFeaturedItem(featuredPosts[i]);
+      fig.classList.add('featured-clone');
+      row.insertBefore(fig, firstRealFigure);
+      leadEntries.push({ figure: fig, img: fig.querySelector('img'), ratio: 1, clone: true, realIdx: i });
+    }
+    items.unshift(...leadEntries);
 
-    const tail = buildFeaturedItem(featuredPosts[0]);
-    tail.classList.add('featured-clone');
-    row.appendChild(tail);
-    items.push({ figure: tail, img: tail.querySelector('img'), ratio: 1, clone: true });
+    for (let i = 0; i < cloneCount; i++) {
+      const fig = buildFeaturedItem(featuredPosts[i]);
+      fig.classList.add('featured-clone');
+      row.appendChild(fig);
+      items.push({ figure: fig, img: fig.querySelector('img'), ratio: 1, clone: true, realIdx: i });
+    }
   }
-  const hasClones = items.length > featuredPosts.length;
 
-  // Instantly scrolls the row so `it` sits centered (its scroll-snap rest
+  // The scrollLeft at which `it` sits centered (its scroll-snap rest
   // position). getBoundingClientRect instead of offsetLeft because the
   // figures are position: relative, so offsetLeft isn't row-relative.
-  function centerOn(it) {
+  function snapLeftOf(it) {
     const rowRect = row.getBoundingClientRect();
     const rect = it.figure.getBoundingClientRect();
-    row.scrollLeft += (rect.left - rowRect.left) - (row.clientWidth - rect.width) / 2;
+    return row.scrollLeft + (rect.left - rowRect.left) - (row.clientWidth - rect.width) / 2;
+  }
+
+  function centerOn(it) {
+    row.scrollLeft = snapLeftOf(it);
   }
 
   function targetRowHeight() {
@@ -297,8 +332,8 @@ function setupFeaturedRow(featuredPosts) {
         it.img.style.height = h + 'px';
       }
       // Start on the real first photo — without this the row would open
-      // scrolled to the leading wrap-around copy of the LAST photo.
-      if (hasClones) centerOn(items[1]);
+      // scrolled to the leading wrap-around copies of the LAST photos.
+      if (cloneCount) centerOn(items[cloneCount]);
       return;
     }
 
@@ -362,33 +397,50 @@ function setupFeaturedRow(featuredPosts) {
     }
   }))).then(layout);
 
-  // The wrap-around teleport: once a swipe settles (no scroll events for a
-  // beat — a plain debounce rather than the scrollend event, which iOS
-  // Safari has historically lacked), check which photo ended up centered.
-  // If it's one of the clones, jump instantly to its real counterpart —
-  // the two are pixel-identical at their snap points, so the swap is
-  // invisible and the next swipe continues seamlessly in either direction.
+  // The wrap-around teleport. Checked on EVERY scroll event, not only after
+  // scrolling settles — with rapid successive swipes a settle debounce
+  // never gets its quiet window, so an earlier settle-only version let a
+  // fast swiper reach the end of the strip's runway before any teleport
+  // had run. The jump is a pure delta (current offset from the clone's
+  // snap point is preserved relative to the counterpart's), and with two
+  // clones per side every slide adjacent to a clone is pixel-identical to
+  // the one adjacent to its counterpart, so teleporting mid-motion doesn't
+  // visibly skip. Skipped while a finger is actually down — teleporting
+  // under an active drag fights the browser's touch-to-scroll mapping —
+  // and caught up the moment it lifts.
+  let touching = false;
+
+  function teleportIfOnClone() {
+    if (!cloneCount || touching || !carouselMode.matches) return;
+    const rowRect = row.getBoundingClientRect();
+    const centerX = rowRect.left + rowRect.width / 2;
+    let nearest = null;
+    let nearestDist = Infinity;
+    for (const it of items) {
+      const rect = it.figure.getBoundingClientRect();
+      const dist = Math.abs(rect.left + rect.width / 2 - centerX);
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearest = it;
+      }
+    }
+    if (!nearest || !nearest.clone) return;
+    row.scrollLeft += snapLeftOf(items[cloneCount + nearest.realIdx]) - snapLeftOf(nearest);
+  }
+
+  row.addEventListener('touchstart', () => { touching = true; }, { passive: true });
+  row.addEventListener('touchend', () => { touching = false; teleportIfOnClone(); }, { passive: true });
+  row.addEventListener('touchcancel', () => { touching = false; teleportIfOnClone(); }, { passive: true });
+
+  // Settle-debounce as a backup sweep for anything the per-event checks
+  // missed (a plain debounce rather than the scrollend event, which iOS
+  // Safari has historically lacked).
   let settleTimer;
   row.addEventListener('scroll', () => {
-    if (!hasClones || !carouselMode.matches) return;
+    if (!cloneCount || !carouselMode.matches) return;
+    teleportIfOnClone();
     clearTimeout(settleTimer);
-    settleTimer = setTimeout(() => {
-      const rowRect = row.getBoundingClientRect();
-      const centerX = rowRect.left + rowRect.width / 2;
-      let nearest = null;
-      let nearestDist = Infinity;
-      for (const it of items) {
-        const rect = it.figure.getBoundingClientRect();
-        const dist = Math.abs(rect.left + rect.width / 2 - centerX);
-        if (dist < nearestDist) {
-          nearestDist = dist;
-          nearest = it;
-        }
-      }
-      if (!nearest || !nearest.clone) return;
-      // Leading clone shows the last photo; trailing clone shows the first.
-      centerOn(nearest === items[0] ? items[items.length - 2] : items[1]);
-    }, 120);
+    settleTimer = setTimeout(teleportIfOnClone, 100);
   }, { passive: true });
 
   let resizeTimer;
