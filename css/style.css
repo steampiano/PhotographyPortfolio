@@ -256,11 +256,32 @@ a {
   object-fit: cover;
   border-radius: 4px;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  /* Bottom edge pinned so growing on hover never bleeds downward onto
+     the caption/date below (which sits in normal flow, unaffected by a
+     transform on its sibling image) — mirrors the Recent Work grid's
+     bottom-anchored expansion, just via transform-origin here instead
+     of flexbox, since this image isn't absolutely positioned. */
+  transform-origin: center bottom;
 }
 
 .featured-item:hover img {
   transform: scale(1.07);
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3), 0 16px 36px rgba(0, 0, 0, 0.7);
+}
+
+/* The meta still needs to slide to track the SIDEWAYS half of that growth
+   (transform-origin only fixed the vertical edge) — same idea as the
+   grid's tracking meta, adapted to Featured's flat scale(1.07) rather
+   than the grid's variable --expand-w: at that ratio the bleed is always
+   half of 7%, i.e. 3.5% of the image's own width, on each side. */
+.featured-item .post-meta {
+  transition: transform 0.2s ease;
+}
+
+.featured-item:hover .post-meta {
+  position: relative;
+  z-index: 2;
+  transform: translateX(-3.5%);
 }
 
 .gallery-intro {
