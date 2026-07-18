@@ -252,20 +252,23 @@ function setupFeaturedRow(featuredPosts) {
     return { figure, img: figure.querySelector('img'), ratio: 1, clone: false };
   });
 
-  // Infinite wrap for the mobile carousel: copies of the last TWO photos
+  // Infinite wrap for the mobile carousel: copies of the last few photos
   // sit before the first (so the very first swipe can go backwards) and
-  // copies of the first two sit after the last. Whenever the scroll
-  // position lands in a copy's territory it teleports to the real
-  // counterpart (see teleportIfOnClone below) — the classic clone-and-
-  // teleport loop. Two slides of runway per side rather than one: a hard
-  // fling can travel more than a slide past the last real photo before
-  // any teleport gets a chance to run, and with a single clone that meant
-  // hitting the physical end of the strip — a dead wall mid-swipe.
-  // buildFeaturedItem looks the post up by image when clicked, so a clone
-  // opens the same lightbox slide as the real one. Hidden outside carousel
-  // mode via CSS (.featured-clone) and skipped by the justified packing,
-  // so desktop never sees duplicates.
-  const cloneCount = featuredPosts.length >= 2 ? 2 : 0;
+  // copies of the first few sit after the last. Whenever the scroll comes
+  // to rest on a copy it teleports to the real counterpart (see
+  // teleportIfOnClone below) — the classic clone-and-teleport loop. Four
+  // slides of runway per side is generous headroom for a fast fling that
+  // travels multiple slides in one gesture before it decelerates — with
+  // too little runway, that deceleration can slam into the physical end
+  // of the scrollable strip and stop dead instead of gliding to a rest,
+  // which is its own kind of jump, independent of the teleport itself
+  // (see teleportIfOnClone's comment for why the teleport only ever runs
+  // once scrolling has fully stopped, never mid-gesture). buildFeaturedItem
+  // looks the post up by image when clicked, so a clone opens the same
+  // lightbox slide as the real one. Hidden outside carousel mode via CSS
+  // (.featured-clone) and skipped by the justified packing, so desktop
+  // never sees duplicates.
+  const cloneCount = featuredPosts.length >= 2 ? Math.min(4, featuredPosts.length - 1) : 0;
   if (cloneCount) {
     const firstRealFigure = items[0].figure;
     const leadEntries = [];
@@ -397,21 +400,21 @@ function setupFeaturedRow(featuredPosts) {
     }
   }))).then(layout);
 
-  // The wrap-around teleport. Checked on EVERY scroll event, not only after
-  // scrolling settles — with rapid successive swipes a settle debounce
-  // never gets its quiet window, so an earlier settle-only version let a
-  // fast swiper reach the end of the strip's runway before any teleport
-  // had run. The jump is a pure delta (current offset from the clone's
-  // snap point is preserved relative to the counterpart's), and with two
-  // clones per side every slide adjacent to a clone is pixel-identical to
-  // the one adjacent to its counterpart, so teleporting mid-motion doesn't
-  // visibly skip. Skipped while a finger is actually down — teleporting
-  // under an active drag fights the browser's touch-to-scroll mapping —
-  // and caught up the moment it lifts.
-  let touching = false;
-
+  // The wrap-around teleport. Only ever runs once scrolling has fully
+  // stopped (a plain debounce — scroll events stop firing for a beat —
+  // rather than the scrollend event, which iOS Safari has historically
+  // lacked), never mid-gesture or mid-momentum. An earlier version also
+  // corrected on every scroll event, reasoning that a settle-only check
+  // could miss a fast swipe entirely — but firing mid-flight fights the
+  // browser's own momentum/snap physics (forcing scrollLeft while iOS is
+  // still decelerating a fling), which is what made crossing the wrap
+  // point feel jumpy rather than smooth. The actual fix for "ran out of
+  // runway" is just more clones (see cloneCount above), not correcting
+  // sooner — settling is what scroll-snap already does natively and
+  // smoothly; this only ever nudges the final rest position afterward,
+  // silently, since a clone and its real counterpart are pixel-identical.
   function teleportIfOnClone() {
-    if (!cloneCount || touching || !carouselMode.matches) return;
+    if (!cloneCount || !carouselMode.matches) return;
     const rowRect = row.getBoundingClientRect();
     const centerX = rowRect.left + rowRect.width / 2;
     let nearest = null;
@@ -428,19 +431,11 @@ function setupFeaturedRow(featuredPosts) {
     row.scrollLeft += snapLeftOf(items[cloneCount + nearest.realIdx]) - snapLeftOf(nearest);
   }
 
-  row.addEventListener('touchstart', () => { touching = true; }, { passive: true });
-  row.addEventListener('touchend', () => { touching = false; teleportIfOnClone(); }, { passive: true });
-  row.addEventListener('touchcancel', () => { touching = false; teleportIfOnClone(); }, { passive: true });
-
-  // Settle-debounce as a backup sweep for anything the per-event checks
-  // missed (a plain debounce rather than the scrollend event, which iOS
-  // Safari has historically lacked).
   let settleTimer;
   row.addEventListener('scroll', () => {
     if (!cloneCount || !carouselMode.matches) return;
-    teleportIfOnClone();
     clearTimeout(settleTimer);
-    settleTimer = setTimeout(teleportIfOnClone, 100);
+    settleTimer = setTimeout(teleportIfOnClone, 120);
   }, { passive: true });
 
   let resizeTimer;
