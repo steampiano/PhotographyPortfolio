@@ -52,9 +52,13 @@ body {
   padding-bottom: 74px;
 }
 
+/* On small screens the fixed footer (plus the reserved body padding for
+   it) permanently ate a big slice of an already-short viewport — see the
+   .site-footer media query further down, which drops it into the normal
+   page flow there instead. No fixed footer means no reserved space. */
 @media (max-width: 640px) {
   body {
-    padding-bottom: 112px;
+    padding-bottom: 0;
   }
 }
 
@@ -320,6 +324,31 @@ a {
   padding: 24px 24px 80px;
 }
 
+/* Mobile: a compact Instagram-style 3-across grid of bare squares, so the
+   whole collection scans in a few screens of scrolling instead of one
+   giant photo per row. The per-photo event badge / caption / date are
+   hidden here — at ~110px cell width they'd wrap into cramped clutter
+   taller than the photos themselves, and all of it is one tap away in
+   the lightbox anyway. (The Featured carousel isn't inside .gallery, so
+   its badges/dates are unaffected.) */
+@media (max-width: 640px) {
+  .gallery {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 16px 12px 48px;
+  }
+
+  /* The extra .post in these selectors isn't decorative — the base
+     `.post figcaption` / `.post .post-date` rules are defined later in
+     this file and tie a plain `.gallery figcaption` on specificity, so
+     source order would let them win and keep the meta visible. */
+  .gallery .post-event,
+  .gallery .post figcaption,
+  .gallery .post .post-date {
+    display: none;
+  }
+}
+
 .gallery-empty {
   color: var(--muted);
 }
@@ -345,7 +374,7 @@ a {
    (The Featured row, lightbox, and dedicated page all keep the true aspect
    ratio — only this grid crops to a square.)
 
-   On hover (desktop) or finger-drag (mobile, via touch-active below), each
+   On hover (desktop only — mobile taps go straight to the lightbox), each
    thumbnail grows to its own --expand-w/--expand-ratio — custom properties
    computed in main.js from that photo's real aspect ratio, so every photo
    ends up at roughly the same visual AREA when expanded (not just the same
@@ -383,8 +412,7 @@ a {
   overflow: visible;
 }
 
-.gallery .post-link:hover,
-.gallery .post-link.touch-active {
+.gallery .post-link:hover {
   /* Above sibling grid photos so the expanded one isn't covered by its
      neighbors, but below the sticky header (z-index: 10) so a photo in the
      top row expanding upward goes behind the header instead of over it. */
@@ -400,8 +428,7 @@ a {
   transition: width 0.25s ease, aspect-ratio 0.25s ease, box-shadow 0.25s ease;
 }
 
-.gallery .post-link:hover img,
-.gallery .post-link.touch-active img {
+.gallery .post-link:hover img {
   width: var(--expand-w, 112%);
   height: auto;
   aspect-ratio: var(--expand-ratio, 1 / 1);
@@ -866,6 +893,19 @@ a {
      during that animation. */
   transform: translateZ(0);
   will-change: transform;
+}
+
+/* Mobile: anchored at the end of the page content instead of floating
+   fixed over it — a fixed bar plus its reserved body padding permanently
+   consumed too much of a phone's short viewport for what's just copyright
+   text and two social icons. */
+@media (max-width: 640px) {
+  .site-footer {
+    position: static;
+    padding: 14px 0;
+    transform: none;
+    will-change: auto;
+  }
 }
 
 .footer-inner {
