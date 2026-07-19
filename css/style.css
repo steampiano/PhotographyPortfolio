@@ -107,6 +107,10 @@ a {
   text-decoration: none;
   color: var(--fg);
   transition: color 0.15s ease;
+  /* Without this, a flex sibling squeezing it for room wraps it mid-phrase
+     ("Photos by" / "@aspy7777") instead of the row just being tight — same
+     reasoning as .nav a below. */
+  white-space: nowrap;
 }
 
 .logo:hover {
@@ -124,6 +128,12 @@ a {
   color: var(--fg);
   font-size: 1.15rem;
   transition: color 0.15s ease;
+  /* Without this, "Other Work" splits into "Other" / "Work" once the row
+     gets tight rather than the row just being tight — a clean overflow
+     (handled by stacking to two rows below a narrow-enough viewport, see
+     the mobile media query) reads far better than a link wrapping
+     mid-phrase. */
+  white-space: nowrap;
 }
 
 .nav a.active {
@@ -140,22 +150,21 @@ a {
    on source order — which silently kept the mobile header at desktop
    padding and font sizes.
 
-   At this width the logo + all three nav links no longer fit in one row
-   without wrapping mid-word/mid-phrase (e.g. "Other" / "Work" splitting
-   across lines) — stacking them into two clean, deliberate rows instead
-   reads far better than letting flexbox wrap them unpredictably. Padding
-   and gap kept tight: two stacked rows already cost more height than the
-   desktop single row, so every spare pixel here is viewport lost on an
-   already-short phone screen. */
+   Stays a single row down to a fairly narrow width — an earlier version
+   stacked the logo and nav into two rows for the entire mobile range, on
+   the assumption that they no longer fit side by side at these sizes.
+   Measured directly (with .logo/.nav a's white-space: nowrap below,
+   otherwise long words silently wrap instead of the row overflowing) at
+   a sweep of widths: the two sit with a comfortable gap from ~430px up,
+   but that gap shrinks to zero by ~380px — .container's width is
+   min(1600px, 94vw), so the space available to the header scales with
+   viewport, and a fixed-width logo+nav pair eventually runs out of room
+   to spread apart no matter how the flex line is set up. Stacking below
+   that point is a real fix, not just a stylistic choice; leaving it
+   single-row for everything wider is what actually addressed the
+   "cramped and wastes the whole right side" complaint that prompted
+   this, since the vast majority of phones (~380px+) do have the room. */
 @media (max-width: 700px) {
-  .header-inner {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-    padding-top: 8px;
-    padding-bottom: 8px;
-  }
-
   .logo {
     font-size: 1.05rem;
   }
@@ -166,6 +175,16 @@ a {
 
   .nav a {
     font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .header-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding-top: 8px;
+    padding-bottom: 8px;
   }
 }
 
