@@ -621,27 +621,23 @@ a {
   }
 }
 
-/* Indented paragraphs for the bio prose — book-style. The two short
-   one-liner paragraphs (the photo-use note and the sign-off) read as
-   standalone statements, not prose flow, so they stay flush. */
-.about-text p {
-  text-indent: 1.5em;
-}
-
-.about-text .using-photos-note,
-.about-text p:last-of-type {
-  text-indent: 0;
-}
-
 .about-text {
   flex: 1 1 420px;
   min-width: 280px;
   max-width: 640px;
 }
 
+/* A bit more breathing room between paragraphs than the browser default
+   (1em, collapsing to 1em between adjacent paragraphs) — margin-top only
+   so the first paragraph doesn't get pushed away from the heading above. */
 .about-text p {
   font-size: 1.15rem;
   line-height: 1.65;
+  margin-top: 1.4em;
+}
+
+.about-text p:first-child {
+  margin-top: 0;
 }
 
 /* Slightly larger than the surrounding paragraphs — at 1.15rem, Roadgeek's
