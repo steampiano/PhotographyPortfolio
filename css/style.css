@@ -619,6 +619,14 @@ a {
     width: min(250px, 78%);
     margin: 0 auto;
   }
+
+  /* "Upcoming Conventions" is the longest heading on this page — at the
+     desktop 2.4rem size it wraps to two lines once the prose column
+     narrows to a phone width. Sized down just enough to keep it (and
+     the shorter "My Gear") on one line. */
+  .about h2 {
+    font-size: 1.9rem;
+  }
 }
 
 .about-text {
