@@ -611,11 +611,10 @@ a {
    accent color as their resting state for the same reason, only revealing
    the real photo on hover once there's room to render it properly. */
 .person-swatch {
-  width: 18px;
+  width: 4px;
   height: 18px;
-  border-radius: 50%;
+  border-radius: 2px;
   flex: 0 0 auto;
-  border: 1px solid rgba(255, 255, 255, 0.15);
   background: var(--border);
 }
 
