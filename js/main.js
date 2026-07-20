@@ -551,6 +551,11 @@ function renderGrid(posts, selectedEvents, selectedPerson) {
   });
 }
 
+// Recurring events (regular meetups, not a single point in time to slot
+// chronologically alongside actual conventions) always sort last in the
+// event filter, regardless of date — add more handles here if needed.
+const RECURRING_EVENTS = new Set(['Furvine']);
+
 // Builds the "Filter by event" dropdown (checkboxes, OR logic) from the set of
 // events present across all posts. Hidden entirely when there are no events.
 function setupEventFilter(posts, onChange) {
@@ -559,8 +564,23 @@ function setupEventFilter(posts, onChange) {
   const panel = document.getElementById('eventFilterPanel');
   if (!wrap || !btn || !panel) return;
 
-  const events = [...new Set(posts.map((p) => p.event).filter(Boolean))]
-    .sort((a, b) => a.localeCompare(b));
+  // Chronological, latest first — not alphabetical. A given event's photos
+  // all land within the same weekend, so its most recent photo's date is a
+  // reliable stand-in for "when did this happen," without needing to parse
+  // dates into real Date objects (ISO date strings already sort correctly
+  // as plain strings).
+  const latestDateByEvent = new Map();
+  for (const post of posts) {
+    if (!post.event) continue;
+    const existing = latestDateByEvent.get(post.event);
+    if (!existing || post.date > existing) latestDateByEvent.set(post.event, post.date);
+  }
+  const events = [...latestDateByEvent.keys()].sort((a, b) => {
+    const aRecurring = RECURRING_EVENTS.has(a);
+    const bRecurring = RECURRING_EVENTS.has(b);
+    if (aRecurring !== bRecurring) return aRecurring ? 1 : -1;
+    return latestDateByEvent.get(b).localeCompare(latestDateByEvent.get(a));
+  });
   if (!events.length) return;
 
   wrap.hidden = false;
