@@ -1150,11 +1150,20 @@ a {
 }
 
 /* Wraps the image so the progress bar can sit at its top edge and the
-   is-loading blur's slight scale-up doesn't peek past the rounded corners. */
+   is-loading blur's slight scale-up doesn't peek past the rounded corners.
+   Overflow toggles to auto once zoomed (see photo.js) — panning is native
+   browser scrolling (touch-drag, trackpad, scrollbar), not a custom drag
+   handler, deliberately: a from-scratch gesture/transform implementation
+   was tried in the lightbox first and turned out too unreliable. */
 .photo-full-wrap {
   position: relative;
   overflow: hidden;
   border-radius: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.photo-full-wrap.is-zoomed {
+  overflow: auto;
 }
 
 .photo-full {
@@ -1164,6 +1173,67 @@ a {
   object-fit: contain;
   background: #1a1a1a;
   transition: filter 0.3s ease;
+}
+
+/* Once zoomed, photo.js sets explicit pixel width/height (computed from
+   the image's own natural unzoomed size × the zoom level) instead of the
+   percentage width above — object-fit has nothing left to do once the
+   box and the content share the same ratio exactly, so this simply lets
+   the image grow past its wrap and become scrollable. */
+.photo-full.is-zoomed {
+  width: auto;
+  max-height: none;
+}
+
+/* Top, not bottom — the site footer is position: fixed on desktop (bottom:
+   0), which overlaps the bottom-right corner of a tall image regardless
+   of viewport height (the image is capped at max-height: 80vh, so its
+   bottom edge lands in roughly the same relative zone the fixed footer
+   occupies no matter how tall the window is — not just a short-viewport
+   edge case). The sticky header never overlaps the top of the image at
+   its resting scroll position, so this side has no equivalent problem. */
+.photo-zoom-controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px;
+}
+
+.photo-zoom-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--fg);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.photo-zoom-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.photo-zoom-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.photo-zoom-btn svg {
+  width: 16px;
+  height: 16px;
 }
 
 /* Same blur-up loading cue as the lightbox: the low-quality thumbnail shows

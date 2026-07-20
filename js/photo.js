@@ -119,6 +119,125 @@ if (!src) {
       wrap.appendChild(img);
       content.appendChild(wrap);
 
+      // ---- Zoom controls ----
+      // Discrete +/- steps, not a gesture/transform implementation —
+      // panning once zoomed is plain native browser scrolling (touch-drag,
+      // trackpad, scrollbar), not a custom drag handler. A from-scratch
+      // pinch/pan zoom was tried in the lightbox first and turned out too
+      // unreliable in practice; this trades that flexibility for something
+      // that just works, leaning entirely on scrolling the browser already
+      // knows how to do.
+      const ZOOM_STEP = 0.5;
+      const ZOOM_MAX = 3;
+      let zoomLevel = 1;
+      let baseWidth = 0;
+      let baseHeight = 0;
+      let zoomReady = false;
+
+      const zoomControls = document.createElement('div');
+      zoomControls.className = 'photo-zoom-controls';
+
+      const zoomOutBtn = document.createElement('button');
+      zoomOutBtn.type = 'button';
+      zoomOutBtn.className = 'photo-zoom-btn';
+      zoomOutBtn.setAttribute('aria-label', 'Zoom out');
+      zoomOutBtn.textContent = '−';
+
+      const zoomResetBtn = document.createElement('button');
+      zoomResetBtn.type = 'button';
+      zoomResetBtn.className = 'photo-zoom-btn';
+      zoomResetBtn.setAttribute('aria-label', 'Reset zoom');
+      zoomResetBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>';
+
+      const zoomInBtn = document.createElement('button');
+      zoomInBtn.type = 'button';
+      zoomInBtn.className = 'photo-zoom-btn';
+      zoomInBtn.setAttribute('aria-label', 'Zoom in');
+      zoomInBtn.textContent = '+';
+
+      zoomControls.appendChild(zoomOutBtn);
+      zoomControls.appendChild(zoomResetBtn);
+      zoomControls.appendChild(zoomInBtn);
+      wrap.appendChild(zoomControls);
+
+      function updateZoomButtons() {
+        zoomOutBtn.disabled = zoomLevel <= 1;
+        zoomResetBtn.disabled = zoomLevel <= 1;
+        zoomInBtn.disabled = !zoomReady || zoomLevel >= ZOOM_MAX;
+      }
+      updateZoomButtons();
+
+      function setZoom(newLevel) {
+        if (!zoomReady) return;
+        newLevel = Math.min(ZOOM_MAX, Math.max(1, newLevel));
+        if (newLevel === zoomLevel) return;
+
+        // Keeps whatever's currently centered in the scrollable view still
+        // roughly centered after the resize, rather than snapping back to
+        // the top-left corner — plain proportional math against scroll
+        // position, not pointer/gesture tracking.
+        const oldWidth = wrap.scrollWidth || baseWidth;
+        const oldHeight = wrap.scrollHeight || baseHeight;
+        const centerXFraction = (wrap.scrollLeft + wrap.clientWidth / 2) / oldWidth;
+        const centerYFraction = (wrap.scrollTop + wrap.clientHeight / 2) / oldHeight;
+
+        zoomLevel = newLevel;
+        const zoomed = zoomLevel > 1;
+        wrap.classList.toggle('is-zoomed', zoomed);
+        img.classList.toggle('is-zoomed', zoomed);
+        img.style.width = (baseWidth * zoomLevel) + 'px';
+        img.style.height = (baseHeight * zoomLevel) + 'px';
+        updateZoomButtons();
+
+        wrap.scrollLeft = centerXFraction * wrap.scrollWidth - wrap.clientWidth / 2;
+        wrap.scrollTop = centerYFraction * wrap.scrollHeight - wrap.clientHeight / 2;
+      }
+
+      function initZoomOnce() {
+        if (zoomReady) return;
+        const rect = img.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        baseWidth = rect.width;
+        baseHeight = rect.height;
+        // Freezes the "viewport" at its natural (unzoomed) size — without
+        // this, growing the image inside would just grow this wrapper
+        // along with it (a plain block element sizes to fit its content by
+        // default), and nothing would ever overflow enough to scroll.
+        wrap.style.width = baseWidth + 'px';
+        wrap.style.height = baseHeight + 'px';
+        zoomReady = true;
+        updateZoomButtons();
+      }
+
+      if (img.complete && img.naturalWidth) {
+        initZoomOnce();
+      } else {
+        img.addEventListener('load', initZoomOnce, { once: true });
+      }
+
+      zoomOutBtn.addEventListener('click', () => setZoom(zoomLevel - ZOOM_STEP));
+      zoomInBtn.addEventListener('click', () => setZoom(zoomLevel + ZOOM_STEP));
+      zoomResetBtn.addEventListener('click', () => setZoom(1));
+
+      let zoomResizeTimer;
+      window.addEventListener('resize', () => {
+        clearTimeout(zoomResizeTimer);
+        zoomResizeTimer = setTimeout(() => {
+          // The frozen base size no longer matches what natural (unzoomed)
+          // sizing would produce at the new viewport width — reset to a
+          // clean 1x and re-measure, rather than keep stale dimensions.
+          zoomLevel = 1;
+          zoomReady = false;
+          wrap.classList.remove('is-zoomed');
+          img.classList.remove('is-zoomed');
+          img.style.width = '';
+          img.style.height = '';
+          wrap.style.width = '';
+          wrap.style.height = '';
+          initZoomOnce();
+        }, 150);
+      });
+
       if (fullSrc !== thumbSrc) {
         img.classList.add('is-loading');
         progressBar.style.width = '0%';
