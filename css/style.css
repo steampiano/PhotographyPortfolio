@@ -396,6 +396,29 @@ a {
   transform: translateX(-3.5%);
 }
 
+/* AFTER the base .featured-item:hover rules above on purpose — same
+   equal-specificity/source-order reasoning as the header media queries
+   elsewhere in this file. A copy of this override once sat inside the
+   earlier max-width: 640px block (above the base rules it was meant to
+   undo) and silently lost every cascade tie, so the scale/shadow expand
+   kept firing at every width.
+
+   Hover doesn't really exist on touch — mobile browsers simulate :hover
+   on tap (and often leave it "stuck" until the next tap elsewhere), so
+   without this, swiping through the carousel randomly triggered the
+   scale/shadow expand on whatever slide was last touched. That's a mouse
+   hover affordance, not something a swipe-through carousel needs. */
+@media (max-width: 640px) {
+  .featured-item:hover img {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .featured-item:hover .post-meta {
+    transform: none;
+  }
+}
+
 .gallery-intro {
   padding: 56px 24px 24px;
 }
