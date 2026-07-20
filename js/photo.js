@@ -1,6 +1,36 @@
 const yearEl = document.getElementById('year');
 if (yearEl) yearEl.textContent = new Date().getFullYear();
 
+// Mobile hamburger toggle for the header nav — identical to main.js's
+// setupMobileNav (this page loads photo.js instead, so it's duplicated
+// rather than shared) — see the 480px media query in style.css.
+function setupMobileNav() {
+  const toggle = document.getElementById('navToggle');
+  const nav = document.getElementById('siteNav');
+  if (!toggle || !nav) return;
+
+  function closeMenu() {
+    nav.classList.remove('open');
+    toggle.setAttribute('aria-expanded', 'false');
+  }
+
+  toggle.addEventListener('click', () => {
+    const open = nav.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', String(open));
+  });
+
+  document.addEventListener('click', (e) => {
+    if (nav.classList.contains('open') && !nav.contains(e.target) && !toggle.contains(e.target)) {
+      closeMenu();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeMenu();
+  });
+}
+setupMobileNav();
+
 const content = document.getElementById('photoContent');
 const params = new URLSearchParams(window.location.search);
 const src = params.get('src');
@@ -50,7 +80,7 @@ if (!src) {
       }
 
       const people = post.people || [];
-      document.title = (post.caption || people.join(', ') || 'Photo') + ' | Photography Portfolio';
+      document.title = (post.caption || people.join(', ') || 'Photo') + ' | @aspy7777 Photos';
 
       // Send "back" to whichever gallery this photo actually belongs to.
       const backLink = document.querySelector('.back-link');

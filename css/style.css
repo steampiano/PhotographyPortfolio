@@ -144,6 +144,44 @@ a {
   color: #9f8ff0;
 }
 
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.nav-toggle-bar {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: var(--fg);
+  border-radius: 1px;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+/* Morphs the three bars into an X once open, driven off the same
+   aria-expanded the click handler already sets for a11y — no separate
+   "open" flag needed on the button itself. */
+.nav-toggle[aria-expanded="true"] .nav-toggle-bar:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.nav-toggle[aria-expanded="true"] .nav-toggle-bar:nth-child(2) {
+  opacity: 0;
+}
+
+.nav-toggle[aria-expanded="true"] .nav-toggle-bar:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
 /* AFTER the base .header-inner/.logo/.nav rules on purpose: media queries
    add no specificity, so if this block sat earlier in the file (as it once
    did) every declaration that conflicts with a base rule would lose to it
@@ -156,9 +194,8 @@ a {
    that turned out to be wrong: the gap is already 0 at 428px (iPhone Pro
    Max) and 390px, and doesn't open up to something comfortable until
    ~450-480px — i.e. every real phone in portrait, not just narrow ones,
-   was hitting "logo text and nav running into each other". Stacking now
-   kicks in at 480px so the single-row layout only applies to windows
-   wider than any real phone (small tablets/narrow desktop windows). */
+   was hitting "logo text and nav running into each other". Below, the nav
+   collapses behind a hamburger toggle instead — see the 480px block. */
 @media (max-width: 700px) {
   .logo {
     font-size: 1.05rem;
@@ -173,13 +210,50 @@ a {
   }
 }
 
+/* Below 480px (every real phone in portrait — see measurement above), the
+   nav moves off the header row entirely into a dropdown behind a hamburger
+   toggle, freeing the row for just the logo and the toggle. That also
+   means the logo no longer has to share space with anything, so it goes
+   back up in size instead of staying shrunk to fit a nav next to it. */
 @media (max-width: 480px) {
   .header-inner {
+    position: relative;
+  }
+
+  .logo {
+    font-size: 1.3rem;
+  }
+
+  .nav-toggle {
+    display: flex;
+  }
+
+  .nav {
+    display: none;
+    position: absolute;
+    top: calc(100% + 1px);
+    left: 0;
+    right: 0;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-    padding-top: 10px;
-    padding-bottom: 10px;
+    gap: 0;
+    background: #141416;
+    border-bottom: 1px solid var(--border);
+    padding: 8px 24px 12px;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+  }
+
+  .nav.open {
+    display: flex;
+  }
+
+  .nav a {
+    font-size: 1.05rem;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav a:last-child {
+    border-bottom: none;
   }
 }
 
