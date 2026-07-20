@@ -84,6 +84,10 @@ import urllib.error
 import urllib.request
 import zlib
 from datetime import datetime, timezone
+from urllib.parse import quote
+from xml.sax.saxutils import escape as xml_escape
+
+SITE_URL = "https://aspy.pics"
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PHOTOS_DIR = os.path.join(BASE_DIR, "photos")
@@ -664,6 +668,28 @@ def write_avatar_colors():
         json.dump(colors, f, indent=2, sort_keys=True)
 
 
+def write_sitemap(posts):
+    """Writes sitemap.xml: the 3 static pages plus one photo.html?src=...
+    URL per post, so crawlers can find individual photo pages (and index
+    them in Google Image Search) without having to follow every gallery
+    link by hand. photo.html itself only has generic, static meta tags
+    (see its <head> — its real content is built client-side from the
+    query param, which crawlers generally don't execute), so this is
+    mainly a discovery aid, not a source of per-photo preview data.
+    """
+    paths = ["/", "/about.html", "/other-work.html"]
+    paths += ["/photo.html?src=" + quote(post["image"]) for post in posts]
+
+    lines = ['<?xml version="1.0" encoding="UTF-8"?>',
+             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    for path in paths:
+        lines.append(f"  <url><loc>{xml_escape(SITE_URL + path)}</loc></url>")
+    lines.append("</urlset>")
+
+    with open(os.path.join(BASE_DIR, "sitemap.xml"), "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+
+
 def find_profile_photo():
     """Find a file named exactly `profile.<ext>` anywhere in photos/.
 
@@ -851,6 +877,8 @@ def main():
         json.dump(posts, f, indent=2)
 
     print(f"Wrote {len(posts)} post(s) to posts.json")
+
+    write_sitemap(posts)
 
     # Only fetches handles that don't already have a cached avatar (new
     # people you've just tagged) — cheap on every normal publish. To force
