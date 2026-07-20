@@ -1429,11 +1429,6 @@ a {
   align-items: center;
   justify-content: center;
   padding: 32px;
-  /* Belt-and-suspenders alongside .lightbox-img's own touch-action: none
-     (see below) — if a pinch's two touch points straddle the image's edge
-     (one finger on the photo, one just off it on the backdrop), this
-     keeps the browser's native pinch-zoom from kicking in there too. */
-  touch-action: none;
 }
 
 .lightbox[hidden] {
@@ -1455,11 +1450,6 @@ a {
   border-radius: 4px;
   background: #1a1a1a;
   transition: filter 0.3s ease;
-  /* Custom pinch/wheel zoom handles this element's own gestures entirely
-     in JS (see setupLightboxZoom in main.js) — none is what stops the
-     browser's own native touch panning/zooming from fighting it. */
-  touch-action: none;
-  cursor: zoom-in;
 }
 
 /* Shown while the thumbnail is displayed and the full preview is still
@@ -1469,28 +1459,6 @@ a {
 .lightbox-img.is-loading {
   filter: blur(16px);
   transform: scale(1.03);
-}
-
-/* Only added for the duration of a discrete, single-shot zoom step
-   (double-tap/double-click, wheel) — continuous gestures (pinch, drag)
-   apply their transform every frame without it, so dragging tracks the
-   finger/cursor 1:1 instead of lagging behind a transition. */
-.lightbox-img.zoom-animated {
-  transition: transform 0.2s ease, filter 0.3s ease;
-}
-
-.lightbox-img.is-zoomed {
-  cursor: grab;
-}
-
-.lightbox-img.is-panning {
-  cursor: grabbing;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .lightbox-img.zoom-animated {
-    transition: filter 0.3s ease;
-  }
 }
 
 .lightbox-progress {
