@@ -624,6 +624,17 @@ function setupEventFilter(posts, onChange) {
       btn.setAttribute('aria-expanded', 'false');
     }
   });
+
+  return {
+    // Unchecks every box and resets the button label — used by the
+    // "Clear filters" action, which resets this alongside the person
+    // search below rather than making someone uncheck each event by hand.
+    clear() {
+      selected.clear();
+      for (const cb of panel.querySelectorAll('input[type="checkbox"]')) cb.checked = false;
+      updateButtonLabel();
+    },
+  };
 }
 
 // Type-ahead search for filtering the grid to a single tagged person —
@@ -806,6 +817,17 @@ function setupPersonSearch(posts, onChange) {
   document.addEventListener('click', (e) => {
     if (!wrap.contains(e.target)) closeResults();
   });
+
+  return {
+    // Used by the "Clear filters" action alongside the event filter's own
+    // clear() — same effect as clicking the chip's own × button.
+    clear() {
+      selected = null;
+      input.value = '';
+      closeResults();
+      renderChip();
+    },
+  };
 }
 
 // ---- Lightbox (single photo view) ----
@@ -864,6 +886,12 @@ let currentObjectUrl = null;
 function renderLightbox() {
   const post = lbList[lbIndex];
   if (!post) return;
+
+  // Every photo starts unzoomed, whether this is the initial open or a
+  // next/prev step — carrying a zoom/pan over to a different photo would
+  // be disorienting, and there's no reason to expect the same framing
+  // matters across photos.
+  resetZoom();
 
   if (currentLoadController) currentLoadController.abort();
   currentLoadController = new AbortController();
@@ -977,6 +1005,7 @@ function closeLightbox() {
   document.removeEventListener('keydown', onLightboxKey);
   if (currentLoadController) currentLoadController.abort();
   infoPanelOpen = false;
+  resetZoom();
 }
 
 function lightboxStep(delta) {
@@ -992,7 +1021,206 @@ function onLightboxKey(e) {
   else if (e.key === 'ArrowRight') lightboxStep(1);
 }
 
+// ---- Lightbox image zoom/pan ----
+// Pinch + drag on touch, scroll-wheel + drag on desktop, double-tap/
+// double-click to toggle a fixed zoom level. Deliberately custom rather
+// than the browser's own native pinch-zoom: this is a position: fixed
+// fullscreen overlay, and native viewport zoom on a fixed element is a
+// known rough edge (the visual viewport changes but fixed positioning is
+// anchored to the layout viewport, so the backdrop/controls can end up
+// misaligned with whatever actually zoomed) — simpler to own the gesture
+// entirely on the image itself and keep native zoom out of it via
+// touch-action: none (see style.css).
+const ZOOM_MIN = 1;
+const ZOOM_MAX = 4;
+const ZOOM_DOUBLE_TAP = 2.5;
+
+let zoomScale = 1;
+let zoomTx = 0;
+let zoomTy = 0;
+
+function applyZoomTransform(animated) {
+  const el = document.getElementById('lightboxImg');
+  el.classList.toggle('zoom-animated', !!animated);
+  // Cleared entirely (not just set to the identity transform) when at
+  // rest, so it doesn't outrank .is-loading's own transform (a plain CSS
+  // rule) via inline-style specificity the next time a photo loads.
+  el.style.transform = (zoomScale === 1 && zoomTx === 0 && zoomTy === 0)
+    ? ''
+    : `translate(${zoomTx}px, ${zoomTy}px) scale(${zoomScale})`;
+  el.classList.toggle('is-zoomed', zoomScale > 1);
+}
+
+// Clamps panning to how far the SCALED image overflows its own resting
+// (unscaled) box — offsetWidth/Height ignore any transform, so this stays
+// correct regardless of current zoom. Beyond this, you'd be dragging the
+// image away from itself and revealing backdrop where the photo doesn't
+// need to be, instead of just seeing more of an oversized image.
+function clampZoomPan(el) {
+  const maxTx = Math.max(0, el.offsetWidth * (zoomScale - 1) / 2);
+  const maxTy = Math.max(0, el.offsetHeight * (zoomScale - 1) / 2);
+  zoomTx = Math.min(maxTx, Math.max(-maxTx, zoomTx));
+  zoomTy = Math.min(maxTy, Math.max(-maxTy, zoomTy));
+}
+
+function resetZoom() {
+  zoomScale = 1;
+  zoomTx = 0;
+  zoomTy = 0;
+  const el = document.getElementById('lightboxImg');
+  if (el) applyZoomTransform(false);
+}
+
+// The image's resting (unscaled) center, in viewport coordinates — derived
+// from its current (possibly already zoomed/panned) box rather than
+// needing to temporarily clear the transform to measure it: scaling from
+// center never moves the center point, and translate shifts it by exactly
+// (zoomTx, zoomTy), so subtracting that back out recovers the resting
+// position. Used to convert a click/touch point into a fixed offset from
+// center ("image space") that stays meaningful as scale/pan change.
+function restingCenter(el) {
+  const rect = el.getBoundingClientRect();
+  return { x: rect.left + rect.width / 2 - zoomTx, y: rect.top + rect.height / 2 - zoomTy };
+}
+
+// Zooms to newScale while keeping the image-space point under
+// (clientX, clientY) visually anchored there, instead of the image
+// jumping around its own center as scale changes.
+function zoomAtPoint(el, clientX, clientY, newScale, animated) {
+  newScale = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, newScale));
+  const center = restingCenter(el);
+  const imgX = (clientX - center.x - zoomTx) / zoomScale;
+  const imgY = (clientY - center.y - zoomTy) / zoomScale;
+  zoomScale = newScale;
+  zoomTx = clientX - center.x - imgX * zoomScale;
+  zoomTy = clientY - center.y - imgY * zoomScale;
+  if (zoomScale === 1) { zoomTx = 0; zoomTy = 0; }
+  clampZoomPan(el);
+  applyZoomTransform(animated);
+}
+
+function setupLightboxZoom() {
+  const el = document.getElementById('lightboxImg');
+  if (!el) return;
+
+  let pinchStartDist = 0;
+  let pinchStartScale = 1;
+  let pinchStartTx = 0;
+  let pinchStartTy = 0;
+  let pinchCenter = { x: 0, y: 0 };
+  let isPanning = false;
+  let panStartX = 0;
+  let panStartY = 0;
+  let panStartTx = 0;
+  let panStartTy = 0;
+  let lastTapTime = 0;
+  let lastTapX = 0;
+  let lastTapY = 0;
+
+  const touchDist = (a, b) => Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+  const touchMid = (a, b) => ({ x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 });
+
+  function toggleZoomAt(clientX, clientY) {
+    zoomAtPoint(el, clientX, clientY, zoomScale > 1 ? 1 : ZOOM_DOUBLE_TAP, true);
+  }
+
+  el.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      pinchStartDist = touchDist(e.touches[0], e.touches[1]);
+      pinchStartScale = zoomScale;
+      pinchStartTx = zoomTx;
+      pinchStartTy = zoomTy;
+      pinchCenter = restingCenter(el);
+    } else if (e.touches.length === 1) {
+      const t = e.touches[0];
+      const now = Date.now();
+      const isDoubleTap = now - lastTapTime < 300 && Math.hypot(t.clientX - lastTapX, t.clientY - lastTapY) < 30;
+      lastTapTime = isDoubleTap ? 0 : now;
+      lastTapX = t.clientX;
+      lastTapY = t.clientY;
+      if (isDoubleTap) {
+        toggleZoomAt(t.clientX, t.clientY);
+        return;
+      }
+      if (zoomScale > 1) {
+        isPanning = true;
+        panStartX = t.clientX;
+        panStartY = t.clientY;
+        panStartTx = zoomTx;
+        panStartTy = zoomTy;
+      }
+    }
+  }, { passive: true });
+
+  el.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const newDist = touchDist(e.touches[0], e.touches[1]);
+      const mid = touchMid(e.touches[0], e.touches[1]);
+      // Derived from the pinch-START baseline every move (not the live
+      // zoomScale/zoomTx) so the anchor math stays stable across the
+      // whole gesture instead of compounding rounding drift move to move.
+      zoomScale = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, pinchStartScale * (newDist / pinchStartDist)));
+      const imgX = (mid.x - pinchCenter.x - pinchStartTx) / pinchStartScale;
+      const imgY = (mid.y - pinchCenter.y - pinchStartTy) / pinchStartScale;
+      zoomTx = mid.x - pinchCenter.x - imgX * zoomScale;
+      zoomTy = mid.y - pinchCenter.y - imgY * zoomScale;
+      clampZoomPan(el);
+      applyZoomTransform(false);
+    } else if (isPanning && e.touches.length === 1) {
+      e.preventDefault();
+      const t = e.touches[0];
+      zoomTx = panStartTx + (t.clientX - panStartX);
+      zoomTy = panStartTy + (t.clientY - panStartY);
+      clampZoomPan(el);
+      applyZoomTransform(false);
+    }
+  }, { passive: false });
+
+  el.addEventListener('touchend', () => {
+    isPanning = false;
+    if (zoomScale <= 1) resetZoom();
+  });
+
+  // Desktop: scroll-wheel zoom anchored at the cursor, drag-to-pan once
+  // zoomed, double-click to toggle. Nothing else on the lightbox uses
+  // wheel or a drag starting on the image itself, so these are
+  // unambiguous to claim here.
+  el.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    zoomAtPoint(el, e.clientX, e.clientY, zoomScale * (e.deltaY < 0 ? 1.2 : 1 / 1.2), false);
+  }, { passive: false });
+
+  el.addEventListener('dblclick', (e) => toggleZoomAt(e.clientX, e.clientY));
+
+  el.addEventListener('mousedown', (e) => {
+    if (zoomScale <= 1) return;
+    e.preventDefault();
+    isPanning = true;
+    panStartX = e.clientX;
+    panStartY = e.clientY;
+    panStartTx = zoomTx;
+    panStartTy = zoomTy;
+    el.classList.add('is-panning');
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!isPanning) return;
+    zoomTx = panStartTx + (e.clientX - panStartX);
+    zoomTy = panStartTy + (e.clientY - panStartY);
+    clampZoomPan(el);
+    applyZoomTransform(false);
+  });
+
+  window.addEventListener('mouseup', () => {
+    isPanning = false;
+    el.classList.remove('is-panning');
+  });
+}
+
 if (lightbox) {
+  setupLightboxZoom();
+
   document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
   document.getElementById('lightboxPrev').addEventListener('click', () => lightboxStep(-1));
   document.getElementById('lightboxNext').addEventListener('click', () => lightboxStep(1));
@@ -1085,11 +1313,28 @@ if (gallery) {
 
       let selectedEvents = new Set();
       let selectedPerson = null;
-      const applyFilters = () => renderGrid(posts, selectedEvents, selectedPerson);
+      const clearFiltersRow = document.getElementById('activeFiltersRow');
+      const clearFiltersBtn = document.getElementById('clearFiltersBtn');
 
-      setupEventFilter(posts, (selected) => { selectedEvents = selected; applyFilters(); });
-      setupPersonSearch(posts, (person) => { selectedPerson = person; applyFilters(); });
+      function applyFilters() {
+        renderGrid(posts, selectedEvents, selectedPerson);
+        const anyActive = selectedEvents.size > 0 || !!selectedPerson;
+        if (clearFiltersRow) clearFiltersRow.hidden = !anyActive;
+      }
+
+      const eventFilterApi = setupEventFilter(posts, (selected) => { selectedEvents = selected; applyFilters(); });
+      const personSearchApi = setupPersonSearch(posts, (person) => { selectedPerson = person; applyFilters(); });
       applyFilters();
+
+      if (clearFiltersBtn) {
+        clearFiltersBtn.addEventListener('click', () => {
+          selectedEvents = new Set();
+          selectedPerson = null;
+          if (eventFilterApi) eventFilterApi.clear();
+          if (personSearchApi) personSearchApi.clear();
+          applyFilters();
+        });
+      }
     })
     .catch(() => {
       gallery.innerHTML = '<p class="gallery-empty">Could not load posts.json (run <code>python3 build.py</code>, and serve over http:// rather than file://).</p>';
