@@ -228,8 +228,15 @@ a {
     display: flex;
   }
 
+  /* Slides open/closed via max-height + overflow:hidden rather than a
+     display toggle — display can't be transitioned, so it used to just pop
+     open instantly. max-height is capped well above the panel's real
+     content height (~160px for 3 links) so the transition timing is
+     driven by the eased curve, not by racing to an exact height; padding
+     animates alongside it so the panel doesn't leave a gap at 0 height.
+     border/shadow only exist in .open — undoing that any other way meant
+     a stray 1px line sitting right under the header even while "closed". */
   .nav {
-    display: none;
     position: absolute;
     top: calc(100% + 1px);
     left: 0;
@@ -237,13 +244,18 @@ a {
     flex-direction: column;
     gap: 0;
     background: #141416;
-    border-bottom: 1px solid var(--border);
-    padding: 8px 24px 12px;
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+    padding: 0 24px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.28s ease, padding-top 0.28s ease, padding-bottom 0.28s ease;
   }
 
   .nav.open {
-    display: flex;
+    max-height: 320px;
+    padding-top: 8px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
   }
 
   .nav a {
