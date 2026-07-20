@@ -240,6 +240,16 @@ a {
 
   .featured-item {
     scroll-snap-align: center;
+    /* There's no real API to cap a touch fling's velocity directly — that
+       physics lives in the browser/OS compositor, not something CSS or JS
+       can throttle. This is the practical equivalent: it forces the
+       browser to stop at THIS slide before continuing, even mid-fling,
+       rather than letting a hard swipe sail past several slides in one
+       motion. A fast swipe now always advances exactly one slide (just
+       snappier), instead of sometimes 2-3 — which was both the source of
+       the "flings off the end of the clone runway" bug and just felt
+       chaotic on a photo-by-photo carousel. */
+    scroll-snap-stop: always;
   }
 
   .featured-item.featured-clone {
