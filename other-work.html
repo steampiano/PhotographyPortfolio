@@ -42,12 +42,26 @@
   <section class="gallery-intro container">
     <h1>Other work</h1>
     <p>Non-fursuit photography, newest first.</p>
-    <div class="event-filter" id="eventFilter" hidden>
-      <button type="button" class="event-filter-btn" id="eventFilterBtn" aria-expanded="false" aria-haspopup="true">
-        Filter by event <span class="event-filter-caret">&#9662;</span>
-      </button>
-      <div class="event-filter-panel" id="eventFilterPanel" hidden></div>
+    <div class="filters-row">
+      <div class="event-filter" id="eventFilter" hidden>
+        <button type="button" class="event-filter-btn" id="eventFilterBtn" aria-expanded="false" aria-haspopup="true">
+          Filter by event <span class="event-filter-caret">&#9662;</span>
+        </button>
+        <div class="event-filter-panel" id="eventFilterPanel" hidden></div>
+      </div>
+
+      <div class="person-search" id="personSearch" hidden>
+        <div class="person-search-input-wrap">
+          <svg class="person-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <circle cx="11" cy="11" r="7"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" id="personSearchInput" placeholder="Search by handle&hellip;" autocomplete="off" aria-label="Search by handle" role="combobox" aria-expanded="false">
+        </div>
+        <div class="person-search-results" id="personSearchResults" role="listbox" hidden></div>
+      </div>
     </div>
+    <div class="active-person-filter" id="personSearchChip"></div>
   </section>
 
   <section id="gallery" class="gallery container" data-collection="other" aria-live="polite">

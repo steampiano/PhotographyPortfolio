@@ -520,17 +520,21 @@ function setupFeaturedRow(featuredPosts) {
   });
 }
 
-// Renders the Recent Work grid, showing only posts whose event is in the
-// selected set. An empty set means "no filter" — show everything.
-function renderGrid(posts, selectedEvents) {
+// Renders the Recent Work grid: posts whose event is in selectedEvents
+// (empty set = no filter) AND, if set, whose people include selectedPerson.
+// Both filters combine (AND), same as the design sketch this was built from.
+function renderGrid(posts, selectedEvents, selectedPerson) {
   gallery.innerHTML = '';
-  const visible = selectedEvents.size === 0
+  let visible = selectedEvents.size === 0
     ? posts
     : posts.filter((p) => p.event && selectedEvents.has(p.event));
+  if (selectedPerson) {
+    visible = visible.filter((p) => (p.people || []).includes(selectedPerson));
+  }
   GRID = visible;
 
   if (!visible.length) {
-    gallery.innerHTML = '<p class="gallery-empty">No photos match the selected events.</p>';
+    gallery.innerHTML = '<p class="gallery-empty">No photos match the selected filters.</p>';
     return;
   }
   for (const post of visible) {
@@ -590,6 +594,174 @@ function setupEventFilter(posts, onChange) {
       panel.hidden = true;
       btn.setAttribute('aria-expanded', 'false');
     }
+  });
+}
+
+// Type-ahead search for filtering the grid to a single tagged person —
+// deliberately NOT a dropdown like setupEventFilter above. Events stay a
+// small, fixed list (browsing it is easy), but the set of tagged people
+// only grows, and a checkbox list of everyone ever tagged doesn't scale
+// the same way. Colored swatches, not avatar photos, in the results list
+// and the active-filter chip: tested against real avatars at this size,
+// and most (busy, detailed fursona/fursuit portraits) collapse into an
+// indistinguishable blur well before 20px — the same reasoning that
+// already put the accent color, not the photo, on the handle pills
+// elsewhere on the site (see buildHandleBubble), only revealing the real
+// photo on hover once there's room to render it properly.
+function setupPersonSearch(posts, onChange) {
+  const wrap = document.getElementById('personSearch');
+  const input = document.getElementById('personSearchInput');
+  const results = document.getElementById('personSearchResults');
+  const chipWrap = document.getElementById('personSearchChip');
+  if (!wrap || !input || !results || !chipWrap) return;
+
+  // Counted across ALL posts (not just currently-visible ones), so a
+  // person's count — and whether they show up at all — doesn't shift
+  // depending on what the event filter currently has selected.
+  const counts = new Map();
+  for (const post of posts) {
+    for (const handle of post.people || []) {
+      counts.set(handle, (counts.get(handle) || 0) + 1);
+    }
+  }
+  const allHandles = [...counts.keys()];
+  if (!allHandles.length) return;
+
+  wrap.hidden = false;
+  let selected = null;
+  let matches = [];
+  let activeIndex = -1;
+
+  function accentFor(handle) {
+    return AVATAR_COLORS[handle.replace(/^@/, '').toLowerCase()];
+  }
+
+  function renderChip() {
+    chipWrap.innerHTML = '';
+    if (!selected) return;
+    const chip = document.createElement('span');
+    chip.className = 'person-chip';
+
+    const swatch = document.createElement('span');
+    swatch.className = 'person-swatch';
+    const accent = accentFor(selected);
+    if (accent) swatch.style.background = accent;
+
+    const label = document.createElement('span');
+    label.textContent = selected;
+
+    const clear = document.createElement('button');
+    clear.type = 'button';
+    clear.setAttribute('aria-label', 'Clear person filter');
+    clear.textContent = '×';
+    clear.addEventListener('click', () => {
+      selected = null;
+      renderChip();
+      onChange(selected);
+    });
+
+    chip.appendChild(swatch);
+    chip.appendChild(label);
+    chip.appendChild(clear);
+    chipWrap.appendChild(chip);
+  }
+
+  function closeResults() {
+    results.hidden = true;
+    input.setAttribute('aria-expanded', 'false');
+    activeIndex = -1;
+  }
+
+  function highlightActive() {
+    [...results.children].forEach((el, i) => {
+      el.classList.toggle('active-option', i === activeIndex);
+    });
+  }
+
+  function select(handle) {
+    selected = handle;
+    input.value = '';
+    closeResults();
+    renderChip();
+    onChange(selected);
+  }
+
+  function renderResults(query) {
+    results.innerHTML = '';
+    activeIndex = -1;
+    const q = query.trim().toLowerCase().replace(/^@/, '');
+    if (!q) {
+      matches = [];
+      closeResults();
+      return;
+    }
+
+    matches = allHandles
+      .filter((h) => h.replace(/^@/, '').toLowerCase().includes(q))
+      .sort((a, b) => counts.get(b) - counts.get(a));
+
+    if (!matches.length) {
+      const empty = document.createElement('div');
+      empty.className = 'person-search-empty';
+      empty.textContent = `No one matching "${query}"`;
+      results.appendChild(empty);
+    } else {
+      matches.forEach((handle) => {
+        const row = document.createElement('div');
+        row.className = 'person-search-option';
+        row.setAttribute('role', 'option');
+
+        const swatch = document.createElement('span');
+        swatch.className = 'person-swatch';
+        const accent = accentFor(handle);
+        if (accent) swatch.style.background = accent;
+
+        const name = document.createElement('span');
+        name.textContent = handle;
+
+        const count = document.createElement('span');
+        count.className = 'person-search-count';
+        const n = counts.get(handle);
+        count.textContent = n + (n === 1 ? ' photo' : ' photos');
+
+        row.appendChild(swatch);
+        row.appendChild(name);
+        row.appendChild(count);
+        row.addEventListener('mousedown', (e) => {
+          e.preventDefault(); // keeps input focus so the click isn't lost to a blur-triggered close
+          select(handle);
+        });
+        results.appendChild(row);
+      });
+    }
+    results.hidden = false;
+    input.setAttribute('aria-expanded', 'true');
+  }
+
+  input.addEventListener('input', () => renderResults(input.value));
+  input.addEventListener('focus', () => {
+    if (input.value) renderResults(input.value);
+  });
+  input.addEventListener('keydown', (e) => {
+    if (results.hidden) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      activeIndex = Math.min(activeIndex + 1, matches.length - 1);
+      highlightActive();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      activeIndex = Math.max(activeIndex - 1, 0);
+      highlightActive();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (activeIndex >= 0 && matches[activeIndex]) select(matches[activeIndex]);
+    } else if (e.key === 'Escape') {
+      closeResults();
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!wrap.contains(e.target)) closeResults();
   });
 }
 
@@ -839,8 +1011,13 @@ if (gallery) {
         return;
       }
 
-      setupEventFilter(posts, (selected) => renderGrid(posts, selected));
-      renderGrid(posts, new Set());
+      let selectedEvents = new Set();
+      let selectedPerson = null;
+      const applyFilters = () => renderGrid(posts, selectedEvents, selectedPerson);
+
+      setupEventFilter(posts, (selected) => { selectedEvents = selected; applyFilters(); });
+      setupPersonSearch(posts, (person) => { selectedPerson = person; applyFilters(); });
+      applyFilters();
     })
     .catch(() => {
       gallery.innerHTML = '<p class="gallery-empty">Could not load posts.json (run <code>python3 build.py</code>, and serve over http:// rather than file://).</p>';
