@@ -1478,20 +1478,42 @@ a {
   display: none;
 }
 
-.lightbox-full {
+.lightbox-actions {
+  display: flex;
+  gap: 8px;
   margin-top: 2px;
+}
+
+.lightbox-action {
   text-decoration: none;
   color: var(--fg);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 8px 16px;
+  font: inherit;
   font-size: 0.9rem;
-  transition: background 0.15s ease, color 0.15s ease;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .lightbox-full:hover {
   background: rgba(255, 255, 255, 0.08);
   color: #dc3055;
+}
+
+.lightbox-copy-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #9f8ff0;
+}
+
+/* Briefly shown after a successful copy (see main.js) instead of the
+   button just silently doing something — clipboard writes have no other
+   visible effect on the page, so without this there'd be no confirmation
+   the click actually did anything. */
+.lightbox-copy-link.copied {
+  color: #9f8ff0;
+  border-color: #9f8ff0;
 }
 
 .lightbox-close {

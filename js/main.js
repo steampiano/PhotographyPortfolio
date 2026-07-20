@@ -963,6 +963,35 @@ if (lightbox) {
     infoBtn.setAttribute('aria-expanded', String(infoPanelOpen));
   });
 
+  // Copies a link straight to the full-resolution .jpg (post.image), not
+  // the permalink page — wired once here, reading lbList[lbIndex] at
+  // click time, rather than re-attached on every renderLightbox() call
+  // (which runs on every next/prev step and would otherwise stack a new
+  // listener each time). new URL(..., location.href) both makes it
+  // absolute (a relative path isn't useful pasted somewhere else) and
+  // percent-encodes it correctly (image paths can contain spaces).
+  const copyLinkBtn = document.getElementById('lightboxCopyLink');
+  const copyLinkLabel = copyLinkBtn.textContent;
+  let copyLinkResetTimer;
+  copyLinkBtn.addEventListener('click', () => {
+    const post = lbList[lbIndex];
+    if (!post) return;
+    const url = new URL(post.image, location.href).href;
+    navigator.clipboard.writeText(url).then(() => {
+      clearTimeout(copyLinkResetTimer);
+      copyLinkBtn.textContent = 'Copied!';
+      copyLinkBtn.classList.add('copied');
+      copyLinkResetTimer = setTimeout(() => {
+        copyLinkBtn.textContent = copyLinkLabel;
+        copyLinkBtn.classList.remove('copied');
+      }, 1500);
+    }).catch(() => {
+      // Clipboard API can fail (permissions, insecure context) — no
+      // visible fallback UI to offer here, so just no-op rather than
+      // throw an unhandled rejection.
+    });
+  });
+
   // Click on the backdrop (not the image, actual text/links, or controls)
   // closes. Excluding the whole .lightbox-meta block (an earlier version of
   // this fix) was too broad — .lightbox-people is a flex row with gaps
