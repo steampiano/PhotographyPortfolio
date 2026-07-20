@@ -152,7 +152,12 @@ function buildHandleBubble(handle) {
   return bubble;
 }
 
-function buildPostFigure(post) {
+// eager: true for the first handful of grid figures (see renderGrid) — those
+// are almost always already in the initial viewport, and loading="lazy" on
+// an image that's on screen from the first paint just adds a deprioritized
+// intersection-observer round-trip for no benefit, the opposite of what
+// lazy-loading is for. Everything past that stays lazy as before.
+function buildPostFigure(post, eager) {
   const figure = document.createElement('figure');
   figure.className = 'post';
 
@@ -176,7 +181,7 @@ function buildPostFigure(post) {
   const img = document.createElement('img');
   img.src = post.thumb || post.image;
   img.alt = post.caption || (post.people ? post.people.join(', ') : '');
-  img.loading = 'lazy';
+  img.loading = eager ? 'eager' : 'lazy';
   img.decoding = 'async';
   link.appendChild(img);
   figure.appendChild(link);
@@ -537,9 +542,13 @@ function renderGrid(posts, selectedEvents, selectedPerson) {
     gallery.innerHTML = '<p class="gallery-empty">No photos match the selected filters.</p>';
     return;
   }
-  for (const post of visible) {
-    gallery.appendChild(buildPostFigure(post));
-  }
+  // A fixed count rather than measuring actual layout — simpler, and covers
+  // roughly the first couple of rows on both the 3-column mobile grid and
+  // wider desktop ones without needing to know the real column count.
+  const EAGER_COUNT = 6;
+  visible.forEach((post, i) => {
+    gallery.appendChild(buildPostFigure(post, i < EAGER_COUNT));
+  });
 }
 
 // Builds the "Filter by event" dropdown (checkboxes, OR logic) from the set of
