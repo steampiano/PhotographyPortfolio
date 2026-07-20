@@ -413,6 +413,13 @@ function setupFeaturedRow(featuredPosts) {
   // sooner — settling is what scroll-snap already does natively and
   // smoothly; this only ever nudges the final rest position afterward,
   // silently, since a clone and its real counterpart are pixel-identical.
+  //
+  // The debounce itself is short (see the setTimeout below) — every slide
+  // now has scroll-snap-stop: always (see CSS), so a swipe can no longer
+  // sail past several slides before coming to rest the way it used to;
+  // scroll events stop firing very shortly after a real settle, so the
+  // wait before the loop completes can stay short too without mistaking
+  // still-decelerating motion for a stop.
   function teleportIfOnClone() {
     if (!cloneCount || !carouselMode.matches) return;
     const rowRect = row.getBoundingClientRect();
@@ -435,7 +442,7 @@ function setupFeaturedRow(featuredPosts) {
   row.addEventListener('scroll', () => {
     if (!cloneCount || !carouselMode.matches) return;
     clearTimeout(settleTimer);
-    settleTimer = setTimeout(teleportIfOnClone, 120);
+    settleTimer = setTimeout(teleportIfOnClone, 60);
   }, { passive: true });
 
   let resizeTimer;
