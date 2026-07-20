@@ -8,10 +8,14 @@
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <!-- This page's content is built entirely client-side from the ?src=
      query param (see js/photo.js), and social/link-preview crawlers
-     generally don't execute JS — so these tags are a static fallback,
-     not the specific photo being viewed. Getting a real per-photo
-     preview card would need a static HTML file generated per photo at
-     build time instead of one shared template. -->
+     generally don't execute JS — so these tags are only ever a generic
+     fallback, not the specific photo being viewed. Real per-photo
+     preview cards live one level up: every photo/thumbnail link on the
+     site points at a generated photo/<slug>.html "shim" page instead of
+     straight to this URL (see build.py's write_photo_pages) — that page
+     has this exact photo's real title/caption/image baked into static
+     tags, then immediately redirects a real visitor here. This template
+     itself is never the URL that actually gets shared. -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Photos by @aspy7777">
 <meta property="og:title" content="Photo | @aspy7777 Photos">

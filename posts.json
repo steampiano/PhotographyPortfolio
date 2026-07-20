@@ -19,7 +19,8 @@
       "iso": "ISO 800",
       "focal_length": "50mm"
     },
-    "order": 0
+    "order": 0,
+    "permalink": "photo/photos-ac-2026-exp-dsc06009.html"
   },
   {
     "image": "photos/AC 2026/exp-DSC06004.jpg",
@@ -40,7 +41,8 @@
       "shutter": "1/250s",
       "iso": "ISO 800",
       "focal_length": "50mm"
-    }
+    },
+    "permalink": "photo/photos-ac-2026-exp-dsc06004.html"
   },
   {
     "image": "photos/AC 2026/exp-DSC05997.jpg",
@@ -61,7 +63,8 @@
       "shutter": "1/250s",
       "iso": "ISO 800",
       "focal_length": "50mm"
-    }
+    },
+    "permalink": "photo/photos-ac-2026-exp-dsc05997.html"
   },
   {
     "image": "other-photos/exp-DSC05781-DxO_DeepPRIME 3.jpg",
@@ -80,7 +83,8 @@
       "shutter": "1/160s",
       "iso": "ISO 4000",
       "focal_length": "28mm"
-    }
+    },
+    "permalink": "photo/other-photos-exp-dsc05781-dxo-deepprime-3.html"
   },
   {
     "image": "other-photos/exp-DSC05690.jpg",
@@ -99,7 +103,8 @@
       "shutter": "1/1000s",
       "iso": "ISO 100",
       "focal_length": "75mm"
-    }
+    },
+    "permalink": "photo/other-photos-exp-dsc05690.html"
   },
   {
     "image": "other-photos/exp-DSC05680-HDR.jpg",
@@ -118,7 +123,8 @@
       "shutter": "1/1600s",
       "iso": "ISO 160",
       "focal_length": "85mm"
-    }
+    },
+    "permalink": "photo/other-photos-exp-dsc05680-hdr.html"
   },
   {
     "image": "other-photos/exp-DSC05233.jpg",
@@ -137,7 +143,8 @@
       "shutter": "1/200s",
       "iso": "ISO 100",
       "focal_length": "85mm"
-    }
+    },
+    "permalink": "photo/other-photos-exp-dsc05233.html"
   },
   {
     "image": "other-photos/exp-DSC05124.jpg",
@@ -156,7 +163,8 @@
       "shutter": "1/1600s",
       "iso": "ISO 100",
       "focal_length": "50mm"
-    }
+    },
+    "permalink": "photo/other-photos-exp-dsc05124.html"
   },
   {
     "image": "other-photos/exp-DSC04996.jpg",
@@ -175,7 +183,8 @@
       "shutter": "1/1000s",
       "iso": "ISO 100",
       "focal_length": "85mm"
-    }
+    },
+    "permalink": "photo/other-photos-exp-dsc04996.html"
   },
   {
     "image": "other-photos/exp-DSC04971.jpg",
@@ -194,7 +203,8 @@
       "shutter": "1/640s",
       "iso": "ISO 200",
       "focal_length": "85mm"
-    }
+    },
+    "permalink": "photo/other-photos-exp-dsc04971.html"
   },
   {
     "image": "other-photos/exp-DSC04939.jpg",
@@ -213,7 +223,8 @@
       "shutter": "1/640s",
       "iso": "ISO 640",
       "focal_length": "85mm"
-    }
+    },
+    "permalink": "photo/other-photos-exp-dsc04939.html"
   },
   {
     "image": "photos/All else/[3x2] exp-DSC04845-2.jpg",
@@ -234,7 +245,8 @@
       "shutter": "1/320s",
       "iso": "ISO 160",
       "focal_length": "85mm"
-    }
+    },
+    "permalink": "photo/photos-all-else-3x2-exp-dsc04845-2.html"
   },
   {
     "image": "photos/All else/exp-DSC04819.jpg",
@@ -255,7 +267,8 @@
       "shutter": "1/250s",
       "iso": "ISO 100",
       "focal_length": "85mm"
-    }
+    },
+    "permalink": "photo/photos-all-else-exp-dsc04819.html"
   },
   {
     "image": "photos/All else/exp-DSC03890.jpg",
@@ -276,7 +289,8 @@
       "shutter": "1/125s",
       "iso": "ISO 3200",
       "focal_length": "85mm"
-    }
+    },
+    "permalink": "photo/photos-all-else-exp-dsc03890.html"
   },
   {
     "image": "photos/FG 2026/exp-DSC03838.jpg",
@@ -299,7 +313,8 @@
       "shutter": "1/200s",
       "iso": "ISO 125",
       "focal_length": "43mm"
-    }
+    },
+    "permalink": "photo/photos-fg-2026-exp-dsc03838.html"
   },
   {
     "image": "photos/FG 2026/exp-DSC03801.jpg",
@@ -328,7 +343,8 @@
       "shutter": "1/200s",
       "iso": "ISO 125",
       "focal_length": "33mm"
-    }
+    },
+    "permalink": "photo/photos-fg-2026-exp-dsc03801.html"
   },
   {
     "image": "photos/TFF 2026/exp-DSC03027.jpg",
@@ -350,7 +366,8 @@
       "iso": "ISO 160",
       "focal_length": "50mm"
     },
-    "order": 7
+    "order": 7,
+    "permalink": "photo/photos-tff-2026-exp-dsc03027.html"
   },
   {
     "image": "photos/TFF 2026/exp-DSC02999.jpg",
@@ -371,7 +388,8 @@
       "shutter": "1/1000s",
       "iso": "ISO 100",
       "focal_length": "50mm"
-    }
+    },
+    "permalink": "photo/photos-tff-2026-exp-dsc02999.html"
   },
   {
     "image": "photos/TFF 2026/exp-DSC02985.jpg",
@@ -392,7 +410,8 @@
       "shutter": "1/125s",
       "iso": "ISO 100",
       "focal_length": "50mm"
-    }
+    },
+    "permalink": "photo/photos-tff-2026-exp-dsc02985.html"
   },
   {
     "image": "photos/TFF 2026/exp-DSC02958.jpg",
@@ -413,7 +432,8 @@
       "shutter": "1/125s",
       "iso": "ISO 320",
       "focal_length": "50mm"
-    }
+    },
+    "permalink": "photo/photos-tff-2026-exp-dsc02958.html"
   },
   {
     "image": "photos/TFF 2026/exp-DSC02922.jpg",
@@ -435,7 +455,8 @@
       "iso": "ISO 400",
       "focal_length": "50mm"
     },
-    "order": 4
+    "order": 4,
+    "permalink": "photo/photos-tff-2026-exp-dsc02922.html"
   },
   {
     "image": "photos/TFF 2026/exp-DSC02864.jpg",
@@ -456,7 +477,8 @@
       "shutter": "1/125s",
       "iso": "ISO 200",
       "focal_length": "50mm"
-    }
+    },
+    "permalink": "photo/photos-tff-2026-exp-dsc02864.html"
   },
   {
     "image": "photos/TFF 2026/exp-DSC02824.jpg",
@@ -477,7 +499,8 @@
       "shutter": "1/100s",
       "iso": "ISO 250",
       "focal_length": "50mm"
-    }
+    },
+    "permalink": "photo/photos-tff-2026-exp-dsc02824.html"
   },
   {
     "image": "photos/TFF 2026/exp-DSC02679.jpg",
@@ -499,7 +522,8 @@
       "shutter": "1/80s",
       "iso": "ISO 640",
       "focal_length": "85mm"
-    }
+    },
+    "permalink": "photo/photos-tff-2026-exp-dsc02679.html"
   },
   {
     "image": "photos/TFF 2026/exp-DSC02636.jpg",
@@ -520,7 +544,8 @@
       "shutter": "1/125s",
       "iso": "ISO 640",
       "focal_length": "85mm"
-    }
+    },
+    "permalink": "photo/photos-tff-2026-exp-dsc02636.html"
   },
   {
     "image": "photos/TFF 2026/exp-DSC02607.jpg",
@@ -541,7 +566,8 @@
       "shutter": "1/125s",
       "iso": "ISO 500",
       "focal_length": "85mm"
-    }
+    },
+    "permalink": "photo/photos-tff-2026-exp-dsc02607.html"
   },
   {
     "image": "other-photos/seaside_again(1).jpg",
@@ -560,7 +586,8 @@
       "shutter": "1/15s",
       "iso": "ISO 400",
       "focal_length": "85mm"
-    }
+    },
+    "permalink": "photo/other-photos-seaside-again-1.html"
   },
   {
     "image": "other-photos/seaside_again(0).jpg",
@@ -579,7 +606,8 @@
       "shutter": "1/15s",
       "iso": "ISO 640",
       "focal_length": "85mm"
-    }
+    },
+    "permalink": "photo/other-photos-seaside-again-0.html"
   },
   {
     "image": "photos/GSFC 2026/exp-DSC01727.jpg",
@@ -602,7 +630,8 @@
       "shutter": "1/80s",
       "iso": "ISO 800",
       "focal_length": "50mm"
-    }
+    },
+    "permalink": "photo/photos-gsfc-2026-exp-dsc01727.html"
   },
   {
     "image": "photos/GSFC 2026/exp-DSC01537.jpg",
@@ -623,7 +652,8 @@
       "shutter": "1/60s",
       "iso": "ISO 5000",
       "focal_length": "50mm"
-    }
+    },
+    "permalink": "photo/photos-gsfc-2026-exp-dsc01537.html"
   },
   {
     "image": "photos/All else/exp-DSC00981.jpg",
@@ -644,7 +674,8 @@
       "shutter": "1/3200s",
       "iso": "ISO 100",
       "focal_length": "50mm"
-    }
+    },
+    "permalink": "photo/photos-all-else-exp-dsc00981.html"
   },
   {
     "image": "photos/All else/exp-DSC00950.jpg",
@@ -665,7 +696,8 @@
       "shutter": "1/3200s",
       "iso": "ISO 100",
       "focal_length": "50mm"
-    }
+    },
+    "permalink": "photo/photos-all-else-exp-dsc00950.html"
   },
   {
     "image": "photos/All else/exp-DSC00889.jpg",
@@ -686,7 +718,8 @@
       "shutter": "1/2500s",
       "iso": "ISO 100",
       "focal_length": "50mm"
-    }
+    },
+    "permalink": "photo/photos-all-else-exp-dsc00889.html"
   },
   {
     "image": "photos/All else/exp-DSC00774.jpg",
@@ -707,7 +740,8 @@
       "shutter": "1/6400s",
       "iso": "ISO 100",
       "focal_length": "50mm"
-    }
+    },
+    "permalink": "photo/photos-all-else-exp-dsc00774.html"
   },
   {
     "image": "photos/All else/exp-DSC00204.jpg",
@@ -728,7 +762,8 @@
       "shutter": "1/60s",
       "iso": "ISO 2500",
       "focal_length": "50mm"
-    }
+    },
+    "permalink": "photo/photos-all-else-exp-dsc00204.html"
   },
   {
     "image": "photos/Echo Park/exp-DSC08803.jpg",
@@ -750,7 +785,8 @@
       "iso": "ISO 50",
       "focal_length": "50mm"
     },
-    "order": 6
+    "order": 6,
+    "permalink": "photo/photos-echo-park-exp-dsc08803.html"
   },
   {
     "image": "photos/Echo Park/exp-DSC08660.jpg",
@@ -772,7 +808,8 @@
       "iso": "ISO 100",
       "focal_length": "50mm"
     },
-    "order": 2
+    "order": 2,
+    "permalink": "photo/photos-echo-park-exp-dsc08660.html"
   },
   {
     "image": "photos/Echo Park/exp-DSC08627.jpg",
@@ -793,7 +830,8 @@
       "shutter": "1/500s",
       "iso": "ISO 100",
       "focal_length": "50mm"
-    }
+    },
+    "permalink": "photo/photos-echo-park-exp-dsc08627.html"
   },
   {
     "image": "photos/Echo Park/exp-DSC08549.jpg",
@@ -818,7 +856,8 @@
       "shutter": "1/500s",
       "iso": "ISO 100",
       "focal_length": "50mm"
-    }
+    },
+    "permalink": "photo/photos-echo-park-exp-dsc08549.html"
   },
   {
     "image": "photos/All else/exp-DSC08479.jpg",
@@ -839,7 +878,8 @@
       "shutter": "1/400s",
       "iso": "ISO 50",
       "focal_length": "50mm"
-    }
+    },
+    "permalink": "photo/photos-all-else-exp-dsc08479.html"
   },
   {
     "image": "photos/All else/exp-DSC08198.jpg",
@@ -860,7 +900,8 @@
       "shutter": "1/125s",
       "iso": "ISO 64",
       "focal_length": "50mm"
-    }
+    },
+    "permalink": "photo/photos-all-else-exp-dsc08198.html"
   },
   {
     "image": "photos/All else/exp-DSC08194.jpg",
@@ -882,7 +923,8 @@
       "iso": "ISO 64",
       "focal_length": "50mm"
     },
-    "order": 3
+    "order": 3,
+    "permalink": "photo/photos-all-else-exp-dsc08194.html"
   },
   {
     "image": "photos/FC 2026/exp-DSC03033.jpg",
@@ -903,7 +945,8 @@
       "shutter": "1/80s",
       "iso": "ISO 250",
       "focal_length": "50mm"
-    }
+    },
+    "permalink": "photo/photos-fc-2026-exp-dsc03033.html"
   },
   {
     "image": "photos/FC 2026/exp-_F2A0029.jpg",
@@ -927,7 +970,8 @@
       "shutter": "1/125s",
       "iso": "ISO 125",
       "focal_length": "75mm"
-    }
+    },
+    "permalink": "photo/photos-fc-2026-exp-f2a0029.html"
   },
   {
     "image": "photos/FC 2026/exp-_F2A0001.jpg",
@@ -949,7 +993,8 @@
       "iso": "ISO 125",
       "focal_length": "300mm"
     },
-    "order": 8
+    "order": 8,
+    "permalink": "photo/photos-fc-2026-exp-f2a0001.html"
   },
   {
     "image": "photos/FC 2026/exp-_F2A9885.jpg",
@@ -970,7 +1015,8 @@
       "shutter": "1/100s",
       "iso": "ISO 125",
       "focal_length": "75mm"
-    }
+    },
+    "permalink": "photo/photos-fc-2026-exp-f2a9885.html"
   },
   {
     "image": "photos/FC 2026/exp-_F2A9863.jpg",
@@ -991,7 +1037,8 @@
       "shutter": "1/160s",
       "iso": "ISO 250",
       "focal_length": "75mm"
-    }
+    },
+    "permalink": "photo/photos-fc-2026-exp-f2a9863.html"
   },
   {
     "image": "photos/FC 2026/exp-DSC02746.jpg",
@@ -1013,7 +1060,8 @@
       "shutter": "1/80s",
       "iso": "ISO 160",
       "focal_length": "50mm"
-    }
+    },
+    "permalink": "photo/photos-fc-2026-exp-dsc02746.html"
   },
   {
     "image": "photos/FC 2026/exp-DSC02702.jpg",
@@ -1035,7 +1083,8 @@
       "shutter": "1/40s",
       "iso": "ISO 250",
       "focal_length": "50mm"
-    }
+    },
+    "permalink": "photo/photos-fc-2026-exp-dsc02702.html"
   },
   {
     "image": "photos/FC 2026/exp-DSC02649.jpg",
@@ -1057,7 +1106,8 @@
       "shutter": "1/25s",
       "iso": "ISO 500",
       "focal_length": "50mm"
-    }
+    },
+    "permalink": "photo/photos-fc-2026-exp-dsc02649.html"
   },
   {
     "image": "photos/FC 2026/exp-DSC02577.jpg",
@@ -1079,7 +1129,8 @@
       "iso": "ISO 160",
       "focal_length": "50mm"
     },
-    "order": 1
+    "order": 1,
+    "permalink": "photo/photos-fc-2026-exp-dsc02577.html"
   },
   {
     "image": "photos/FC 2026/exp-DSC02555.jpg",
@@ -1100,7 +1151,8 @@
       "shutter": "1/125s",
       "iso": "ISO 160",
       "focal_length": "50mm"
-    }
+    },
+    "permalink": "photo/photos-fc-2026-exp-dsc02555.html"
   },
   {
     "image": "photos/FC 2026/exp-DSC02501.jpg",
@@ -1121,7 +1173,8 @@
       "shutter": "1/30s",
       "iso": "ISO 500",
       "focal_length": "50mm"
-    }
+    },
+    "permalink": "photo/photos-fc-2026-exp-dsc02501.html"
   },
   {
     "image": "photos/MFF 2025/exp-DSC01693.jpg",
@@ -1142,7 +1195,8 @@
       "shutter": "1/100s",
       "iso": "ISO 500",
       "focal_length": "16mm"
-    }
+    },
+    "permalink": "photo/photos-mff-2025-exp-dsc01693.html"
   },
   {
     "image": "photos/MFF 2025/exp-DSC01689.jpg",
@@ -1163,7 +1217,8 @@
       "shutter": "1/100s",
       "iso": "ISO 500",
       "focal_length": "16mm"
-    }
+    },
+    "permalink": "photo/photos-mff-2025-exp-dsc01689.html"
   },
   {
     "image": "photos/MFF 2025/exp-DSC01666.jpg",
@@ -1184,7 +1239,8 @@
       "shutter": "1/100s",
       "iso": "ISO 320",
       "focal_length": "16mm"
-    }
+    },
+    "permalink": "photo/photos-mff-2025-exp-dsc01666.html"
   },
   {
     "image": "photos/MFF 2025/exp-DSC01644.jpg",
@@ -1205,7 +1261,8 @@
       "shutter": "1/100s",
       "iso": "ISO 320",
       "focal_length": "16mm"
-    }
+    },
+    "permalink": "photo/photos-mff-2025-exp-dsc01644.html"
   },
   {
     "image": "photos/MFF 2025/exp-DSC01634.jpg",
@@ -1226,7 +1283,8 @@
       "shutter": "1/100s",
       "iso": "ISO 320",
       "focal_length": "16mm"
-    }
+    },
+    "permalink": "photo/photos-mff-2025-exp-dsc01634.html"
   },
   {
     "image": "photos/All else/blur-exp-DSC00659-HDR.jpg",
@@ -1240,7 +1298,8 @@
     ],
     "tags": [],
     "featured": false,
-    "collection": "fursuit"
+    "collection": "fursuit",
+    "permalink": "photo/photos-all-else-blur-exp-dsc00659-hdr.html"
   },
   {
     "image": "other-photos/10-09-2025.jpg",
@@ -1259,7 +1318,8 @@
       "shutter": "1/6s",
       "iso": "ISO 400",
       "focal_length": "53mm"
-    }
+    },
+    "permalink": "photo/other-photos-10-09-2025.html"
   },
   {
     "image": "photos/All else/exp-DSC09855-2.jpg",
@@ -1280,7 +1340,8 @@
       "shutter": "1/8s",
       "iso": "ISO 50",
       "focal_length": "28mm"
-    }
+    },
+    "permalink": "photo/photos-all-else-exp-dsc09855-2.html"
   },
   {
     "image": "photos/All else/exp-DSC09847-2.jpg",
@@ -1301,7 +1362,8 @@
       "shutter": "1/8s",
       "iso": "ISO 50",
       "focal_length": "59mm"
-    }
+    },
+    "permalink": "photo/photos-all-else-exp-dsc09847-2.html"
   },
   {
     "image": "photos/All else/exp-DSC09824-2.jpg",
@@ -1323,6 +1385,7 @@
       "iso": "ISO 50",
       "focal_length": "30mm"
     },
-    "order": 5
+    "order": 5,
+    "permalink": "photo/photos-all-else-exp-dsc09824-2.html"
   }
 ]

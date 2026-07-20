@@ -80,6 +80,7 @@ import struct
 import subprocess
 import tempfile
 import time
+import html
 import urllib.error
 import urllib.request
 import zlib
@@ -90,6 +91,7 @@ from xml.sax.saxutils import escape as xml_escape
 SITE_URL = "https://aspy.pics"
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PHOTO_PAGE_DIR = os.path.join(BASE_DIR, "photo")
 PHOTOS_DIR = os.path.join(BASE_DIR, "photos")
 THUMBS_DIR = os.path.join(BASE_DIR, "thumbs")
 PREVIEWS_DIR = os.path.join(BASE_DIR, "previews")
@@ -668,17 +670,116 @@ def write_avatar_colors():
         json.dump(colors, f, indent=2, sort_keys=True)
 
 
+def _slugify(image_path):
+    """'photos/AC 2026/exp-DSC06009.jpg' -> 'photos-ac-2026-exp-dsc06009'.
+    Derived from the full relative path (not just the filename) so two
+    photos with the same camera-assigned filename in different event
+    folders can't collide.
+    """
+    base, _ext = os.path.splitext(image_path)
+    return re.sub(r"[^a-z0-9]+", "-", base.lower()).strip("-")
+
+
+def _photo_title(post):
+    if post.get("caption"):
+        return f"{post['caption']} | @aspy7777 Photos"
+    if post.get("people"):
+        return f"{', '.join(post['people'])} | @aspy7777 Photos"
+    if post.get("event"):
+        return f"{post['event']} | @aspy7777 Photos"
+    return "Photo | @aspy7777 Photos"
+
+
+def _photo_description(post):
+    if post.get("caption"):
+        return post["caption"]
+    bits = []
+    if post.get("event"):
+        bits.append(f"Taken at {post['event']}")
+    if post.get("people"):
+        bits.append(f"featuring {', '.join(post['people'])}")
+    if bits:
+        return " ".join(bits) + "."
+    return "A photo from @aspy7777's photography portfolio."
+
+
+PHOTO_PAGE_TEMPLATE = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="refresh" content="0; url={redirect_url}">
+<title>{title}</title>
+<meta name="description" content="{description}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Photos by @aspy7777">
+<meta property="og:title" content="{title}">
+<meta property="og:description" content="{description}">
+<meta property="og:image" content="{image_url}">
+<meta property="og:url" content="{page_url}">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+<body>
+<p><a href="{redirect_url}">View this photo</a></p>
+</body>
+</html>
+"""
+
+
+def write_photo_pages(posts):
+    """Generates a thin static "shim" page per photo at photo/<slug>.html,
+    each with accurate per-photo Open Graph/Twitter tags (title, caption,
+    image) followed by an immediate redirect to the real interactive
+    viewer (photo.html?src=...). Mutates each post with a "permalink" field
+    (used by main.js instead of linking straight to photo.html — see
+    buildPostFigure/buildFeaturedItem/#lightboxFull) and by write_sitemap.
+
+    Needed because photo.html's own content is built client-side from that
+    query param, and social/link-preview crawlers (Discord, Twitter, etc.)
+    generally don't execute JS — they only ever see whatever static tags
+    are on the URL that was actually shared, which used to be photo.html's
+    generic fallback regardless of which photo it was.
+
+    A meta refresh, not a JS redirect, does the actual redirecting — it
+    works with JS disabled too, and (importantly) those same crawlers are
+    well-established to NOT follow it: they read the first response's raw
+    HTML and stop, which is exactly what leaves them looking at this
+    page's specific tags instead of skipping ahead to photo.html's.
+
+    The whole photo/ directory is wiped and regenerated every run so a
+    renamed or deleted photo doesn't leave a stale, orphaned shim behind.
+    """
+    if os.path.isdir(PHOTO_PAGE_DIR):
+        shutil.rmtree(PHOTO_PAGE_DIR)
+    os.makedirs(PHOTO_PAGE_DIR, exist_ok=True)
+
+    for post in posts:
+        slug = _slugify(post["image"])
+        permalink = f"photo/{slug}.html"
+        redirect_url = "/photo.html?src=" + quote(post["image"])
+        image_url = SITE_URL + "/" + quote(post["preview"])
+
+        page_html = PHOTO_PAGE_TEMPLATE.format(
+            redirect_url=html.escape(redirect_url),
+            title=html.escape(_photo_title(post)),
+            description=html.escape(_photo_description(post)),
+            image_url=html.escape(image_url),
+            page_url=html.escape(f"{SITE_URL}/{permalink}"),
+        )
+        with open(os.path.join(PHOTO_PAGE_DIR, f"{slug}.html"), "w", encoding="utf-8") as f:
+            f.write(page_html)
+
+        post["permalink"] = permalink
+
+
 def write_sitemap(posts):
-    """Writes sitemap.xml: the 3 static pages plus one photo.html?src=...
-    URL per post, so crawlers can find individual photo pages (and index
-    them in Google Image Search) without having to follow every gallery
-    link by hand. photo.html itself only has generic, static meta tags
-    (see its <head> — its real content is built client-side from the
-    query param, which crawlers generally don't execute), so this is
-    mainly a discovery aid, not a source of per-photo preview data.
+    """Writes sitemap.xml: the 3 static pages plus each post's own
+    photo/<slug>.html permalink (see write_photo_pages, which must run
+    first to populate it), so crawlers can find individual photo pages
+    (and index them in Google Image Search) without having to follow every
+    gallery link by hand.
     """
     paths = ["/", "/about.html", "/other-work.html"]
-    paths += ["/photo.html?src=" + quote(post["image"]) for post in posts]
+    paths += ["/" + post["permalink"] for post in posts]
 
     lines = ['<?xml version="1.0" encoding="UTF-8"?>',
              '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
@@ -872,6 +973,11 @@ def main():
                          OTHER_PREVIEWS_DIR, "previews-other", "other", [])
 
     posts.sort(key=lambda p: p["date"], reverse=True)
+
+    # Mutates each post with a "permalink" field and writes photo/*.html —
+    # must run before posts.json is written so that field is included, and
+    # before write_sitemap so it can reuse the same permalinks.
+    write_photo_pages(posts)
 
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         json.dump(posts, f, indent=2)

@@ -158,7 +158,12 @@ function buildPostFigure(post) {
 
   const link = document.createElement('a');
   link.className = 'post-link';
-  link.href = 'photo.html?src=' + encodeURIComponent(post.image);
+  // permalink (photo/<slug>.html, see build.py's write_photo_pages) rather
+  // than linking straight to photo.html — it's a thin static shim with
+  // this photo's actual title/caption/image baked into its meta tags,
+  // which is what a share/copy-link/new-tab-open should point at instead
+  // of photo.html's generic fallback tags.
+  link.href = post.permalink;
   // Normal click opens the lightbox; ⌘/Ctrl/middle-click still opens the
   // dedicated page in a new tab.
   link.addEventListener('click', (e) => {
@@ -231,7 +236,12 @@ function buildFeaturedItem(post) {
 
   const link = document.createElement('a');
   link.className = 'post-link';
-  link.href = 'photo.html?src=' + encodeURIComponent(post.image);
+  // permalink (photo/<slug>.html, see build.py's write_photo_pages) rather
+  // than linking straight to photo.html — it's a thin static shim with
+  // this photo's actual title/caption/image baked into its meta tags,
+  // which is what a share/copy-link/new-tab-open should point at instead
+  // of photo.html's generic fallback tags.
+  link.href = post.permalink;
   link.addEventListener('click', (e) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
     e.preventDefault();
@@ -705,8 +715,9 @@ function renderLightbox() {
 
   document.getElementById('lightboxEvent').textContent = post.event || '';
   document.getElementById('lightboxDate').textContent = formatDate(post.date);
-  document.getElementById('lightboxFull').href =
-    'photo.html?src=' + encodeURIComponent(post.image);
+  // Same permalink as the grid/featured links above, not photo.html
+  // directly — see buildPostFigure's comment for why.
+  document.getElementById('lightboxFull').href = post.permalink;
 
   // Shooting info (aperture/shutter/ISO/focal length) is tucked behind the
   // info button rather than shown by default, since it's secondary to the
