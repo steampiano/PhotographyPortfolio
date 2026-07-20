@@ -39,6 +39,20 @@
 
 * { box-sizing: border-box; }
 
+/* A theme-matching keyboard-focus ring, applied globally — without this,
+   every link/button/input on the site fell back to the browser's default
+   (usually blue) outline, which doesn't match the dark/purple theme
+   anywhere it showed up. :focus-visible rather than :focus so it only
+   appears for keyboard navigation, not every mouse click. A couple of
+   elements (e.g. .person-search input) already swap in their own focus
+   treatment on plain :focus — this still layers on top of those for
+   keyboard users specifically, which reads as extra emphasis, not a
+   conflict. */
+:focus-visible {
+  outline: 2px solid #9f8ff0;
+  outline-offset: 2px;
+}
+
 body {
   margin: 0;
   background: var(--bg);
