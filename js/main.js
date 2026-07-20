@@ -669,13 +669,25 @@ function setupPersonSearch(posts, onChange) {
   function closeResults() {
     results.hidden = true;
     input.setAttribute('aria-expanded', 'false');
+    input.removeAttribute('aria-activedescendant');
     activeIndex = -1;
   }
 
+  // Keeps the visual highlight (sighted keyboard users) and the ARIA
+  // active-descendant relationship (screen readers) in sync — without the
+  // latter, arrowing through suggestions moved the highlight but never
+  // announced which option it landed on.
   function highlightActive() {
     [...results.children].forEach((el, i) => {
-      el.classList.toggle('active-option', i === activeIndex);
+      const isActive = i === activeIndex;
+      el.classList.toggle('active-option', isActive);
+      el.setAttribute('aria-selected', String(isActive));
     });
+    if (activeIndex >= 0 && results.children[activeIndex]) {
+      input.setAttribute('aria-activedescendant', results.children[activeIndex].id);
+    } else {
+      input.removeAttribute('aria-activedescendant');
+    }
   }
 
   function select(handle) {
@@ -706,10 +718,12 @@ function setupPersonSearch(posts, onChange) {
       empty.textContent = `No one matching "${query}"`;
       results.appendChild(empty);
     } else {
-      matches.forEach((handle) => {
+      matches.forEach((handle, i) => {
         const row = document.createElement('div');
         row.className = 'person-search-option';
+        row.id = 'person-option-' + i;
         row.setAttribute('role', 'option');
+        row.setAttribute('aria-selected', 'false');
 
         const swatch = document.createElement('span');
         swatch.className = 'person-swatch';
