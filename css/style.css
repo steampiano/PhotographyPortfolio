@@ -1041,9 +1041,32 @@ a {
 @media (max-width: 640px) {
   .site-footer {
     position: static;
-    padding: 14px 0;
+    padding: 10px 0;
     transform: none;
     will-change: auto;
+  }
+
+  .footer-inner {
+    gap: 8px;
+  }
+
+  .site-footer p {
+    font-size: 0.72rem;
+    line-height: 1.35;
+  }
+
+  .footer-social {
+    gap: 8px;
+  }
+
+  .social-link {
+    width: 28px;
+    height: 28px;
+  }
+
+  .social-link svg {
+    width: 15px;
+    height: 15px;
   }
 }
 
