@@ -119,6 +119,38 @@ if (!src) {
       wrap.appendChild(img);
       content.appendChild(wrap);
 
+      // Copies a link straight to the full-resolution .jpg (post.image),
+      // same as the lightbox's copy-link button — no lbList/lbIndex to
+      // read here since there's only ever one photo on this page. new
+      // URL(..., location.href) both makes it absolute (a relative path
+      // isn't useful pasted somewhere else) and percent-encodes it
+      // correctly (image paths can contain spaces).
+      const copyLinkBtn = document.createElement('button');
+      copyLinkBtn.type = 'button';
+      copyLinkBtn.className = 'photo-copy-link-btn';
+      copyLinkBtn.setAttribute('aria-live', 'polite');
+      copyLinkBtn.textContent = 'Copy Link';
+      wrap.appendChild(copyLinkBtn);
+
+      const copyLinkLabel = copyLinkBtn.textContent;
+      let copyLinkResetTimer;
+      copyLinkBtn.addEventListener('click', () => {
+        const url = new URL(post.image, location.href).href;
+        navigator.clipboard.writeText(url).then(() => {
+          clearTimeout(copyLinkResetTimer);
+          copyLinkBtn.textContent = 'Copied!';
+          copyLinkBtn.classList.add('copied');
+          copyLinkResetTimer = setTimeout(() => {
+            copyLinkBtn.textContent = copyLinkLabel;
+            copyLinkBtn.classList.remove('copied');
+          }, 1500);
+        }).catch(() => {
+          // Clipboard API can fail (permissions, insecure context) — no
+          // visible fallback UI to offer here, so just no-op rather than
+          // throw an unhandled rejection.
+        });
+      });
+
       // ---- Zoom controls ----
       // Discrete +/- steps, not a gesture/transform implementation —
       // panning once zoomed is plain native browser scrolling (touch-drag,
