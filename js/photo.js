@@ -199,8 +199,11 @@ if (!src) {
       zoomControls.appendChild(zoomInBtn);
       toolbar.appendChild(zoomControls);
 
-      content.appendChild(toolbar);
+      // Below the image, not above it — this page's whole point is to
+      // show the photo at as large a size as the viewport allows without
+      // scrolling, so nothing should eat into that space ahead of it.
       content.appendChild(wrap);
+      content.appendChild(toolbar);
 
       function updateZoomButtons() {
         zoomOutBtn.disabled = zoomLevel <= 1;

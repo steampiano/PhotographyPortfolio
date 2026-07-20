@@ -1169,17 +1169,29 @@ a {
 .photo-full {
   display: block;
   width: 100%;
-  max-height: 80vh;
+  /* A flat 80vh (the previous value) ignores everything ABOVE the image
+     (header + this page's own top padding + the back-link) — on anything
+     shorter than a genuinely tall monitor, 80vh plus that fixed ~160px of
+     chrome added up to more than the actual viewport, so the image
+     overflowed the screen and needed a scroll just to see the whole
+     thing even before zooming. Subtracting a concrete estimate of that
+     chrome instead keeps the full (unzoomed) image on screen without
+     scrolling on typical desktop window sizes. */
+  max-height: calc(100vh - 180px);
   object-fit: contain;
   background: #1a1a1a;
-  transition: filter 0.3s ease;
+  transition: width 0.25s ease, height 0.25s ease, filter 0.3s ease;
 }
 
 /* Once zoomed, photo.js sets explicit pixel width/height (computed from
    the image's own natural unzoomed size × the zoom level) instead of the
    percentage width above — object-fit has nothing left to do once the
    box and the content share the same ratio exactly, so this simply lets
-   the image grow past its wrap and become scrollable. */
+   the image grow past its wrap and become scrollable. The width/height
+   transition above applies here too — zoom is discrete +/- steps (see
+   photo.js), not a drag/gesture, so there's no continuous tracking for a
+   transition to lag behind; every change is a single, deliberate jump
+   that's safe to animate. */
 .photo-full.is-zoomed {
   width: auto;
   max-height: none;
@@ -1194,13 +1206,18 @@ a {
    zoomed) scrolled away right along with the image instead of staying
    put in the corner. Living outside the wrap entirely sidesteps that
    category of bug rather than working around it. */
+/* Below the image (see photo.js — appended after .photo-full-wrap), not
+   above it: this page's whole point is to show the photo at as large a
+   size as the viewport allows without scrolling (see .photo-full's
+   max-height comment), so nothing should eat into that space ahead of
+   the image itself. */
 .photo-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  margin-bottom: 14px;
+  margin-top: 14px;
 }
 
 .photo-zoom-controls {
