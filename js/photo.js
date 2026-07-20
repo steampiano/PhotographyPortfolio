@@ -117,7 +117,14 @@ if (!src) {
 
       wrap.appendChild(progressEl);
       wrap.appendChild(img);
-      content.appendChild(wrap);
+
+      // A plain row above the image, not floating controls layered on
+      // top of it — see .photo-toolbar's comment in style.css for why
+      // (unwanted visually, and it was actively buggy: absolutely-
+      // positioned controls inside the wrap scrolled away with the image
+      // once zoomed instead of staying anchored in the corner).
+      const toolbar = document.createElement('div');
+      toolbar.className = 'photo-toolbar';
 
       // Copies a link straight to the full-resolution .jpg (post.image),
       // same as the lightbox's copy-link button — no lbList/lbIndex to
@@ -130,7 +137,7 @@ if (!src) {
       copyLinkBtn.className = 'photo-copy-link-btn';
       copyLinkBtn.setAttribute('aria-live', 'polite');
       copyLinkBtn.textContent = 'Copy Link';
-      wrap.appendChild(copyLinkBtn);
+      toolbar.appendChild(copyLinkBtn);
 
       const copyLinkLabel = copyLinkBtn.textContent;
       let copyLinkResetTimer;
@@ -190,7 +197,10 @@ if (!src) {
       zoomControls.appendChild(zoomOutBtn);
       zoomControls.appendChild(zoomResetBtn);
       zoomControls.appendChild(zoomInBtn);
-      wrap.appendChild(zoomControls);
+      toolbar.appendChild(zoomControls);
+
+      content.appendChild(toolbar);
+      content.appendChild(wrap);
 
       function updateZoomButtons() {
         zoomOutBtn.disabled = zoomLevel <= 1;

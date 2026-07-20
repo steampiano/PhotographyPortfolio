@@ -1185,22 +1185,28 @@ a {
   max-height: none;
 }
 
-/* Top, not bottom — the site footer is position: fixed on desktop (bottom:
-   0), which overlaps the bottom-right corner of a tall image regardless
-   of viewport height (the image is capped at max-height: 80vh, so its
-   bottom edge lands in roughly the same relative zone the fixed footer
-   occupies no matter how tall the window is — not just a short-viewport
-   edge case). The sticky header never overlaps the top of the image at
-   its resting scroll position, so this side has no equivalent problem. */
+/* A plain row above the image, not floating controls layered on top of
+   it — two reasons. First, overlaying the photo itself was actively
+   unwanted. Second, it was also buggy: position: absolute only anchors
+   to its containing block's edges, it does NOT exempt an element from
+   being part of that block's own scrollable content — so controls placed
+   absolutely inside .photo-full-wrap (which becomes overflow: auto once
+   zoomed) scrolled away right along with the image instead of staying
+   put in the corner. Living outside the wrap entirely sidesteps that
+   category of bug rather than working around it. */
+.photo-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
 .photo-zoom-controls {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 3;
   display: flex;
   align-items: center;
   gap: 2px;
-  background: rgba(0, 0, 0, 0.55);
   border: 1px solid var(--border);
   border-radius: 999px;
   padding: 4px;
@@ -1223,7 +1229,7 @@ a {
 }
 
 .photo-zoom-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .photo-zoom-btn:disabled {
@@ -1236,31 +1242,23 @@ a {
   height: 16px;
 }
 
-/* Mirrors the zoom controls' floating-pill treatment, top-left instead of
-   top-right — top because the site's fixed footer overlaps the bottom of
-   a tall image (see .photo-zoom-controls' comment), left simply so it
-   doesn't collide with zoom on the right. Same "Copy Link" -> "Copied!"
-   text swap as the lightbox's copy-link button, just with no next/prev
-   list to read the current photo from — there's only ever one on this
-   page. */
+/* Same "Copy Link" -> "Copied!" text swap as the lightbox's copy-link
+   button, just with no next/prev list to read the current photo from —
+   there's only ever one on this page. */
 .photo-copy-link-btn {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  z-index: 3;
-  background: rgba(0, 0, 0, 0.55);
+  background: transparent;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: 6px;
   padding: 8px 16px;
   color: var(--fg);
   font: inherit;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .photo-copy-link-btn:hover {
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
   color: #dc3055;
 }
 
