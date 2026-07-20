@@ -216,10 +216,6 @@ a {
    means the logo no longer has to share space with anything, so it goes
    back up in size instead of staying shrunk to fit a nav next to it. */
 @media (max-width: 480px) {
-  .header-inner {
-    position: relative;
-  }
-
   .logo {
     font-size: 1.3rem;
   }
@@ -235,7 +231,14 @@ a {
      driven by the eased curve, not by racing to an exact height.
      No padding of its own — each link is its own full-bleed row (see
      .nav a below), so there's nothing here that needs to animate
-     alongside max-height to avoid a gap at 0 height. */
+     alongside max-height to avoid a gap at 0 height.
+     left/right: 0 here resolve against .site-header (position: sticky,
+     the nearest positioned ancestor — .header-inner itself is NOT
+     position: relative), which spans the true viewport edges, unlike
+     .header-inner which is inset by .container's max-width/auto-margins.
+     Anchoring to the narrower .header-inner left the dropdown floating
+     with no visible edge of its own, blending into the page on both
+     sides instead of reading as a distinct panel. */
   .nav {
     position: absolute;
     top: calc(100% + 1px);
