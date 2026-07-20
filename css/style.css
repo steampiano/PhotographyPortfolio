@@ -1510,14 +1510,10 @@ a {
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
-.lightbox-full:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #dc3055;
-}
-
+.lightbox-full:hover,
 .lightbox-copy-link:hover {
   background: rgba(255, 255, 255, 0.08);
-  color: #9f8ff0;
+  color: #dc3055;
 }
 
 /* Briefly shown after a successful copy (see main.js) instead of the
