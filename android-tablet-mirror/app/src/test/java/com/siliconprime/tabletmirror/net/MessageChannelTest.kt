@@ -86,16 +86,22 @@ class MessageChannelTest {
         val out = ByteArrayOutputStream()
         val writer = MessageChannel(ByteArrayInputStream(ByteArray(0)), out)
         writer.enableEncryption(
-            SecureChannel(key, SecureChannel.DIR_HOST_TO_VIEWER, SecureChannel.DIR_VIEWER_TO_HOST),
+            SecureChannel(
+                sendKey = key,
+                recvKey = ByteArray(SecureChannel.KEY_BYTES) { 4 },
+                sendDirection = SecureChannel.DIR_HOST_TO_VIEWER,
+                recvDirection = SecureChannel.DIR_VIEWER_TO_HOST,
+            ),
         )
         writer.send(MsgType.VIDEO_FRAME, ByteArray(32))
 
         val reader = channelOver(out.toByteArray())
         reader.enableEncryption(
             SecureChannel(
-                ByteArray(SecureChannel.KEY_BYTES) { 6 },
-                SecureChannel.DIR_VIEWER_TO_HOST,
-                SecureChannel.DIR_HOST_TO_VIEWER,
+                sendKey = ByteArray(SecureChannel.KEY_BYTES) { 6 },
+                recvKey = ByteArray(SecureChannel.KEY_BYTES) { 7 },
+                sendDirection = SecureChannel.DIR_VIEWER_TO_HOST,
+                recvDirection = SecureChannel.DIR_HOST_TO_VIEWER,
             ),
         )
         assertThrows(IOException::class.java) { reader.receive() }

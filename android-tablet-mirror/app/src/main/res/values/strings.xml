@@ -6,10 +6,10 @@
     <string name="title_viewer">Remote screen</string>
 
     <string name="accessibility_service_label">Tablet Mirror remote control</string>
-    <string name="accessibility_service_description">Lets a paired tablet tap, swipe and type on this device while it is being shared. Only active while you are sharing your screen, and only for a viewer that entered the correct PIN.</string>
+    <string name="accessibility_service_description">Lets a paired tablet tap, swipe and type on this device while it is being shared. Only active while you are sharing your screen, only for a tablet you have paired, and only while you leave remote control switched on.</string>
 
     <!-- Main -->
-    <string name="main_intro">Mirror one tablet onto another over your local network, and drive it from there. Install this app on both tablets and give each one a role.</string>
+    <string name="main_intro">Mirror one tablet onto another over your local network, and drive it from there. Install this app on both tablets, give each one a role, then pair them once.</string>
     <string name="main_share_this_tablet">Share this tablet\'s screen</string>
     <string name="main_share_hint">This tablet is the one being watched and controlled.</string>
     <string name="main_control_other_tablet">Control another tablet</string>
@@ -19,48 +19,75 @@
     <string name="main_control_disabled">Off. Without it this tablet can still be watched, but not controlled.</string>
     <string name="action_open_accessibility_settings">Turn on remote control</string>
     <string name="action_open_accessibility_settings_change">Change remote control setting</string>
-    <string name="main_privacy_note">While sharing, an ongoing notification stays visible on the shared tablet. Traffic never leaves your local network and is encrypted with a key derived from the session PIN.</string>
+    <string name="main_privacy_note">While sharing, an ongoing notification stays visible on the shared tablet. Traffic never leaves your local network, and each session is encrypted with fresh keys that only the two paired tablets can derive.</string>
 
     <!-- Host -->
-    <string name="host_intro">Start sharing, then enter this PIN on the other tablet. A new PIN is generated for every session.</string>
-    <string name="host_pin_label">Session PIN</string>
-    <string name="action_new_pin">Generate a new PIN</string>
+    <string name="host_intro">Start sharing, then pair the tablet that will control this one. Only paired tablets can connect.</string>
     <string name="host_quality_label">Quality</string>
     <string name="label_port">Port</string>
     <string name="action_start_sharing">Start sharing</string>
     <string name="action_stop_sharing">Stop sharing</string>
     <string name="host_idle">Not sharing.</string>
-    <string name="host_waiting">Sharing. Waiting for a tablet to connect…</string>
+    <string name="host_waiting">Sharing. Waiting for a paired tablet to connect…</string>
     <string name="host_client_connected">Connected to %1$s.</string>
     <string name="host_addresses_label">This tablet\'s addresses</string>
     <string name="host_no_addresses">No network address found. Check that Wi-Fi is on.</string>
-    <string name="host_control_enabled">Remote control is enabled: the viewer can tap and type here.</string>
-    <string name="host_control_disabled">Remote control is off. The viewer will see this screen but cannot touch it.</string>
-    <string name="action_enable_remote_control">Turn on remote control</string>
+    <string name="host_identity_hardware">This tablet\'s identity: %1$s (held in secure hardware)</string>
+    <string name="host_identity_software">This tablet\'s identity: %1$s (software-backed key)</string>
     <string name="host_permission_declined">Screen capture was declined, so nothing is being shared.</string>
     <string name="host_bad_port">Pick a port between 1024 and 65535.</string>
+
+    <string name="host_paired_devices_label">Paired tablets</string>
+    <string name="host_no_paired_devices">None yet. Nothing can connect until you pair a tablet.</string>
+    <string name="action_pair_device">Pair a tablet</string>
+    <string name="action_pairing_open">Pairing open…</string>
+    <string name="action_unpair">Unpair</string>
+    <string name="title_unpair">Unpair which tablet?</string>
+    <string name="host_pairing_open">Ready to pair for %1$d more seconds. Connect from the other tablet now.</string>
+    <string name="host_pair_needs_sharing">Start sharing first, then pair.</string>
+    <string name="host_paired_with">Paired with %1$s.</string>
+
+    <string name="host_remote_control_label">Remote control of this tablet</string>
+    <string name="host_allow_control">Let the paired tablet touch this screen</string>
+    <string name="host_control_allowed_hint">The paired tablet can tap, swipe and type here. It can do anything someone standing at this tablet could do.</string>
+    <string name="host_control_blocked_hint">Off: the paired tablet can only watch. Input from it is discarded by this tablet.</string>
+    <string name="host_control_enabled">The accessibility service is on, so touches can be applied.</string>
+    <string name="host_control_disabled">The accessibility service is off, so no touches can be applied.</string>
+    <string name="action_enable_remote_control">Turn on the accessibility service</string>
+    <string name="action_view_log">View connection history</string>
+    <string name="title_connection_log">Connection history</string>
+    <string name="host_log_empty">Nothing recorded yet.</string>
+    <string name="action_clear_log">Clear</string>
 
     <string name="quality_low">Low — 960px, easiest on a weak network</string>
     <string name="quality_balanced">Balanced — 1280px, 30fps</string>
     <string name="quality_high">High — 1600px, 30fps</string>
     <string name="quality_native">Native resolution — sharpest, needs a fast link</string>
 
+    <!-- Pairing -->
+    <string name="pairing_title">Do these codes match?</string>
+    <string name="pairing_prompt">%1$s wants to pair. Check that the code below is showing on that tablet too.</string>
+    <string name="pairing_fingerprint">Device identity: %1$s</string>
+    <string name="pairing_match">Codes match</string>
+    <string name="pairing_mismatch">They differ / cancel</string>
+
     <!-- Connect -->
-    <string name="connect_intro">Pick the tablet you want to control, then enter the PIN it is showing.</string>
+    <string name="connect_intro">Pick the tablet you want to control. After the first pairing it connects on its own.</string>
     <string name="connect_found_label">Tablets on this network</string>
     <string name="connect_searching">Searching…</string>
     <string name="connect_discovery_failed">%1$s Enter the address shown on the other tablet instead.</string>
     <string name="label_address">Address</string>
-    <string name="label_pin">PIN</string>
     <string name="action_connect">Connect</string>
     <string name="connect_need_address">Enter the address shown on the other tablet.</string>
     <string name="connect_bad_port">That port number is not valid.</string>
-    <string name="connect_need_pin">Enter the %1$d-digit PIN shown on the other tablet.</string>
+    <string name="connect_pair_mode">Pair with this tablet for the first time</string>
+    <string name="connect_pair_mode_hint">Only tick this while the other tablet is showing "ready to pair". Both tablets will display a code for you to compare.</string>
 
     <!-- Viewer -->
     <string name="viewer_connecting">Connecting to %1$s…</string>
-    <string name="viewer_control_unavailable">The other tablet has not turned on remote control, so it cannot be touched from here.</string>
-    <string name="viewer_control_unavailable_short">View only: remote control is off on the host</string>
+    <string name="viewer_paired">Paired with %1$s (%2$s).</string>
+    <string name="viewer_control_unavailable">That tablet is not accepting remote input.</string>
+    <string name="viewer_control_unavailable_short">View only</string>
     <string name="viewer_view_only">View only</string>
     <string name="viewer_decode_error">Could not decode the video: %1$s</string>
     <string name="viewer_session_ended">The session ended.</string>
@@ -93,7 +120,8 @@
     <string name="notification_connected">Being watched and controlled by %1$s</string>
 
     <string name="status_control_ready">Remote control is available.</string>
-    <string name="status_control_unavailable">Remote control is turned off on the shared tablet.</string>
+    <string name="status_control_unavailable">The other tablet has the accessibility service switched off.</string>
+    <string name="status_control_blocked_by_host">The other tablet is set to view-only.</string>
 
     <string name="error_missing_permission">Screen capture permission is missing.</string>
     <string name="error_encoder">Video encoder failed: %1$s</string>

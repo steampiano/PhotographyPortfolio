@@ -7,7 +7,7 @@ import java.io.DataOutputStream
 /**
  * Wire format shared by host and viewer.
  *
- * Every message is `[type:1][length:4][payload:length]`. Once the PIN handshake
+ * Every message is `[type:1][length:4][payload:length]`. Once the handshake
  * completes the payload bytes are the AES-GCM sealed form of the plaintext
  * payload, so `length` grows by [SecureChannel.TAG_BYTES].
  *
@@ -16,8 +16,8 @@ import java.io.DataOutputStream
  */
 object Protocol {
     /** "TMR" + protocol generation, sent in the clear so mismatches fail fast. */
-    const val MAGIC = 0x544D5231
-    const val VERSION = 1
+    const val MAGIC = 0x544D5232
+    const val VERSION = 2
 
     const val DEFAULT_PORT = 45123
 
@@ -28,25 +28,25 @@ object Protocol {
     /** Generous enough for a 4K keyframe, small enough to bound a hostile peer. */
     const val MAX_MESSAGE_BYTES = 8 * 1024 * 1024
 
-    const val NONCE_BYTES = 16
-    const val SALT_BYTES = 16
-    const val MAC_BYTES = 32
+    /** Digits in the pairing comparison code. */
+    const val SAS_DIGITS = 6
 
-    const val PIN_DIGITS = 6
+    /** BYE reason meaning "your identity is not pinned here". */
+    const val REASON_NOT_PAIRED = "not-paired"
 }
 
 enum class MsgType(val id: Int) {
-    /** viewer -> host: magic, version, nonce, device name */
+    /** viewer -> host: magic, version, ephemeral key, identity key, device name */
     HELLO(0x01),
 
-    /** host -> viewer: salt, nonce, device name */
+    /** host -> viewer: ephemeral key, identity key, device name, pairing flag, signature */
     CHALLENGE(0x02),
 
-    /** viewer -> host: proof of PIN knowledge */
-    AUTH_VIEWER(0x03),
+    /** viewer -> host: signature over the transcript; encryption is live after this */
+    AUTH(0x03),
 
-    /** host -> viewer: proof of PIN knowledge; encryption is live after this */
-    AUTH_HOST(0x04),
+    /** either direction, encrypted: whether this operator accepted the pairing code */
+    PAIR_RESULT(0x04),
 
     /** host -> viewer: video dimensions + H.264 SPS/PPS */
     VIDEO_CONFIG(0x10),
@@ -86,6 +86,83 @@ class Message(val type: MsgType, val payload: ByteArray)
 // ---------------------------------------------------------------------------
 // Payload codecs
 // ---------------------------------------------------------------------------
+
+/**
+ * Opening message. The keys are X.509 encodings: [ephemeralKey] is thrown away
+ * when the session ends, [identityKey] is the long-term one a peer pins.
+ */
+data class Hello(
+    val magic: Int,
+    val version: Int,
+    val ephemeralKey: ByteArray,
+    val identityKey: ByteArray,
+    val deviceName: String,
+) {
+    fun encode(): ByteArray = buildPayload { out ->
+        out.writeInt(magic)
+        out.writeInt(version)
+        out.writeBlob(ephemeralKey)
+        out.writeBlob(identityKey)
+        out.writeUTF(deviceName)
+    }
+
+    companion object {
+        fun decode(payload: ByteArray): Hello = readPayload(payload) { inp ->
+            Hello(inp.readInt(), inp.readInt(), inp.readBlob(), inp.readBlob(), inp.readUTF())
+        }
+    }
+}
+
+/**
+ * The host's reply. [pairing] tells the viewer whether this is a first meeting;
+ * it is covered by [signature], so it cannot be flipped in transit.
+ */
+data class Challenge(
+    val ephemeralKey: ByteArray,
+    val identityKey: ByteArray,
+    val deviceName: String,
+    val pairing: Boolean,
+    val signature: ByteArray,
+) {
+    fun encode(): ByteArray = buildPayload { out ->
+        out.writeBlob(ephemeralKey)
+        out.writeBlob(identityKey)
+        out.writeUTF(deviceName)
+        out.writeBoolean(pairing)
+        out.writeBlob(signature)
+    }
+
+    companion object {
+        fun decode(payload: ByteArray): Challenge = readPayload(payload) { inp ->
+            Challenge(
+                inp.readBlob(),
+                inp.readBlob(),
+                inp.readUTF(),
+                inp.readBoolean(),
+                inp.readBlob(),
+            )
+        }
+    }
+}
+
+/** The viewer's proof that it holds the identity key it announced. */
+data class Auth(val signature: ByteArray) {
+    fun encode(): ByteArray = buildPayload { it.writeBlob(signature) }
+
+    companion object {
+        fun decode(payload: ByteArray): Auth = readPayload(payload) { Auth(it.readBlob()) }
+    }
+}
+
+/** One operator's verdict on the pairing code. */
+data class PairResult(val accepted: Boolean) {
+    fun encode(): ByteArray = buildPayload { it.writeBoolean(accepted) }
+
+    companion object {
+        fun decode(payload: ByteArray): PairResult =
+            readPayload(payload) { PairResult(it.readBoolean()) }
+    }
+}
 
 /**
  * Navigation actions the viewer can trigger on the host.
@@ -226,6 +303,21 @@ data class HostStatus(val controlAvailable: Boolean, val detail: String) {
         }
     }
 }
+
+/** Length-prefixed byte string, bounded so a hostile peer cannot force a huge allocation. */
+internal fun DataOutputStream.writeBlob(bytes: ByteArray) {
+    writeInt(bytes.size)
+    write(bytes)
+}
+
+internal fun DataInputStream.readBlob(): ByteArray {
+    val size = readInt()
+    require(size in 0..MAX_BLOB_BYTES) { "blob length out of range: $size" }
+    return ByteArray(size).also(::readFully)
+}
+
+/** Keys and signatures are all a few hundred bytes; nothing legitimate is larger. */
+private const val MAX_BLOB_BYTES = 8 * 1024
 
 internal inline fun buildPayload(body: (DataOutputStream) -> Unit): ByteArray {
     val bytes = ByteArrayOutputStream()

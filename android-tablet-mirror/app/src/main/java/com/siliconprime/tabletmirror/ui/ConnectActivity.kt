@@ -59,23 +59,28 @@ class ConnectActivity : AppCompatActivity() {
     private fun onHostChosen(host: DiscoveredHost) {
         binding.address.setText(host.address)
         binding.port.setText(host.port.toString())
-        binding.pin.requestFocus()
     }
 
     private fun connectManually() {
         val address = binding.address.text?.toString()?.trim().orEmpty()
         val port = binding.port.text?.toString()?.toIntOrNull() ?: Protocol.DEFAULT_PORT
-        val pin = binding.pin.text?.toString()?.filter(Char::isDigit).orEmpty()
 
         when {
             address.isEmpty() -> showError(getString(R.string.connect_need_address))
             port !in 1..65535 -> showError(getString(R.string.connect_bad_port))
-            pin.length != Protocol.PIN_DIGITS ->
-                showError(getString(R.string.connect_need_pin, Protocol.PIN_DIGITS))
-
             else -> {
                 binding.error.visibility = View.GONE
-                startActivity(ViewerActivity.intent(this, address, port, pin))
+                // Pairing is only attempted when asked for. Without this, an
+                // impostor answering on the host's address could provoke a pairing
+                // prompt during ordinary use.
+                startActivity(
+                    ViewerActivity.intent(
+                        context = this,
+                        address = address,
+                        port = port,
+                        pairing = binding.pairMode.isChecked,
+                    ),
+                )
             }
         }
     }

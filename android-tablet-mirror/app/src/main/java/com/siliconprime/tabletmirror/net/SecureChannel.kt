@@ -6,34 +6,41 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 /**
- * AES-GCM framing for one direction pair of an established session.
+ * AES-256-GCM framing for an established session.
  *
- * Each direction gets its own implicit 64-bit sequence counter, so IVs never
- * repeat under a given key and neither side has to transmit them. Because the
- * receiver derives the IV from its own counter, a replayed, reordered or dropped
- * message fails authentication instead of being silently accepted — the channel
- * is strictly ordered and any tampering is fatal.
+ * Each direction has its own key, derived independently from the handshake, and
+ * its own implicit 64-bit sequence counter, so IVs never repeat under a key and
+ * neither side has to transmit them. Because the receiver derives the IV from its
+ * own counter, a replayed, reordered or dropped message fails authentication
+ * instead of being silently accepted — the channel is strictly ordered and any
+ * tampering is fatal.
  *
  * The message type is bound in as additional authenticated data so an attacker
  * cannot relabel a sealed payload (e.g. replay a video frame as a touch event).
+ * Separate per-direction keys also make a reflection attack impossible: bouncing
+ * our own ciphertext back at us cannot authenticate.
  */
 class SecureChannel(
-    key: ByteArray,
+    sendKey: ByteArray,
+    recvKey: ByteArray,
     private val sendDirection: Byte,
     private val recvDirection: Byte,
 ) {
     init {
-        require(key.size == KEY_BYTES) { "key must be $KEY_BYTES bytes, was ${key.size}" }
+        require(sendKey.size == KEY_BYTES) { "send key must be $KEY_BYTES bytes, was ${sendKey.size}" }
+        require(recvKey.size == KEY_BYTES) { "recv key must be $KEY_BYTES bytes, was ${recvKey.size}" }
         require(sendDirection != recvDirection) { "directions must differ" }
+        require(!sendKey.contentEquals(recvKey)) { "directions must not share a key" }
     }
 
-    private val secret = SecretKeySpec(key, "AES")
+    private val sendSecret = SecretKeySpec(sendKey, "AES")
+    private val recvSecret = SecretKeySpec(recvKey, "AES")
     private var sendSeq = 0L
     private var recvSeq = 0L
 
     fun seal(type: Int, plaintext: ByteArray): ByteArray {
         val cipher = Cipher.getInstance(TRANSFORM)
-        cipher.init(Cipher.ENCRYPT_MODE, secret, spec(sendDirection, sendSeq))
+        cipher.init(Cipher.ENCRYPT_MODE, sendSecret, spec(sendDirection, sendSeq))
         cipher.updateAAD(aad(type, sendSeq))
         sendSeq++
         return cipher.doFinal(plaintext)
@@ -42,7 +49,7 @@ class SecureChannel(
     @Throws(GeneralSecurityException::class)
     fun open(type: Int, sealed: ByteArray): ByteArray {
         val cipher = Cipher.getInstance(TRANSFORM)
-        cipher.init(Cipher.DECRYPT_MODE, secret, spec(recvDirection, recvSeq))
+        cipher.init(Cipher.DECRYPT_MODE, recvSecret, spec(recvDirection, recvSeq))
         cipher.updateAAD(aad(type, recvSeq))
         // Advance regardless of outcome: a failed open aborts the connection, and
         // reusing the counter after a failure would be worse than desynchronising.

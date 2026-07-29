@@ -9,17 +9,21 @@ import java.security.GeneralSecurityException
 
 class SecureChannelTest {
 
+    private val hostToViewer = ByteArray(SecureChannel.KEY_BYTES) { it.toByte() }
+    private val viewerToHost = ByteArray(SecureChannel.KEY_BYTES) { (255 - it).toByte() }
+
     private fun pair(): Pair<SecureChannel, SecureChannel> {
-        val key = ByteArray(SecureChannel.KEY_BYTES) { it.toByte() }
         val host = SecureChannel(
-            key,
-            SecureChannel.DIR_HOST_TO_VIEWER,
-            SecureChannel.DIR_VIEWER_TO_HOST,
+            sendKey = hostToViewer,
+            recvKey = viewerToHost,
+            sendDirection = SecureChannel.DIR_HOST_TO_VIEWER,
+            recvDirection = SecureChannel.DIR_VIEWER_TO_HOST,
         )
         val viewer = SecureChannel(
-            key,
-            SecureChannel.DIR_VIEWER_TO_HOST,
-            SecureChannel.DIR_HOST_TO_VIEWER,
+            sendKey = viewerToHost,
+            recvKey = hostToViewer,
+            sendDirection = SecureChannel.DIR_VIEWER_TO_HOST,
+            recvDirection = SecureChannel.DIR_HOST_TO_VIEWER,
         )
         return host to viewer
     }
@@ -121,9 +125,10 @@ class SecureChannelTest {
     fun `a peer using the wrong key cannot read the stream`() {
         val (host, _) = pair()
         val stranger = SecureChannel(
-            ByteArray(SecureChannel.KEY_BYTES) { 42 },
-            SecureChannel.DIR_VIEWER_TO_HOST,
-            SecureChannel.DIR_HOST_TO_VIEWER,
+            sendKey = ByteArray(SecureChannel.KEY_BYTES) { 42 },
+            recvKey = ByteArray(SecureChannel.KEY_BYTES) { 43 },
+            sendDirection = SecureChannel.DIR_VIEWER_TO_HOST,
+            recvDirection = SecureChannel.DIR_HOST_TO_VIEWER,
         )
         val sealed = host.seal(MsgType.VIDEO_FRAME.id, ByteArray(16))
         assertThrows(GeneralSecurityException::class.java) {
@@ -133,16 +138,39 @@ class SecureChannelTest {
 
     @Test
     fun `a channel refuses to send and receive on the same direction tag`() {
-        val key = ByteArray(SecureChannel.KEY_BYTES)
         assertThrows(IllegalArgumentException::class.java) {
-            SecureChannel(key, SecureChannel.DIR_HOST_TO_VIEWER, SecureChannel.DIR_HOST_TO_VIEWER)
+            SecureChannel(
+                hostToViewer,
+                viewerToHost,
+                SecureChannel.DIR_HOST_TO_VIEWER,
+                SecureChannel.DIR_HOST_TO_VIEWER,
+            )
         }
     }
 
     @Test
     fun `a short key is refused`() {
         assertThrows(IllegalArgumentException::class.java) {
-            SecureChannel(ByteArray(16), SecureChannel.DIR_HOST_TO_VIEWER, SecureChannel.DIR_VIEWER_TO_HOST)
+            SecureChannel(
+                ByteArray(16),
+                viewerToHost,
+                SecureChannel.DIR_HOST_TO_VIEWER,
+                SecureChannel.DIR_VIEWER_TO_HOST,
+            )
+        }
+    }
+
+    @Test
+    fun `the two directions must not share a key`() {
+        // Reusing one key both ways would let an attacker reflect our own
+        // ciphertext back at us and have it authenticate.
+        assertThrows(IllegalArgumentException::class.java) {
+            SecureChannel(
+                hostToViewer,
+                hostToViewer.copyOf(),
+                SecureChannel.DIR_HOST_TO_VIEWER,
+                SecureChannel.DIR_VIEWER_TO_HOST,
+            )
         }
     }
 }

@@ -1,12 +1,15 @@
 package com.siliconprime.tabletmirror.viewer
 
 import android.util.Log
+import com.siliconprime.tabletmirror.crypto.IdentitySigner
+import com.siliconprime.tabletmirror.crypto.TrustStore
 import com.siliconprime.tabletmirror.net.Handshake
 import com.siliconprime.tabletmirror.net.HandshakeException
 import com.siliconprime.tabletmirror.net.HostStatus
 import com.siliconprime.tabletmirror.net.Message
 import com.siliconprime.tabletmirror.net.MessageChannel
 import com.siliconprime.tabletmirror.net.MsgType
+import com.siliconprime.tabletmirror.net.PairingGate
 import com.siliconprime.tabletmirror.net.TextInput
 import com.siliconprime.tabletmirror.net.TouchAction
 import com.siliconprime.tabletmirror.net.TouchBatch
@@ -30,12 +33,14 @@ import java.util.concurrent.atomic.AtomicBoolean
 class ViewerConnection(
     private val hostAddress: String,
     private val port: Int,
-    private val pin: String,
+    private val identity: IdentitySigner,
+    private val trustStore: TrustStore,
+    private val pairingGate: PairingGate,
     private val deviceName: String,
     private val listener: Listener,
 ) {
     interface Listener {
-        fun onConnected(hostName: String)
+        fun onConnected(hostName: String, fingerprint: String, newlyPaired: Boolean)
         fun onVideoConfig(config: VideoConfig)
 
         /** [payload] begins with a FrameHeader. Ownership passes to the listener. */
@@ -116,8 +121,14 @@ class ViewerConnection(
             val ch = MessageChannel(s.getInputStream(), s.getOutputStream())
             channel = ch
 
-            val peer = Handshake.asViewer(ch, pin, deviceName)
-            listener.onConnected(peer.deviceName)
+            val peer = Handshake.asViewer(
+                channel = ch,
+                identity = identity,
+                trustStore = trustStore,
+                authority = pairingGate,
+                deviceName = deviceName,
+            )
+            listener.onConnected(peer.peerName, peer.fingerprint, peer.newlyPaired)
 
             Thread({ sendLoop(ch) }, "viewer-sender").apply { isDaemon = true }.start()
 

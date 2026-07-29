@@ -1,12 +1,15 @@
 package com.siliconprime.tabletmirror.host
 
 import android.util.Log
+import com.siliconprime.tabletmirror.crypto.IdentitySigner
+import com.siliconprime.tabletmirror.crypto.TrustStore
 import com.siliconprime.tabletmirror.net.FrameHeader
 import com.siliconprime.tabletmirror.net.Handshake
 import com.siliconprime.tabletmirror.net.HandshakeException
 import com.siliconprime.tabletmirror.net.HostStatus
 import com.siliconprime.tabletmirror.net.MessageChannel
 import com.siliconprime.tabletmirror.net.MsgType
+import com.siliconprime.tabletmirror.net.PairingGate
 import com.siliconprime.tabletmirror.net.TextInput
 import com.siliconprime.tabletmirror.net.TouchBatch
 import com.siliconprime.tabletmirror.net.VideoConfig
@@ -18,22 +21,32 @@ import java.net.Socket
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * Accepts one viewer at a time, authenticates it with the session PIN, then
- * streams encoded frames to it and applies the input it sends back.
+ * Accepts one viewer at a time, authenticates it against the pinned identities in
+ * [trustStore], then streams encoded frames to it and applies the input it sends
+ * back.
  *
  * Serving a single viewer is a deliberate limit: two controllers fighting over
  * one gesture injector would produce nonsense, and the encoder is tuned for one
  * consumer's bandwidth.
+ *
+ * Remote input is gated by [controlAllowed], checked on *this* side for every
+ * message. A viewer cannot talk its way past it: if control is off here, input
+ * messages are read and dropped no matter what the viewer sends.
  */
 class HostServer(
     private val port: Int,
-    private val pin: String,
+    private val identity: IdentitySigner,
+    private val trustStore: TrustStore,
+    private val pairingGate: PairingGate,
     private val deviceName: String,
+    private val controlAllowed: () -> Boolean,
+    private val log: ConnectionLog,
     private val callbacks: Callbacks,
 ) {
     interface Callbacks {
         fun onClientConnected(deviceName: String)
         fun onClientDisconnected(reason: String?)
+        fun onPaired(deviceName: String, fingerprint: String)
 
         /** The stream needs an IDR: a viewer just joined, or we dropped frames. */
         fun onKeyFrameNeeded()
@@ -49,6 +62,10 @@ class HostServer(
 
     @Volatile
     private var videoConfig: VideoConfig? = null
+
+    /** Timestamps of recent rejected handshakes, used to throttle guessing. */
+    private val recentFailures = ArrayDeque<Long>()
+    private val failureLock = Any()
 
     fun start() {
         if (!running.compareAndSet(false, true)) return
@@ -136,9 +153,30 @@ class HostServer(
             }
             val active = session!!
 
-            val peer = Handshake.asHost(channel, pin, deviceName)
-            active.markAuthenticated(peer.deviceName)
-            callbacks.onClientConnected(peer.deviceName)
+            if (isThrottled()) {
+                runCatching {
+                    channel.send(
+                        MsgType.BYE,
+                        buildPayload { it.writeUTF("Too many failed attempts. Try again shortly.") },
+                    )
+                }
+                throw IOException("throttled")
+            }
+
+            val peer = Handshake.asHost(
+                channel = channel,
+                identity = identity,
+                trustStore = trustStore,
+                authority = pairingGate,
+                deviceName = deviceName,
+            )
+            if (peer.newlyPaired) {
+                log.record(ConnectionLog.Event.PAIRED, "${peer.peerName} (${peer.fingerprint})")
+                callbacks.onPaired(peer.peerName, peer.fingerprint)
+            }
+            log.record(ConnectionLog.Event.CONNECTED, "${peer.peerName} (${peer.fingerprint})")
+            active.markAuthenticated(peer.peerName)
+            callbacks.onClientConnected(peer.peerName)
 
             videoConfig?.let { active.enqueueConfig(it) }
             callbacks.onKeyFrameNeeded()
@@ -146,9 +184,16 @@ class HostServer(
             active.readLoop()
         } catch (e: HandshakeException) {
             Log.w(TAG, "handshake rejected: ${e.message}")
+            noteFailure()
+            log.record(
+                ConnectionLog.Event.REFUSED,
+                "${e.reason.name} from ${socket.inetAddress?.hostAddress ?: "?"}",
+            )
             session?.failureReason = e.message
         } catch (e: IOException) {
-            if (e.message != "busy") Log.i(TAG, "client ended: ${e.message}")
+            if (e.message != "busy" && e.message != "throttled") {
+                Log.i(TAG, "client ended: ${e.message}")
+            }
         } catch (e: Exception) {
             callbacks.onServerError(e)
         } finally {
@@ -158,11 +203,31 @@ class HostServer(
             synchronized(lock) {
                 if (client === session) client = null
             }
+            if (session?.wasAuthenticated == true) {
+                log.record(ConnectionLog.Event.DISCONNECTED, session?.peerName ?: "")
+            }
             if (session?.wasAuthenticated == true || reason != null) {
                 MirrorAccessibilityService.releaseAllPointers()
                 callbacks.onClientDisconnected(reason)
             }
         }
+    }
+
+    /**
+     * Refuses new connections for a cool-off period after repeated rejections, so
+     * an attacker on the network cannot hammer the handshake in a tight loop.
+     */
+    private fun isThrottled(): Boolean = synchronized(failureLock) {
+        val now = System.currentTimeMillis()
+        while (recentFailures.isNotEmpty() && now - recentFailures.first() > FAILURE_WINDOW_MS) {
+            recentFailures.removeFirst()
+        }
+        recentFailures.size >= MAX_FAILURES
+    }
+
+    private fun noteFailure() = synchronized(failureLock) {
+        recentFailures.addLast(System.currentTimeMillis())
+        while (recentFailures.size > MAX_FAILURES) recentFailures.removeFirst()
     }
 
     /** One connected viewer: a reader loop plus a dedicated, bounded sender. */
@@ -184,7 +249,9 @@ class HostServer(
         @Volatile
         private var closed = false
 
-        private var peerName = ""
+        @Volatile
+        var peerName = ""
+            private set
 
         /**
          * Outbound queue. Video is dropped rather than buffered without bound: a
@@ -277,18 +344,25 @@ class HostServer(
             while (!closed) {
                 val message = channel.receive() ?: break
                 when (message.type) {
-                    MsgType.TOUCH -> MirrorAccessibilityService.deliverTouch(
-                        TouchBatch.decode(message.payload),
-                    )
+                    // Input is gated here, on the shared tablet. Dropping the
+                    // message rather than trusting the viewer to behave is the
+                    // whole point of enforcing it on this side.
+                    MsgType.TOUCH -> if (controlAllowed()) {
+                        MirrorAccessibilityService.deliverTouch(
+                            TouchBatch.decode(message.payload),
+                        )
+                    }
 
-                    MsgType.GLOBAL_ACTION -> {
+                    MsgType.GLOBAL_ACTION -> if (controlAllowed()) {
                         val action = readPayload(message.payload) { it.readInt() }
                         MirrorAccessibilityService.deliverGlobalAction(action)
                     }
 
-                    MsgType.TEXT -> MirrorAccessibilityService.deliverText(
-                        TextInput.decode(message.payload),
-                    )
+                    MsgType.TEXT -> if (controlAllowed()) {
+                        MirrorAccessibilityService.deliverText(
+                            TextInput.decode(message.payload),
+                        )
+                    }
 
                     MsgType.PING -> offer(Outbound(MsgType.PONG, message.payload), droppable = false)
 
@@ -332,5 +406,8 @@ class HostServer(
 
         /** The viewer pings every 5s, so silence this long means it is gone. */
         private const val READ_TIMEOUT_MS = 20_000
+
+        private const val MAX_FAILURES = 5
+        private const val FAILURE_WINDOW_MS = 60_000L
     }
 }

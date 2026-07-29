@@ -14,10 +14,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import com.siliconprime.tabletmirror.R
+import com.siliconprime.tabletmirror.crypto.DeviceIdentity
+import com.siliconprime.tabletmirror.crypto.PreferencesTrustStore
 import com.siliconprime.tabletmirror.databinding.ActivityViewerBinding
 import com.siliconprime.tabletmirror.net.FrameHeader
 import com.siliconprime.tabletmirror.net.HostStatus
+import com.siliconprime.tabletmirror.net.PairingGate
 import com.siliconprime.tabletmirror.net.Protocol
 import com.siliconprime.tabletmirror.net.RemoteAction
 import com.siliconprime.tabletmirror.net.TextInput
@@ -52,8 +57,13 @@ class ViewerActivity : AppCompatActivity() {
     private var surfaceReady = false
 
     private var controlAvailable = false
+    private var controlDetail = ""
     private var viewOnly = false
     private var hostLabel = ""
+
+    /** This side's half of the pairing decision. */
+    private val pairingGate = PairingGate()
+    private var pairingDialog: android.app.AlertDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,8 +75,8 @@ class ViewerActivity : AppCompatActivity() {
 
         val address = intent.getStringExtra(EXTRA_ADDRESS).orEmpty()
         val port = intent.getIntExtra(EXTRA_PORT, Protocol.DEFAULT_PORT)
-        val pin = intent.getStringExtra(EXTRA_PIN).orEmpty()
-        if (address.isEmpty() || pin.length != Protocol.PIN_DIGITS) {
+        val pairing = intent.getBooleanExtra(EXTRA_PAIRING, false)
+        if (address.isEmpty()) {
             finish()
             return
         }
@@ -75,16 +85,32 @@ class ViewerActivity : AppCompatActivity() {
         wireControls()
         setStatus(getString(R.string.viewer_connecting, address))
 
+        if (pairing) pairingGate.openWindow()
+        lifecycleScope.launch { pairingGate.pending.collect(::renderPairingRequest) }
+
         connection = ViewerConnection(
             hostAddress = address,
             port = port,
-            pin = pin,
+            identity = DeviceIdentity.get(),
+            trustStore = PreferencesTrustStore(this),
+            pairingGate = pairingGate,
             deviceName = NetUtil.deviceLabel(),
             listener = connectionListener,
         ).also { it.connect() }
     }
 
+    private fun renderPairingRequest(request: PairingGate.Request?) {
+        if (request == null) {
+            pairingDialog?.dismiss()
+            pairingDialog = null
+            return
+        }
+        if (pairingDialog?.isShowing == true) return
+        pairingDialog = PairingDialog.show(this, request, pairingGate)
+    }
+
     override fun onDestroy() {
+        pairingGate.closeWindow()
         connection?.disconnect()
         connection = null
         decoder?.stop()
@@ -158,7 +184,9 @@ class ViewerActivity : AppCompatActivity() {
     /** Runs [block] only if the host can actually act on it, else explains why. */
     private fun requireControl(block: () -> Unit) {
         if (!controlAvailable) {
-            setStatus(getString(R.string.viewer_control_unavailable))
+            // The host says why; relaying its wording avoids guessing whether the
+            // accessibility service is off or control is switched off there.
+            setStatus(controlDetail.ifEmpty { getString(R.string.viewer_control_unavailable) })
             return
         }
         block()
@@ -178,7 +206,9 @@ class ViewerActivity : AppCompatActivity() {
     private fun refreshStatus() {
         val parts = buildList {
             if (hostLabel.isNotEmpty()) add(hostLabel)
-            if (!controlAvailable) add(getString(R.string.viewer_control_unavailable_short))
+            if (!controlAvailable) {
+                add(controlDetail.ifEmpty { getString(R.string.viewer_control_unavailable_short) })
+            }
             if (viewOnly) add(getString(R.string.viewer_view_only))
         }
         // With control live and nothing to warn about, get out of the way.
@@ -276,8 +306,15 @@ class ViewerActivity : AppCompatActivity() {
     }
 
     private val connectionListener = object : ViewerConnection.Listener {
-        override fun onConnected(hostName: String) = runOnUiThread {
+        override fun onConnected(
+            hostName: String,
+            fingerprint: String,
+            newlyPaired: Boolean,
+        ) = runOnUiThread {
             hostLabel = hostName
+            if (newlyPaired) {
+                setStatus(getString(R.string.viewer_paired, hostName, fingerprint))
+            }
             refreshStatus()
         }
 
@@ -300,6 +337,7 @@ class ViewerActivity : AppCompatActivity() {
 
         override fun onStatus(status: HostStatus) = runOnUiThread {
             controlAvailable = status.controlAvailable
+            controlDetail = status.detail
             refreshStatus()
         }
 
@@ -320,16 +358,16 @@ class ViewerActivity : AppCompatActivity() {
     companion object {
         private const val EXTRA_ADDRESS = "address"
         private const val EXTRA_PORT = "port"
-        private const val EXTRA_PIN = "pin"
+        private const val EXTRA_PAIRING = "pairing"
 
         /** GestureInjector supports ten simultaneous strokes. */
         private const val MAX_POINTER_ID = 9
 
-        fun intent(context: Context, address: String, port: Int, pin: String): Intent =
+        fun intent(context: Context, address: String, port: Int, pairing: Boolean): Intent =
             Intent(context, ViewerActivity::class.java).apply {
                 putExtra(EXTRA_ADDRESS, address)
                 putExtra(EXTRA_PORT, port)
-                putExtra(EXTRA_PIN, pin)
+                putExtra(EXTRA_PAIRING, pairing)
             }
     }
 }

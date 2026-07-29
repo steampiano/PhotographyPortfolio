@@ -21,8 +21,12 @@ import android.view.Display
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import com.siliconprime.tabletmirror.R
+import com.siliconprime.tabletmirror.crypto.DeviceIdentity
+import com.siliconprime.tabletmirror.crypto.Identity
+import com.siliconprime.tabletmirror.crypto.PreferencesTrustStore
 import com.siliconprime.tabletmirror.net.HostAdvertiser
 import com.siliconprime.tabletmirror.net.HostStatus
+import com.siliconprime.tabletmirror.net.PairingGate
 import com.siliconprime.tabletmirror.net.Protocol
 import com.siliconprime.tabletmirror.net.VideoConfig
 import com.siliconprime.tabletmirror.ui.MainActivity
@@ -39,11 +43,15 @@ import kotlinx.coroutines.launch
 /** Everything the host UI needs to render, published as it changes. */
 data class HostState(
     val sharing: Boolean = false,
-    val pin: String = "",
     val port: Int = Protocol.DEFAULT_PORT,
     val addresses: List<String> = emptyList(),
     val clientName: String? = null,
-    val controlEnabled: Boolean = false,
+    /** Whether the accessibility service is enabled in Settings. */
+    val accessibilityEnabled: Boolean = false,
+    /** Whether this tablet is willing to accept remote input at all. */
+    val controlAllowed: Boolean = true,
+    val fingerprint: String = "",
+    val hardwareBackedKey: Boolean = false,
     val message: String? = null,
 )
 
@@ -76,10 +84,14 @@ class ScreenCaptureService : Service() {
     private var rotationRestartPending = false
     private var controlJob: Job? = null
 
+    /** Read for every inbound input message, so it is resolved once up front. */
+    private lateinit var settings: HostSettings
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
         super.onCreate()
+        settings = HostSettings(this)
         createNotificationChannel()
     }
 
@@ -92,6 +104,9 @@ class ScreenCaptureService : Service() {
             }
 
             ACTION_START -> if (projection == null) beginSharing(intent)
+
+            // The operator flipped the control switch; apply it to the live session.
+            ACTION_REFRESH_POLICY -> if (projection != null) publishControlStatus()
         }
         // The projection token cannot be recreated by the system, so never let
         // Android restart this service on its own.
@@ -101,13 +116,12 @@ class ScreenCaptureService : Service() {
     private fun beginSharing(intent: Intent) {
         val resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, 0)
         val resultData: Intent? = intent.getParcelableExtra(EXTRA_RESULT_DATA)
-        val pin = intent.getStringExtra(EXTRA_PIN).orEmpty()
         val port = intent.getIntExtra(EXTRA_PORT, Protocol.DEFAULT_PORT)
         quality = runCatching {
             Quality.valueOf(intent.getStringExtra(EXTRA_QUALITY) ?: Quality.BALANCED.name)
         }.getOrDefault(Quality.BALANCED)
 
-        if (resultData == null || pin.length != Protocol.PIN_DIGITS) {
+        if (resultData == null) {
             publish { it.copy(message = getString(R.string.error_missing_permission)) }
             stopSelf()
             return
@@ -140,7 +154,17 @@ class ScreenCaptureService : Service() {
         active.registerCallback(projectionCallback, mainHandler)
 
         val deviceName = NetUtil.deviceLabel()
-        val hostServer = HostServer(port, pin, deviceName, serverCallbacks)
+        val identity = DeviceIdentity.get()
+        val hostServer = HostServer(
+            port = port,
+            identity = identity,
+            trustStore = PreferencesTrustStore(this),
+            pairingGate = pairingGate,
+            deviceName = deviceName,
+            controlAllowed = { settings.controlAllowed },
+            log = ConnectionLog(this),
+            callbacks = serverCallbacks,
+        )
         server = hostServer
         hostServer.start()
 
@@ -155,11 +179,13 @@ class ScreenCaptureService : Service() {
         publish {
             HostState(
                 sharing = true,
-                pin = pin,
                 port = port,
                 addresses = NetUtil.localAddresses(),
                 clientName = null,
-                controlEnabled = MirrorAccessibilityService.isEnabledInSettings(this),
+                accessibilityEnabled = MirrorAccessibilityService.isEnabledInSettings(this),
+                controlAllowed = settings.controlAllowed,
+                fingerprint = Identity.fingerprint(identity.publicKey),
+                hardwareBackedKey = identity.hardwareBacked,
                 message = null,
             )
         }
@@ -170,6 +196,7 @@ class ScreenCaptureService : Service() {
         controlJob?.cancel()
         controlJob = null
 
+        pairingGate.closeWindow()
         advertiser?.unregister()
         advertiser = null
         server?.stop()
@@ -308,10 +335,15 @@ class ScreenCaptureService : Service() {
         override fun onClientConnected(deviceName: String) {
             mainHandler.post {
                 startEncoder()
-                val controlEnabled = MirrorAccessibilityService.isAvailable.value
-                server?.broadcastStatus(HostStatus(controlEnabled, controlDetail(controlEnabled)))
+                publishControlStatus()
                 publish { it.copy(clientName = deviceName, message = null) }
                 updateNotification(deviceName)
+            }
+        }
+
+        override fun onPaired(deviceName: String, fingerprint: String) {
+            mainHandler.post {
+                publish { it.copy(message = getString(R.string.host_paired_with, deviceName)) }
             }
         }
 
@@ -339,16 +371,28 @@ class ScreenCaptureService : Service() {
         controlJob?.cancel()
         controlJob = scope.launch {
             MirrorAccessibilityService.isAvailable.collect { available ->
-                publish { it.copy(controlEnabled = available) }
-                server?.broadcastStatus(HostStatus(available, controlDetail(available)))
+                publish { it.copy(accessibilityEnabled = available) }
+                publishControlStatus()
             }
         }
     }
 
-    private fun controlDetail(available: Boolean): String = if (available) {
-        getString(R.string.status_control_ready)
-    } else {
-        getString(R.string.status_control_unavailable)
+    /**
+     * Tells the viewer whether input will actually be applied. Both conditions must
+     * hold: the accessibility service enabled, and this tablet willing to be
+     * driven. The viewer is told which is missing so its operator is not left
+     * guessing.
+     */
+    private fun publishControlStatus() {
+        val accessibility = MirrorAccessibilityService.isAvailable.value
+        val allowed = settings.controlAllowed
+        val detail = when {
+            !allowed -> getString(R.string.status_control_blocked_by_host)
+            !accessibility -> getString(R.string.status_control_unavailable)
+            else -> getString(R.string.status_control_ready)
+        }
+        publish { it.copy(controlAllowed = allowed) }
+        server?.broadcastStatus(HostStatus(accessibility && allowed, detail))
     }
 
     // -----------------------------------------------------------------------
@@ -430,10 +474,10 @@ class ScreenCaptureService : Service() {
 
         const val ACTION_START = "com.siliconprime.tabletmirror.START_SHARING"
         const val ACTION_STOP = "com.siliconprime.tabletmirror.STOP_SHARING"
+        const val ACTION_REFRESH_POLICY = "com.siliconprime.tabletmirror.REFRESH_POLICY"
 
         private const val EXTRA_RESULT_CODE = "result_code"
         private const val EXTRA_RESULT_DATA = "result_data"
-        private const val EXTRA_PIN = "pin"
         private const val EXTRA_PORT = "port"
         private const val EXTRA_QUALITY = "quality"
 
@@ -449,23 +493,41 @@ class ScreenCaptureService : Service() {
         private val mutableState = MutableStateFlow(HostState())
         val state: StateFlow<HostState> = mutableState
 
+        /**
+         * Shared with the host UI: the operator opens the pairing window and answers
+         * the comparison prompt through this.
+         */
+        val pairingGate = PairingGate()
+
         fun startIntent(
             context: Context,
             resultCode: Int,
             resultData: Intent,
-            pin: String,
             port: Int,
             quality: Quality,
         ): Intent = Intent(context, ScreenCaptureService::class.java).apply {
             action = ACTION_START
             putExtra(EXTRA_RESULT_CODE, resultCode)
             putExtra(EXTRA_RESULT_DATA, resultData)
-            putExtra(EXTRA_PIN, pin)
             putExtra(EXTRA_PORT, port)
             putExtra(EXTRA_QUALITY, quality.name)
         }
 
         fun stopIntent(context: Context): Intent =
             Intent(context, ScreenCaptureService::class.java).setAction(ACTION_STOP)
+
+        /**
+         * Re-reads host policy on a running session. Safe to call when nothing is
+         * being shared: the service ignores it unless a projection is active.
+         */
+        fun notifyControlPolicyChanged(context: Context) {
+            if (!state.value.sharing) return
+            runCatching {
+                context.startService(
+                    Intent(context, ScreenCaptureService::class.java)
+                        .setAction(ACTION_REFRESH_POLICY),
+                )
+            }
+        }
     }
 }
