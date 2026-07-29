@@ -2,6 +2,10 @@
 
 A static site. No backend, no build tooling beyond one small script.
 
+> `android-tablet-mirror/` is an unrelated, self-contained Android project that
+> happens to live in this repo. It has nothing to do with the site — see its own
+> README.
+
 ## Adding a new post
 
 1. Drop the photo anywhere in `photos/` (`.jpg`, `.jpeg`, `.png`, `.webp`, or
