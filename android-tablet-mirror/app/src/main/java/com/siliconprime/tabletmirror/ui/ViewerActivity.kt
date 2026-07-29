@@ -1,26 +1,31 @@
 package com.siliconprime.tabletmirror.ui
 
+import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.Network
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import android.text.InputType
 import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.View
 import android.view.WindowManager
 import android.widget.EditText
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
 import com.siliconprime.tabletmirror.R
 import com.siliconprime.tabletmirror.crypto.DeviceIdentity
 import com.siliconprime.tabletmirror.crypto.PreferencesTrustStore
 import com.siliconprime.tabletmirror.databinding.ActivityViewerBinding
 import com.siliconprime.tabletmirror.net.FrameHeader
+import com.siliconprime.tabletmirror.net.HostBrowser
 import com.siliconprime.tabletmirror.net.HostStatus
 import com.siliconprime.tabletmirror.net.PairingGate
 import com.siliconprime.tabletmirror.net.Protocol
@@ -32,19 +37,30 @@ import com.siliconprime.tabletmirror.net.TouchBatch
 import com.siliconprime.tabletmirror.net.TouchPoint
 import com.siliconprime.tabletmirror.net.VideoConfig
 import com.siliconprime.tabletmirror.util.NetUtil
+import com.siliconprime.tabletmirror.viewer.Endpoint
+import com.siliconprime.tabletmirror.viewer.HostCandidates
+import com.siliconprime.tabletmirror.viewer.ReconnectPolicy
+import com.siliconprime.tabletmirror.viewer.SessionEnd
 import com.siliconprime.tabletmirror.viewer.VideoDecoder
 import com.siliconprime.tabletmirror.viewer.ViewerConnection
+import com.siliconprime.tabletmirror.viewer.ViewerPrefs
+import kotlinx.coroutines.launch
 
 /**
  * Shows the remote screen and forwards input to it.
  *
- * Local gestures are translated into normalised host coordinates, so the two
- * tablets need not match in size or resolution. There is a view-only toggle
- * because a mirror you can accidentally tap is worse than one you cannot.
+ * Built to be left alone. Once paired, this screen reconnects on its own after a
+ * Wi-Fi blip, a host restart or a power cut, and keeps trying indefinitely — a
+ * tablet on a kitchen wall should never need someone to walk over and dismiss a
+ * dialog. It also re-finds the host through discovery if its address has changed,
+ * which is safe precisely because authentication is by pinned identity: a stranger
+ * at that address cannot complete the handshake.
  */
 class ViewerActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityViewerBinding
+    private lateinit var prefs: ViewerPrefs
+    private lateinit var trustStore: PreferencesTrustStore
 
     private var connection: ViewerConnection? = null
 
@@ -63,7 +79,21 @@ class ViewerActivity : AppCompatActivity() {
 
     /** This side's half of the pairing decision. */
     private val pairingGate = PairingGate()
-    private var pairingDialog: android.app.AlertDialog? = null
+    private var pairingDialog: AlertDialog? = null
+
+    // Reconnection state.
+    private val policy = ReconnectPolicy()
+    private val handler = Handler(Looper.getMainLooper())
+    private var browser: HostBrowser? = null
+    private val discovered = LinkedHashSet<Endpoint>()
+    private var candidates = mutableListOf<Endpoint>()
+    private var candidateIndex = 0
+    private var attempt = 0
+    private var pairingRequested = false
+    private var givenUp = false
+    private var connectedOnce = false
+    private var requestedEndpoint: Endpoint? = null
+    private var networkCallback: ConnectivityManager.NetworkCallback? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -73,49 +103,193 @@ class ViewerActivity : AppCompatActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         enterImmersiveMode()
 
+        prefs = ViewerPrefs(this)
+        trustStore = PreferencesTrustStore(this)
+
         val address = intent.getStringExtra(EXTRA_ADDRESS).orEmpty()
         val port = intent.getIntExtra(EXTRA_PORT, Protocol.DEFAULT_PORT)
-        val pairing = intent.getBooleanExtra(EXTRA_PAIRING, false)
+        pairingRequested = intent.getBooleanExtra(EXTRA_PAIRING, false)
         if (address.isEmpty()) {
             finish()
             return
         }
+        requestedEndpoint = Endpoint(address, port)
 
         binding.surface.holder.addCallback(surfaceCallback)
         wireControls()
-        setStatus(getString(R.string.viewer_connecting, address))
 
-        if (pairing) pairingGate.openWindow()
+        if (pairingRequested) pairingGate.openWindow()
         lifecycleScope.launch { pairingGate.pending.collect(::renderPairingRequest) }
 
-        connection = ViewerConnection(
-            hostAddress = address,
-            port = port,
-            identity = DeviceIdentity.get(),
-            trustStore = PreferencesTrustStore(this),
-            pairingGate = pairingGate,
-            deviceName = NetUtil.deviceLabel(),
-            listener = connectionListener,
-        ).also { it.connect() }
-    }
+        // Pairing is a deliberate, attended act, so it targets exactly the address
+        // the operator chose. Roaming only begins once an identity is pinned.
+        if (!pairingRequested) startDiscovery()
 
-    private fun renderPairingRequest(request: PairingGate.Request?) {
-        if (request == null) {
-            pairingDialog?.dismiss()
-            pairingDialog = null
-            return
-        }
-        if (pairingDialog?.isShowing == true) return
-        pairingDialog = PairingDialog.show(this, request, pairingGate)
+        candidates = mutableListOf(requestedEndpoint!!)
+        connectToCurrentCandidate()
     }
 
     override fun onDestroy() {
+        givenUp = true
+        handler.removeCallbacksAndMessages(null)
+        unregisterNetworkCallback()
+        browser?.stop()
+        browser = null
         pairingGate.closeWindow()
         connection?.disconnect()
         connection = null
         decoder?.stop()
         decoder = null
         super.onDestroy()
+    }
+
+    // -----------------------------------------------------------------------
+    // Connection supervision
+    // -----------------------------------------------------------------------
+
+    private fun connectToCurrentCandidate() {
+        if (givenUp || isFinishing) return
+        val endpoint = candidates.getOrNull(candidateIndex) ?: run {
+            scheduleRetry()
+            return
+        }
+
+        setStatus(
+            if (connectedOnce) {
+                getString(R.string.viewer_reconnecting, hostLabel.ifEmpty { endpoint.address })
+            } else {
+                getString(R.string.viewer_connecting, endpoint.address)
+            },
+        )
+        binding.progress.visibility = View.VISIBLE
+
+        connection = ViewerConnection(
+            hostAddress = endpoint.address,
+            port = endpoint.port,
+            identity = DeviceIdentity.get(),
+            trustStore = trustStore,
+            pairingGate = pairingGate,
+            deviceName = NetUtil.deviceLabel(),
+            listener = connectionListener,
+        ).also { it.connect() }
+    }
+
+    private fun onAttemptFailed(reason: String?, end: SessionEnd) {
+        connection = null
+        decoder?.stop()
+        decoder = null
+
+        if (end == SessionEnd.LOCAL || givenUp || isFinishing) return
+
+        if (policy.isFatal(end, hasPairedHost = trustStore.all().isNotEmpty())) {
+            giveUp(reason)
+            return
+        }
+
+        // Work through the remaining candidates before backing off, so a host that
+        // has merely changed address is found on this pass rather than the next.
+        candidateIndex++
+        if (candidateIndex < candidates.size) {
+            connectToCurrentCandidate()
+        } else {
+            scheduleRetry()
+        }
+    }
+
+    private fun scheduleRetry() {
+        if (givenUp || isFinishing) return
+        attempt++
+        val delay = policy.delayFor(attempt)
+        rebuildCandidates()
+        candidateIndex = 0
+        registerNetworkCallback()
+
+        binding.progress.visibility = View.GONE
+        setStatus(
+            getString(
+                R.string.viewer_retrying,
+                hostLabel.ifEmpty { requestedEndpoint?.address.orEmpty() },
+                (delay / 1000).coerceAtLeast(1).toInt(),
+            ),
+        )
+        handler.removeCallbacksAndMessages(RETRY_TOKEN)
+        handler.postAtTime(
+            { connectToCurrentCandidate() },
+            RETRY_TOKEN,
+            SystemClock.uptimeMillis() + delay,
+        )
+    }
+
+    /** Jump the backoff when the network returns rather than waiting it out. */
+    private fun retryNow() {
+        if (givenUp || isFinishing || connection != null) return
+        handler.removeCallbacksAndMessages(RETRY_TOKEN)
+        rebuildCandidates()
+        candidateIndex = 0
+        connectToCurrentCandidate()
+    }
+
+    private fun rebuildCandidates() {
+        val saved = requestedEndpoint ?: prefs.lastEndpoint
+        val ordered = HostCandidates.order(saved, discovered.toList())
+        candidates = if (ordered.isEmpty() && saved != null) {
+            mutableListOf(saved)
+        } else {
+            ordered.toMutableList()
+        }
+    }
+
+    private fun giveUp(reason: String?) {
+        givenUp = true
+        binding.progress.visibility = View.GONE
+        setStatus(null)
+        AlertDialog.Builder(this)
+            .setTitle(R.string.title_connection_failed)
+            .setMessage(reason ?: getString(R.string.viewer_session_ended))
+            .setPositiveButton(R.string.action_close) { _, _ -> finish() }
+            .setNeutralButton(R.string.action_choose_other) { _, _ ->
+                startActivity(ConnectActivity.pickIntent(this))
+                finish()
+            }
+            .setOnDismissListener { finish() }
+            .show()
+    }
+
+    private fun startDiscovery() {
+        if (browser != null) return
+        browser = HostBrowser(this).apply {
+            start(
+                onFound = { host ->
+                    runOnUiThread {
+                        // Only an extra place to try. The pinned identity decides
+                        // whether we will actually talk to whatever is there.
+                        discovered.add(Endpoint(host.address, host.port))
+                    }
+                },
+                onError = { /* A typed address remains the fallback. */ },
+            )
+        }
+    }
+
+    private fun registerNetworkCallback() {
+        if (networkCallback != null) return
+        val manager = getSystemService(ConnectivityManager::class.java) ?: return
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                runOnUiThread { retryNow() }
+            }
+        }
+        networkCallback = callback
+        runCatching { manager.registerDefaultNetworkCallback(callback) }
+            .onFailure { networkCallback = null }
+    }
+
+    private fun unregisterNetworkCallback() {
+        val callback = networkCallback ?: return
+        networkCallback = null
+        runCatching {
+            getSystemService(ConnectivityManager::class.java)?.unregisterNetworkCallback(callback)
+        }
     }
 
     // -----------------------------------------------------------------------
@@ -160,6 +334,16 @@ class ViewerActivity : AppCompatActivity() {
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             hide(WindowInsetsCompat.Type.systemBars())
         }
+    }
+
+    private fun renderPairingRequest(request: PairingGate.Request?) {
+        if (request == null) {
+            pairingDialog?.dismiss()
+            pairingDialog = null
+            return
+        }
+        if (pairingDialog?.isShowing == true) return
+        pairingDialog = PairingDialog.show(this, request, pairingGate)
     }
 
     private fun promptForText() {
@@ -212,7 +396,13 @@ class ViewerActivity : AppCompatActivity() {
             if (viewOnly) add(getString(R.string.viewer_view_only))
         }
         // With control live and nothing to warn about, get out of the way.
-        setStatus(if (parts.size <= 1 && controlAvailable && !viewOnly) null else parts.joinToString(" · "))
+        setStatus(
+            if (parts.size <= 1 && controlAvailable && !viewOnly) {
+                null
+            } else {
+                parts.joinToString(" · ")
+            },
+        )
     }
 
     // -----------------------------------------------------------------------
@@ -312,8 +502,15 @@ class ViewerActivity : AppCompatActivity() {
             newlyPaired: Boolean,
         ) = runOnUiThread {
             hostLabel = hostName
+            attempt = 0
+            connectedOnce = true
+            // Remember what worked, so next time the app opens straight into it.
+            candidates.getOrNull(candidateIndex)?.let { prefs.lastEndpoint = it }
+            unregisterNetworkCallback()
             if (newlyPaired) {
                 setStatus(getString(R.string.viewer_paired, hostName, fingerprint))
+                // Roaming is only safe once an identity is pinned, which it now is.
+                startDiscovery()
             }
             refreshStatus()
         }
@@ -341,17 +538,8 @@ class ViewerActivity : AppCompatActivity() {
             refreshStatus()
         }
 
-        override fun onClosed(reason: String?, error: Boolean) = runOnUiThread {
-            if (isFinishing || isDestroyed) return@runOnUiThread
-            decoder?.stop()
-            decoder = null
-            binding.progress.visibility = View.GONE
-            AlertDialog.Builder(this@ViewerActivity)
-                .setTitle(if (error) R.string.title_connection_failed else R.string.title_disconnected)
-                .setMessage(reason ?: getString(R.string.viewer_session_ended))
-                .setPositiveButton(R.string.action_close) { _, _ -> finish() }
-                .setOnDismissListener { finish() }
-                .show()
+        override fun onClosed(reason: String?, end: SessionEnd) = runOnUiThread {
+            onAttemptFailed(reason, end)
         }
     }
 
@@ -362,6 +550,8 @@ class ViewerActivity : AppCompatActivity() {
 
         /** GestureInjector supports ten simultaneous strokes. */
         private const val MAX_POINTER_ID = 9
+
+        private val RETRY_TOKEN = Any()
 
         fun intent(context: Context, address: String, port: Int, pairing: Boolean): Intent =
             Intent(context, ViewerActivity::class.java).apply {

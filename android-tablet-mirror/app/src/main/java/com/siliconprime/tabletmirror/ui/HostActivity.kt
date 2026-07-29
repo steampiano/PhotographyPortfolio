@@ -73,8 +73,11 @@ class HostActivity : AppCompatActivity() {
             android.R.layout.simple_spinner_dropdown_item,
             Quality.entries.map { getString(qualityLabel(it)) },
         )
-        binding.qualitySpinner.setSelection(Quality.BALANCED.ordinal)
-        binding.port.setText(Protocol.DEFAULT_PORT.toString())
+        val remembered = settings.quality?.let { name ->
+            Quality.entries.firstOrNull { it.name == name }
+        } ?: Quality.BALANCED
+        binding.qualitySpinner.setSelection(remembered.ordinal)
+        binding.port.setText(settings.port.toString())
 
         binding.allowControl.isChecked = settings.controlAllowed
         binding.allowControl.setOnCheckedChangeListener { _, checked ->
@@ -134,6 +137,9 @@ class HostActivity : AppCompatActivity() {
         val quality = Quality.entries.getOrElse(binding.qualitySpinner.selectedItemPosition) {
             Quality.BALANCED
         }
+        // Remember the choices so the next start needs no decisions.
+        settings.quality = quality.name
+        settings.port = port
         startForegroundService(
             ScreenCaptureService.startIntent(this, resultCode, data, port, quality),
         )

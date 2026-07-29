@@ -47,8 +47,11 @@ class ViewerConnection(
         fun onFrame(payload: ByteArray)
         fun onStatus(status: HostStatus)
 
-        /** Terminal. [reason] is set when the far end explained itself. */
-        fun onClosed(reason: String?, error: Boolean)
+        /**
+         * Terminal for this attempt. [end] tells the caller whether trying again
+         * could plausibly help.
+         */
+        fun onClosed(reason: String?, end: SessionEnd)
     }
 
     private val running = AtomicBoolean(false)
@@ -61,12 +64,17 @@ class ViewerConnection(
     @Volatile
     private var closedReported = false
 
+    /** Distinguishes "we hung up" from "it fell over" once the socket errors. */
+    @Volatile
+    private var stoppedLocally = false
+
     fun connect() {
         if (!running.compareAndSet(false, true)) return
         Thread({ run() }, "viewer-connection").apply { isDaemon = true }.start()
     }
 
     fun disconnect() {
+        stoppedLocally = true
         if (!running.compareAndSet(true, false)) return
         // No parting BYE: this is called from the activity's main thread, and a
         // socket write can block for as long as TCP allows. Closing the transport
@@ -110,7 +118,7 @@ class ViewerConnection(
 
     private fun run() {
         var reason: String? = null
-        var isError = true
+        var end = SessionEnd.TRANSIENT
         try {
             val s = Socket()
             socket = s
@@ -133,12 +141,26 @@ class ViewerConnection(
             Thread({ sendLoop(ch) }, "viewer-sender").apply { isDaemon = true }.start()
 
             readLoop(ch)
+            // A clean end still means the host went away, which it may well undo.
             reason = null
-            isError = false
+            end = SessionEnd.TRANSIENT
         } catch (e: HandshakeException) {
             reason = e.message
+            end = when (e.reason) {
+                // Nothing about waiting will make these right.
+                HandshakeException.Reason.PAIRING_DECLINED,
+                HandshakeException.Reason.VERSION_MISMATCH,
+                HandshakeException.Reason.AUTH_FAILED,
+                HandshakeException.Reason.MALFORMED,
+                -> SessionEnd.FATAL
+
+                HandshakeException.Reason.NOT_PAIRED -> SessionEnd.NOT_PAIRED
+
+                // Host busy, throttled, or shutting down: all temporary.
+                HandshakeException.Reason.REJECTED -> SessionEnd.TRANSIENT
+            }
         } catch (e: SocketTimeoutException) {
-            reason = "The host stopped responding."
+            reason = "The other tablet stopped responding."
         } catch (e: IOException) {
             reason = e.message ?: "Connection failed."
         } catch (e: Exception) {
@@ -147,7 +169,7 @@ class ViewerConnection(
         } finally {
             running.set(false)
             closeTransport()
-            reportClosed(reason, isError)
+            reportClosed(reason, if (stoppedLocally) SessionEnd.LOCAL else end)
         }
     }
 
@@ -165,7 +187,10 @@ class ViewerConnection(
                         readPayload(message.payload) { it.readUTF() }
                     }.getOrDefault("")
                     running.set(false)
-                    reportClosed(reason.ifEmpty { null }, error = false)
+                    // The host hung up deliberately, but it may come straight back
+                    // (a restart, or someone re-enabling sharing), so this is not
+                    // treated as final.
+                    reportClosed(reason.ifEmpty { null }, SessionEnd.TRANSIENT)
                     return
                 }
 
@@ -208,10 +233,10 @@ class ViewerConnection(
         runCatching { socket?.close() }
     }
 
-    private fun reportClosed(reason: String?, error: Boolean) {
+    private fun reportClosed(reason: String?, end: SessionEnd) {
         if (closedReported) return
         closedReported = true
-        listener.onClosed(reason, error)
+        listener.onClosed(reason, if (stoppedLocally) SessionEnd.LOCAL else end)
     }
 
     companion object {

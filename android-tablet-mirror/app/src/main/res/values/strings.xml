@@ -85,6 +85,9 @@
 
     <!-- Viewer -->
     <string name="viewer_connecting">Connecting to %1$s…</string>
+    <string name="viewer_reconnecting">Reconnecting to %1$s…</string>
+    <string name="viewer_retrying">Lost contact with %1$s. Trying again in %2$ds…</string>
+    <string name="action_choose_other">Choose another tablet</string>
     <string name="viewer_paired">Paired with %1$s (%2$s).</string>
     <string name="viewer_control_unavailable">That tablet is not accepting remote input.</string>
     <string name="viewer_control_unavailable_short">View only</string>

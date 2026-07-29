@@ -22,8 +22,8 @@ One APK covers both ends. On launch you pick a role:
    VirtualDisplay ──▶ MediaCodec (H.264) ──┐   ┌──▶ MediaCodec decoder
                                            │   │
                                      ┌─────┴───┴─────┐
-                                     │  TCP socket   │  PIN handshake,
-                                     │  AES-GCM      │  then encrypted
+                                     │  TCP socket   │  pinned identities,
+                                     │  AES-256-GCM  │  ephemeral ECDH
                                      └─────┬───┬─────┘
                                            │   │
    AccessibilityService ◀── touches ───────┘   └──── MotionEvent
@@ -103,6 +103,8 @@ without looking at the other screen.
 | `host/GestureStateMachine.kt` | Pointer stream → gesture segments (pure, tested) |
 | `host/GestureInjector.kt` | Segments → chained `StrokeDescription`s |
 | `viewer/ViewerConnection.kt` | Client socket, read and send loops |
+| `viewer/ReconnectPolicy.kt` | Retry backoff and where to try next (pure, tested) |
+| `viewer/ViewerPrefs.kt` | Remembers the tablet this one drives |
 | `viewer/VideoDecoder.kt` | H.264 → Surface |
 | `util/Geometry.kt` | Letterbox fitting, coordinate mapping, encoder sizing |
 
@@ -164,6 +166,45 @@ and a **View only** toggle. `Controls` hides the bar.
 screen, so you can see which device is trusted and when it last connected. Use
 **Unpair** to revoke a tablet; it cannot reconnect afterwards without a fresh
 pairing on both sides.
+
+### Day-to-day: what you actually have to touch
+
+Designed so that nothing needs touching once it is running.
+
+**Kitchen tablet (viewer): open the app. That is the whole procedure.**
+
+- It goes straight to the tablet it was driving — no list, no address, no code.
+- If the connection drops, it reconnects itself and keeps trying **indefinitely**,
+  backing off from 1s to a 30s poll. A tablet on a wall never needs someone to
+  walk over and dismiss a dialog. It shows what it is doing while it retries.
+- When Wi-Fi returns it reconnects **immediately** instead of waiting out the
+  backoff.
+- If the cashier tablet has taken a **new DHCP address**, it is re-found by
+  discovery automatically. Nobody reads an IP off one screen and types it into
+  another. This is safe because trust is by pinned identity: a stranger at that
+  address just fails the handshake and gets skipped.
+- It only gives up for problems retrying cannot fix — a declined pairing, a
+  version mismatch, or nothing paired at all — and then says which.
+
+**Cashier tablet (host): one tap, plus the system prompt.**
+
+- Quality and port are remembered, so *Start sharing* needs no decisions.
+- Android then asks you to confirm screen capture. **This cannot be skipped or
+  remembered**, by deliberate platform design: any app that could silently begin
+  capturing your screen would be spyware. Expect one confirmation per sharing
+  session, i.e. after a reboot or after tapping Stop.
+
+Two things worth doing once, on the tablets themselves:
+
+- **Set the screen timeout long, or Never, on the cashier tablet.** A display that
+  sleeps captures as black. The app holds the CPU awake but cannot legitimately
+  keep a screen on.
+- Consider Android's **screen pinning** (Settings → Security) on the kitchen
+  tablet so the app cannot be swiped away by accident.
+
+Realistically: a power cut means someone opens the app on the cashier tablet and
+taps twice. Everything after that is automatic, including the kitchen tablet
+finding its way back on its own.
 
 ### Quality presets
 
@@ -227,11 +268,11 @@ is capped at 300 entries and never leaves the tablet.
 
 ## Limits and honest caveats
 
-**Not yet run on hardware.** 96 JVM unit tests pass, covering the wire protocol,
+**Not yet run on hardware.** 113 JVM unit tests pass, covering the wire protocol,
 the AES-GCM channel, HKDF against the RFC 5869 vectors, the full handshake over
 real loopback sockets (including impostor, unpaired-device and declined-pairing
-rejection), the pairing gate, coordinate geometry, and the gesture scheduling
-state machine. Everything that touches the Android framework — capture, encode,
+rejection), the pairing gate, the reconnect and host-candidate rules, coordinate geometry,
+and the gesture scheduling state machine. Everything that touches the Android framework — capture, encode,
 decode, stroke dispatch, the Keystore, the UI — was written against the documented
 APIs but has **not been compiled or executed on a device**, because this was
 developed in an environment with no Android SDK and no access to Google's Maven
@@ -272,7 +313,12 @@ platform, not something the app can or should work around.
 **One viewer at a time.** A second connection is refused with a clear message.
 Two controllers fighting over one gesture injector would produce nonsense.
 
-**Local network only.** No relay, no NAT traversal, no internet path.
+**Local network only.** No relay, no NAT traversal, no internet path. This is a
+deliberate limit, not a missing feature.
+
+**The screen-capture prompt cannot be automated away.** Nor should it be. If a
+future Android release offers a legitimate persistent grant for dedicated devices,
+that is the route — not anything that hides the consent step.
 
 **Pairing is the trust decision.** Do not change the pairing window to stay open,
 and do not make the code auto-confirm. Both would turn an authenticated channel

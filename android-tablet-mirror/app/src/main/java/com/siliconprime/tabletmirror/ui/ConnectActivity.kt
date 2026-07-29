@@ -1,5 +1,7 @@
 package com.siliconprime.tabletmirror.ui
 
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -13,10 +15,16 @@ import com.siliconprime.tabletmirror.databinding.ActivityConnectBinding
 import com.siliconprime.tabletmirror.net.DiscoveredHost
 import com.siliconprime.tabletmirror.net.HostBrowser
 import com.siliconprime.tabletmirror.net.Protocol
+import com.siliconprime.tabletmirror.viewer.ViewerPrefs
 
 /**
  * Finds a host to control: pick a discovered one, or type an address when the
  * network blocks multicast discovery.
+ *
+ * Once a tablet has been paired this screen normally does not appear at all. It
+ * forwards straight through to the last host, so opening the app is the only
+ * action needed to get a picture back. Pass [pickIntent] to reach it deliberately
+ * and choose something else.
  */
 class ConnectActivity : AppCompatActivity() {
 
@@ -24,8 +32,27 @@ class ConnectActivity : AppCompatActivity() {
     private lateinit var browser: HostBrowser
     private val adapter = HostAdapter(::onHostChosen)
 
+    /**
+     * True when onCreate handed straight off to the viewer. Android still runs the
+     * rest of the lifecycle after finish(), so the later callbacks must not touch
+     * the fields this screen never got round to initialising.
+     */
+    private var forwarded = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Straight back to the tablet we were driving, unless asked to choose.
+        val remembered = ViewerPrefs(this).lastEndpoint
+        if (remembered != null && !intent.getBooleanExtra(EXTRA_PICK, false)) {
+            forwarded = true
+            startActivity(
+                ViewerActivity.intent(this, remembered.address, remembered.port, pairing = false),
+            )
+            finish()
+            return
+        }
+
         binding = ActivityConnectBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -40,6 +67,7 @@ class ConnectActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
+        if (forwarded) return
         adapter.clear()
         browser.start(
             onFound = { host -> runOnUiThread { adapter.add(host) } },
@@ -52,7 +80,7 @@ class ConnectActivity : AppCompatActivity() {
     }
 
     override fun onStop() {
-        browser.stop()
+        if (!forwarded) browser.stop()
         super.onStop()
     }
 
@@ -88,6 +116,14 @@ class ConnectActivity : AppCompatActivity() {
     private fun showError(message: String) {
         binding.error.text = message
         binding.error.visibility = View.VISIBLE
+    }
+
+    companion object {
+        private const val EXTRA_PICK = "pick"
+
+        /** Opens the chooser even when a host is already remembered. */
+        fun pickIntent(context: Context): Intent =
+            Intent(context, ConnectActivity::class.java).putExtra(EXTRA_PICK, true)
     }
 
     private class HostAdapter(
