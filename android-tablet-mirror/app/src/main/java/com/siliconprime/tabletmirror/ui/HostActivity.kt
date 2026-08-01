@@ -134,15 +134,17 @@ class HostActivity : AppCompatActivity() {
     }
 
     /**
-     * Asks for the whole display rather than letting the operator pick a single
-     * app.
+     * Declares that this app only ever wants the whole display.
      *
-     * From Android 14 the consent dialog offers "share one app" as well, and that
-     * option would quietly break this app: remote touches arrive as fractions of
-     * the captured image and are replayed against full-display coordinates, so
-     * capturing only one app's window would leave every tap landing in the wrong
-     * place. Declaring the config up front removes the choice, which also means one
-     * less decision each time sharing starts.
+     * From Android 14 the consent dialog also offers "share one app", and that
+     * choice quietly breaks control: remote touches arrive as fractions of the
+     * captured image and are replayed against full-display coordinates, so
+     * capturing a single app's window leaves every tap landing somewhere else.
+     *
+     * Declaring the config is worth doing but is not a guarantee — some builds drop
+     * the chooser, others (observed on One UI, Android 16) still offer it. So it is
+     * a preference, not a defence; the defence is `ScreenCaptureService` noticing
+     * partial capture at runtime and refusing to inject input.
      */
     private fun screenCaptureIntent(manager: MediaProjectionManager): Intent =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -274,7 +276,13 @@ class HostActivity : AppCompatActivity() {
             binding.clientStatus.text = getString(R.string.host_idle)
         }
 
-        showMessage(state.message)
+        // Takes precedence over any other message: nothing else on this screen
+        // matters if the capture is the wrong shape.
+        if (state.partialCapture) {
+            showMessage(getString(R.string.host_partial_capture_warning))
+        } else {
+            showMessage(state.message)
+        }
     }
 
     private fun renderAccessibility(enabled: Boolean) {

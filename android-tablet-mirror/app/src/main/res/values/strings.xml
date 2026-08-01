@@ -35,6 +35,7 @@
     <string name="host_identity_hardware">This tablet\'s identity: %1$s (held in secure hardware)</string>
     <string name="host_identity_software">This tablet\'s identity: %1$s (software-backed key)</string>
     <string name="host_permission_declined">Screen capture was declined, so nothing is being shared.</string>
+    <string name="host_partial_capture_warning">Only one app is being shared, not the whole screen. Remote touches are switched off, because they would land in the wrong place. Stop sharing, start again, and choose "Entire screen".</string>
     <string name="host_bad_port">Pick a port between 1024 and 65535.</string>
 
     <string name="host_paired_devices_label">Paired tablets</string>
@@ -118,6 +119,7 @@
     <string name="status_control_ready">Remote control is available.</string>
     <string name="status_control_unavailable">The other tablet has the accessibility service switched off.</string>
     <string name="status_control_blocked_by_host">The other tablet is set to view-only.</string>
+    <string name="status_control_partial_capture">The other tablet is sharing one app instead of its whole screen, so touches are switched off there.</string>
 
     <string name="error_missing_permission">Screen capture permission is missing.</string>
     <string name="error_encoder">Video encoder failed: %1$s</string>
