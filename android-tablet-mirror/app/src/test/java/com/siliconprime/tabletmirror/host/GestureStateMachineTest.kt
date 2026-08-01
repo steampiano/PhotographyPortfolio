@@ -3,6 +3,8 @@ package com.siliconprime.tabletmirror.host
 import com.siliconprime.tabletmirror.net.TouchAction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -22,6 +24,12 @@ class GestureStateMachineTest {
     private fun up(id: Int, x: Float, y: Float) =
         machine.submit(TouchAction.UP, listOf(id), listOf(p(x, y)))
 
+    /** Presses and pushes past the tap deadline, so the pointer is a hold/drag. */
+    private fun downAndHold(id: Int, x: Float, y: Float) {
+        down(id, x, y)
+        now += GestureStateMachine.TAP_DEADLINE_MS + 1
+    }
+
     /** Dispatches whatever is pending and reports it completed, as the glue does. */
     private fun runGesture(): List<GestureStateMachine.Segment> {
         val segments = machine.poll()
@@ -34,38 +42,78 @@ class GestureStateMachineTest {
     // -----------------------------------------------------------------------
 
     @Test
-    fun `a tap opens a stroke and then closes it`() {
+    fun `a tap is one self-contained stroke, not a continued one`() {
         down(0, 100f, 200f)
-        val first = machine.poll()
-        assertEquals(1, first.size)
-        assertEquals(p(100f, 200f), first[0].anchor)
-        assertTrue("must stay open awaiting the release", first[0].willContinue)
-        assertFalse(first[0].continuation)
+        // Nothing goes out yet: this might still become a tap.
+        assertTrue("a press must not dispatch before the release", machine.poll().isEmpty())
 
-        // The release arrives while the first segment is still in flight.
         up(0, 100f, 200f)
-        assertTrue("nothing may dispatch while a gesture is in flight", machine.poll().isEmpty())
+        val segment = machine.poll().single()
+        assertEquals(p(100f, 200f), segment.anchor)
+        assertFalse("a tap must not continue into another stroke", segment.continuation)
+        assertFalse("a tap must close within its own gesture", segment.willContinue)
+        // Splitting a tap across two dispatches leaves the touch held open between
+        // them, which the host's UI reads as a press rather than a click.
 
         machine.onGestureFinished(cancelled = false)
-        val terminal = machine.poll()
-        assertEquals(1, terminal.size)
-        assertFalse("the terminal segment must close the stroke", terminal[0].willContinue)
-        assertTrue(terminal[0].continuation)
-
-        machine.onGestureFinished(cancelled = false)
-        assertTrue("the pointer is only forgotten after its terminal segment", machine.isIdle)
+        assertTrue(machine.isIdle)
     }
 
     @Test
-    fun `a pointer is not retired before its terminal segment is dispatched`() {
-        down(0, 10f, 10f)
-        machine.poll()
-        up(0, 10f, 10f)
-        machine.onGestureFinished(cancelled = false)
-        // Regression guard: retiring on release would drop the stroke and lose the
-        // tap entirely.
-        assertEquals(setOf(0), machine.livePointerIds)
+    fun `a tap dispatches as soon as the release arrives, without waiting out the deadline`() {
+        down(0, 5f, 5f)
+        now += 20
+        assertTrue(machine.poll().isEmpty())
+        up(0, 5f, 5f)
+        // Latency for a tap is the network only; the deadline is a ceiling, not a wait.
         assertEquals(1, machine.poll().size)
+    }
+
+    @Test
+    fun `a press held past the deadline becomes a continued stroke`() {
+        down(0, 10f, 10f)
+        assertTrue(machine.poll().isEmpty())
+
+        now += GestureStateMachine.TAP_DEADLINE_MS + 1
+        val segment = machine.poll().single()
+        assertTrue("a hold must stay open", segment.willContinue)
+        assertFalse(segment.continuation)
+    }
+
+    @Test
+    fun `the machine asks to be re-polled while a press is undecided`() {
+        down(0, 1f, 1f)
+        machine.poll()
+        val wake = machine.pendingWakeUpMs()
+        assertNotNull("a still finger would otherwise never dispatch", wake)
+        assertTrue(wake!! in 1..GestureStateMachine.TAP_DEADLINE_MS)
+
+        now += GestureStateMachine.TAP_DEADLINE_MS
+        assertEquals(0L, machine.pendingWakeUpMs())
+        machine.poll()
+        // Once dispatched there is nothing left waiting on a timer.
+        assertNull(machine.pendingWakeUpMs())
+    }
+
+    @Test
+    fun `movement before the deadline starts a drag immediately`() {
+        down(0, 0f, 0f)
+        move(0, 30f, 0f)
+        // A drag must not pay the tap deadline: the movement already settles it.
+        val segment = machine.poll().single()
+        assertTrue(segment.willContinue)
+        assertEquals(listOf(p(30f, 0f)), segment.moves)
+        assertNull(machine.pendingWakeUpMs())
+    }
+
+    @Test
+    fun `a quick flick is delivered as one stroke including its movement`() {
+        down(0, 0f, 0f)
+        machine.submit(TouchAction.MOVE, listOf(0), listOf(p(10f, 0f)))
+        machine.submit(TouchAction.UP, listOf(0), listOf(p(20f, 0f)))
+        val segment = machine.poll().single()
+        assertFalse(segment.willContinue)
+        assertEquals(listOf(p(10f, 0f), p(20f, 0f)), segment.moves)
     }
 
     @Test
@@ -83,7 +131,7 @@ class GestureStateMachineTest {
 
     @Test
     fun `moves arriving mid-flight are coalesced into one segment`() {
-        down(0, 0f, 0f)
+        downAndHold(0, 0f, 0f)
         machine.poll()
 
         move(0, 10f, 0f)
@@ -99,7 +147,7 @@ class GestureStateMachineTest {
 
     @Test
     fun `the anchor follows the last delivered position`() {
-        down(0, 0f, 0f)
+        downAndHold(0, 0f, 0f)
         runGesture()
 
         move(0, 40f, 50f)
@@ -115,7 +163,7 @@ class GestureStateMachineTest {
 
     @Test
     fun `segment duration scales with sample count and stays bounded`() {
-        down(0, 0f, 0f)
+        downAndHold(0, 0f, 0f)
         machine.poll()
         repeat(60) { move(0, it.toFloat(), 0f) }
         machine.onGestureFinished(cancelled = false)
@@ -126,7 +174,7 @@ class GestureStateMachineTest {
 
     @Test
     fun `a single sample still gets the minimum duration`() {
-        down(0, 0f, 0f)
+        downAndHold(0, 0f, 0f)
         machine.poll()
         move(0, 1f, 1f)
         machine.onGestureFinished(cancelled = false)
@@ -139,7 +187,7 @@ class GestureStateMachineTest {
 
     @Test
     fun `a held pointer keeps producing idle segments so the touch is not released`() {
-        down(0, 50f, 60f)
+        downAndHold(0, 50f, 60f)
         machine.poll()
 
         repeat(5) {
@@ -154,7 +202,7 @@ class GestureStateMachineTest {
 
     @Test
     fun `a pointer held with no input at all is eventually released`() {
-        down(0, 50f, 60f)
+        downAndHold(0, 50f, 60f)
         machine.poll()
         machine.onGestureFinished(cancelled = false)
 
@@ -175,6 +223,7 @@ class GestureStateMachineTest {
     fun `two pointers are dispatched together in a stable order`() {
         down(0, 0f, 0f)
         down(1, 100f, 100f)
+        now += GestureStateMachine.TAP_DEADLINE_MS + 1
 
         val segments = machine.poll()
         assertEquals(2, segments.size)
@@ -192,6 +241,7 @@ class GestureStateMachineTest {
     fun `one pointer lifting leaves the other still open`() {
         down(0, 0f, 0f)
         down(1, 100f, 100f)
+        now += GestureStateMachine.TAP_DEADLINE_MS + 1
         runGesture()
 
         up(0, 0f, 0f)
@@ -205,10 +255,11 @@ class GestureStateMachineTest {
 
     @Test
     fun `a pointer added mid-gesture starts a new stroke rather than continuing one`() {
-        down(0, 0f, 0f)
+        downAndHold(0, 0f, 0f)
         runGesture()
 
         down(1, 200f, 200f)
+        now += GestureStateMachine.TAP_DEADLINE_MS + 1
         val segments = machine.poll().associateBy { it.pointerId }
         assertTrue("the existing pointer continues", segments.getValue(0).continuation)
         assertFalse("the new pointer must not continue a stroke it never had", segments.getValue(1).continuation)
@@ -218,12 +269,13 @@ class GestureStateMachineTest {
     fun `the pointer count is capped`() {
         val cap = GestureStateMachine.MAX_POINTERS
         repeat(cap + 5) { down(it, it.toFloat(), it.toFloat()) }
+        now += GestureStateMachine.TAP_DEADLINE_MS + 1
         assertEquals(cap, machine.poll().size)
     }
 
     @Test
     fun `a duplicate down does not strand the live pointer`() {
-        down(0, 10f, 10f)
+        downAndHold(0, 10f, 10f)
         runGesture()
         down(0, 999f, 999f)
 
@@ -242,6 +294,7 @@ class GestureStateMachineTest {
     fun `cancel releases every live pointer instead of dropping them`() {
         down(0, 0f, 0f)
         down(1, 50f, 50f)
+        now += GestureStateMachine.TAP_DEADLINE_MS + 1
         runGesture()
 
         machine.submit(TouchAction.CANCEL, emptyList(), emptyList())
@@ -255,7 +308,7 @@ class GestureStateMachineTest {
 
     @Test
     fun `a cancelled gesture discards all state because strokes are invalid`() {
-        down(0, 0f, 0f)
+        downAndHold(0, 0f, 0f)
         machine.poll()
         machine.onGestureFinished(cancelled = true)
         // Continuing a cancelled stroke is illegal, so nothing may be carried over.
@@ -265,12 +318,12 @@ class GestureStateMachineTest {
 
     @Test
     fun `a refused dispatch clears state rather than wedging in flight`() {
-        down(0, 0f, 0f)
+        downAndHold(0, 0f, 0f)
         machine.poll()
         machine.onDispatchFailed()
         assertTrue(machine.isIdle)
         // A stuck inFlight flag would silently kill all further input.
-        down(1, 5f, 5f)
+        downAndHold(1, 5f, 5f)
         assertEquals(1, machine.poll().size)
     }
 
@@ -284,7 +337,7 @@ class GestureStateMachineTest {
 
     @Test
     fun `a move after release is ignored`() {
-        down(0, 0f, 0f)
+        downAndHold(0, 0f, 0f)
         machine.poll()
         up(0, 1f, 1f)
         move(0, 500f, 500f)
@@ -298,7 +351,7 @@ class GestureStateMachineTest {
 
     @Test
     fun `a full tap drag release cycle drains completely`() {
-        down(0, 0f, 0f)
+        downAndHold(0, 0f, 0f)
         runGesture()
         repeat(4) { i ->
             move(0, i * 10f, i * 10f)

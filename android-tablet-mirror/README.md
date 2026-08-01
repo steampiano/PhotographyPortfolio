@@ -309,8 +309,17 @@ hardware-backed path is the stronger claim and the one worth confirming.
 **Remote control needs an accessibility service.** Unavoidable for a
 user-installed app. Consequences:
 
-- Gestures are dispatched as short chained segments, so input has a small
-  inherent lag (tens of milliseconds) beyond network latency.
+- A tap is sent as one self-contained stroke, decided by waiting up to 200ms to
+  see whether the press becomes a drag. That ceiling costs a tap nothing — a
+  release dispatches immediately — but it is why taps register as clicks rather
+  than as a press being held.
+- Drags are dispatched as short chained segments, so dragging has a small inherent
+  lag (tens of milliseconds) beyond network latency.
+- **If another accessibility service that reads the screen is enabled on the host
+  — TalkBack, Voice Access, Select to Speak — a single tap becomes "move
+  accessibility focus" rather than "activate".** That is the platform's
+  explore-by-touch behaviour, not something this app can override. Turn those off
+  on the shared tablet.
 - Multi-touch is forwarded (up to 10 pointers). The scheduling is unit tested,
   but it is still the least certain part in practice: chaining several strokes
   across dispatches leans on platform behaviour that varies more between Android

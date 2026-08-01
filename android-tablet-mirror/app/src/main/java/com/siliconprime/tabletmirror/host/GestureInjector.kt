@@ -48,6 +48,7 @@ class GestureInjector(private val service: AccessibilityService) {
     }
 
     fun shutdown() {
+        handler.removeCallbacks(wakeUp)
         handler.post {
             machine.clear()
             strokes.clear()
@@ -55,10 +56,23 @@ class GestureInjector(private val service: AccessibilityService) {
         thread.quitSafely()
     }
 
+    private val wakeUp = Runnable { pump() }
+
+    /**
+     * Re-polls when a press is waiting to see whether it becomes a tap. Without
+     * this a finger held perfectly still would never be dispatched at all.
+     */
+    private fun scheduleWakeUp() {
+        val delay = machine.pendingWakeUpMs() ?: return
+        handler.removeCallbacks(wakeUp)
+        handler.postDelayed(wakeUp, delay.coerceAtLeast(1L))
+    }
+
     private fun pump() {
         val segments = machine.poll()
         if (segments.isEmpty()) {
             pruneStrokes()
+            scheduleWakeUp()
             return
         }
 
@@ -102,6 +116,8 @@ class GestureInjector(private val service: AccessibilityService) {
             machine.onDispatchFailed()
             strokes.clear()
         }
+        // A second pointer may still be waiting on the tap deadline.
+        scheduleWakeUp()
     }
 
     private fun buildStroke(segment: GestureStateMachine.Segment): StrokeDescription {

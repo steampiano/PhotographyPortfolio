@@ -45,7 +45,12 @@ class GestureStateMachine(
         val continuation: Boolean,
     )
 
-    private class Pointer(var x: Float, var y: Float, var lastInputAt: Long) {
+    private class Pointer(
+        var x: Float,
+        var y: Float,
+        var lastInputAt: Long,
+        val downAt: Long,
+    ) {
         val queued = ArrayList<Point>()
         var started = false
 
@@ -71,7 +76,7 @@ class GestureStateMachine(
                 // Ignore a duplicate DOWN: re-seeding a live pointer would strand
                 // its open stroke.
                 if (pointers.size < maxPointers && !pointers.containsKey(id)) {
-                    pointers[id] = Pointer(points[i].x, points[i].y, now)
+                    pointers[id] = Pointer(points[i].x, points[i].y, now, now)
                 }
             }
 
@@ -156,6 +161,24 @@ class GestureStateMachine(
     private fun segmentFor(id: Int, pointer: Pointer): Segment? {
         if (pointer.finished) return null
 
+        // A press that has neither moved nor been released yet may still turn out to
+        // be an ordinary tap, so hold off and let the release decide.
+        //
+        // This is the whole reason taps work. Dispatching on the press means the
+        // stroke has to be left open (willContinue) and closed by a second, chained
+        // dispatch — and between those two the touch stays down, which the host's UI
+        // reads as a press being held: the item highlights but never activates.
+        // Waiting lets a tap go out as ONE self-contained down-and-up stroke, which
+        // is unambiguously a click.
+        //
+        // It delays nothing in practice: the deadline is a ceiling, not a wait. A
+        // release arriving after 40ms dispatches at 40ms.
+        if (!pointer.started && !pointer.lifting && pointer.queued.isEmpty() &&
+            clock() - pointer.downAt < TAP_DEADLINE_MS
+        ) {
+            return null
+        }
+
         val moves = pointer.queued.toList()
         pointer.queued.clear()
 
@@ -178,10 +201,17 @@ class GestureStateMachine(
             pointer.y = last.y
         }
 
-        val duration = if (moves.isEmpty()) {
+        val scaled = if (moves.isEmpty()) {
             SEGMENT_MS
         } else {
             (moves.size * PER_SAMPLE_MS).coerceIn(SEGMENT_MS, MAX_SEGMENT_MS)
+        }
+        // A whole tap in one stroke gets a floor, so it is comfortably long enough
+        // to register as a click rather than being dismissed as noise.
+        val duration = if (!pointer.started && pointer.lifting) {
+            maxOf(scaled, TAP_DURATION_MS)
+        } else {
+            scaled
         }
 
         val willContinue = !pointer.lifting
@@ -199,9 +229,31 @@ class GestureStateMachine(
         return segment
     }
 
+    /**
+     * How long until [poll] should be called again for a press that is waiting to
+     * see whether it becomes a tap, or null if nothing is waiting on a timer.
+     */
+    fun pendingWakeUpMs(): Long? {
+        val now = clock()
+        return pointers.values
+            .filter { !it.started && !it.lifting && it.queued.isEmpty() }
+            .minOfOrNull { (it.downAt + TAP_DEADLINE_MS - now).coerceAtLeast(0L) }
+    }
+
     companion object {
         /** Matches GestureDescription.getMaxStrokeCount() on current platforms. */
         const val MAX_POINTERS = 10
+
+        /**
+         * How long a press may stay undecided before it is treated as a hold or a
+         * drag rather than a tap. Comfortably under Android's 500ms long-press
+         * threshold, and it delays nothing: a release before this dispatches at
+         * once.
+         */
+        const val TAP_DEADLINE_MS = 200L
+
+        /** Length of a synthesised tap: long enough to register, short enough not to hold. */
+        const val TAP_DURATION_MS = 60L
 
         /** Segment length. Short keeps drags responsive; too short gets coalesced. */
         const val SEGMENT_MS = 32L
