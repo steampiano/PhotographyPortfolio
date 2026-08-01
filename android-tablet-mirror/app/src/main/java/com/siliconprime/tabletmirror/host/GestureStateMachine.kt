@@ -137,6 +137,18 @@ class GestureStateMachine(
             pointers.values.removeAll { it.lifting || it.finished }
             return emptyList()
         }
+
+        // Retire finished pointers here, as their terminal segment goes out, rather
+        // than waiting for the platform's callback.
+        //
+        // Holding the slot until the callback silently swallowed the next touch: a
+        // fresh DOWN for the same pointer id was rejected as a duplicate, and then
+        // its UP was rejected too because the stale pointer was already lifting. Any
+        // tap beginning before the previous result came back was lost whole, so
+        // tapping at a normal pace — or faster, because it seemed broken — dropped
+        // more and more of them.
+        pointers.values.removeAll { it.finished }
+
         inFlight = true
         inFlightSince = clock()
         return segments

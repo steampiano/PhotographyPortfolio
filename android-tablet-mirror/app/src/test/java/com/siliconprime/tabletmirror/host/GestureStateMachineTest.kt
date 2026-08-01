@@ -181,6 +181,46 @@ class GestureStateMachineTest {
     }
 
     @Test
+    fun `a tap starting before the previous result arrives is not swallowed`() {
+        // Tapping at any normal pace means the next press begins before the platform
+        // has reported the last gesture. Both taps must land.
+        down(0, 10f, 10f)
+        up(0, 10f, 10f)
+        assertEquals(1, machine.poll().size)
+
+        // Same pointer id, as every single-finger tap uses. No callback yet.
+        down(0, 50f, 50f)
+        up(0, 50f, 50f)
+
+        machine.onGestureFinished(cancelled = false)
+        val second = machine.poll().single()
+        assertEquals("the second tap must land where it was pressed", p(50f, 50f), second.anchor)
+        assertFalse(second.willContinue)
+    }
+
+    @Test
+    fun `a finished pointer is retired as its terminal segment goes out`() {
+        down(0, 1f, 1f)
+        up(0, 1f, 1f)
+        machine.poll()
+        // Holding the slot until the callback is what lost the next touch: a new
+        // DOWN for this id would be rejected as a duplicate.
+        assertTrue(machine.livePointerIds.isEmpty())
+    }
+
+    @Test
+    fun `a run of taps all land`() {
+        repeat(5) { i ->
+            val at = 10f + i * 20f
+            down(0, at, at)
+            up(0, at, at)
+            val segment = machine.poll().single()
+            assertEquals("tap $i", p(at, at), segment.anchor)
+            machine.onGestureFinished(cancelled = false)
+        }
+    }
+
+    @Test
     fun `a release before anything was dispatched leaves no pointer behind`() {
         down(0, 5f, 5f)
         machine.releaseAll()

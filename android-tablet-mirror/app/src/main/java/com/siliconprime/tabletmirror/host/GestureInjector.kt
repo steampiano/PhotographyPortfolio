@@ -177,8 +177,14 @@ class GestureInjector(private val service: AccessibilityService) {
 
         override fun onCancelled(gestureDescription: GestureDescription?) {
             handler.post {
+                // The remaining blind spot: a cancelled gesture injects no click, and
+                // until now said nothing about it. If this appears while taps are
+                // failing, the platform is aborting our gestures and that is a
+                // different problem from anything the state machine controls.
+                Log.w(TAG, "gesture cancelled by the platform; no touch was delivered")
                 machine.onGestureFinished(cancelled = true)
                 strokes.clear()
+                pump()
             }
         }
     }
