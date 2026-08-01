@@ -9,12 +9,10 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
-import android.text.InputType
 import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.View
 import android.view.WindowManager
-import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -29,9 +27,6 @@ import com.siliconprime.tabletmirror.net.HostBrowser
 import com.siliconprime.tabletmirror.net.HostStatus
 import com.siliconprime.tabletmirror.net.PairingGate
 import com.siliconprime.tabletmirror.net.Protocol
-import com.siliconprime.tabletmirror.net.RemoteAction
-import com.siliconprime.tabletmirror.net.TextInput
-import com.siliconprime.tabletmirror.net.TextOp
 import com.siliconprime.tabletmirror.net.TouchAction
 import com.siliconprime.tabletmirror.net.TouchBatch
 import com.siliconprime.tabletmirror.net.TouchPoint
@@ -297,14 +292,6 @@ class ViewerActivity : AppCompatActivity() {
     // -----------------------------------------------------------------------
 
     private fun wireControls() {
-        binding.buttonBack.setOnClickListener { sendAction(RemoteAction.BACK) }
-        binding.buttonHome.setOnClickListener { sendAction(RemoteAction.HOME) }
-        binding.buttonRecents.setOnClickListener { sendAction(RemoteAction.RECENTS) }
-        binding.buttonNotifications.setOnClickListener { sendAction(RemoteAction.NOTIFICATIONS) }
-        binding.buttonBackspace.setOnClickListener {
-            requireControl { connection?.sendText(TextInput(TextOp.BACKSPACE, "")) }
-        }
-        binding.buttonKeyboard.setOnClickListener { promptForText() }
         binding.buttonDisconnect.setOnClickListener { finish() }
 
         binding.buttonViewOnly.setOnClickListener {
@@ -320,8 +307,11 @@ class ViewerActivity : AppCompatActivity() {
         }
 
         binding.buttonToggleBar.setOnClickListener {
-            val visible = binding.controlBar.visibility == View.VISIBLE
-            binding.controlBar.visibility = if (visible) View.GONE else View.VISIBLE
+            val hiding = binding.controlBar.visibility == View.VISIBLE
+            binding.controlBar.visibility = if (hiding) View.GONE else View.VISIBLE
+            binding.buttonToggleBar.setText(
+                if (hiding) R.string.action_view_controls else R.string.action_hide_controls,
+            )
         }
 
         binding.surface.setOnTouchListener { view, event -> forwardTouch(view, event) }
@@ -345,38 +335,6 @@ class ViewerActivity : AppCompatActivity() {
         if (pairingDialog?.isShowing == true) return
         pairingDialog = PairingDialog.show(this, request, pairingGate)
     }
-
-    private fun promptForText() {
-        val field = EditText(this).apply {
-            inputType = InputType.TYPE_CLASS_TEXT
-            hint = getString(R.string.hint_text_to_send)
-        }
-        AlertDialog.Builder(this)
-            .setTitle(R.string.title_send_text)
-            .setMessage(R.string.message_send_text)
-            .setView(field)
-            .setPositiveButton(R.string.action_send) { _, _ ->
-                val text = field.text?.toString().orEmpty()
-                if (text.isNotEmpty()) {
-                    requireControl { connection?.sendText(TextInput(TextOp.INSERT, text)) }
-                }
-            }
-            .setNegativeButton(R.string.action_cancel, null)
-            .show()
-    }
-
-    /** Runs [block] only if the host can actually act on it, else explains why. */
-    private fun requireControl(block: () -> Unit) {
-        if (!controlAvailable) {
-            // The host says why; relaying its wording avoids guessing whether the
-            // accessibility service is off or control is switched off there.
-            setStatus(controlDetail.ifEmpty { getString(R.string.viewer_control_unavailable) })
-            return
-        }
-        block()
-    }
-
-    private fun sendAction(action: Int) = requireControl { connection?.sendGlobalAction(action) }
 
     private fun setStatus(text: String?) {
         if (text.isNullOrEmpty()) {

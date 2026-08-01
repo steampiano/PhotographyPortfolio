@@ -25,6 +25,13 @@ enum class Quality(
     BALANCED(1280, 6_000_000, 30),
     HIGH(1600, 10_000_000, 30),
 
+    /**
+     * Full HD at 60fps. The smoothest option, and the most demanding: not every
+     * tablet's encoder can do 1080p60, so the host falls back automatically if
+     * the codec refuses to configure.
+     */
+    FULL_HD_60(1920, 16_000_000, 60),
+
     /** No downscale — sharp text, needs a good 5GHz link. */
     NATIVE(0, 14_000_000, 30),
 }

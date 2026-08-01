@@ -28,97 +28,55 @@
         android:textColor="@android:color/white"
         android:textSize="14sp" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/button_toggle_bar"
-        style="@style/Widget.Material3.Button.TextButton"
+    <!--
+      Everything the viewer needs sits in one row in the bottom-right corner.
+      Navigation and typing are deliberately absent: the mirrored image includes
+      the host's own navigation bar and keyboard, so those are tapped directly.
+    -->
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        android:layout_margin="4dp"
-        android:minWidth="0dp"
-        android:text="@string/action_toggle_controls"
-        android:textColor="@android:color/white" />
-
-    <LinearLayout
-        android:id="@+id/control_bar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|center_horizontal"
         android:layout_margin="8dp"
-        android:background="#B3000000"
-        android:orientation="horizontal"
-        android:paddingHorizontal="4dp">
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:id="@+id/control_bar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#B3000000"
+            android:orientation="horizontal"
+            android:paddingHorizontal="4dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/button_view_only"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="0dp"
+                android:text="@string/action_view_only"
+                android:textColor="@android:color/white" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/button_disconnect"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="0dp"
+                android:text="@string/action_disconnect"
+                android:textColor="@android:color/white" />
+        </LinearLayout>
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/button_back"
+            android:id="@+id/button_toggle_bar"
             style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:background="#B3000000"
             android:minWidth="0dp"
-            android:text="@string/action_remote_back"
-            android:textColor="@android:color/white" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/button_home"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minWidth="0dp"
-            android:text="@string/action_remote_home"
-            android:textColor="@android:color/white" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/button_recents"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minWidth="0dp"
-            android:text="@string/action_remote_recents"
-            android:textColor="@android:color/white" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/button_notifications"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minWidth="0dp"
-            android:text="@string/action_remote_notifications"
-            android:textColor="@android:color/white" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/button_keyboard"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minWidth="0dp"
-            android:text="@string/action_remote_text"
-            android:textColor="@android:color/white" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/button_backspace"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minWidth="0dp"
-            android:text="@string/action_remote_backspace"
-            android:textColor="@android:color/white" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/button_view_only"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minWidth="0dp"
-            android:text="@string/action_view_only"
-            android:textColor="@android:color/white" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/button_disconnect"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minWidth="0dp"
-            android:text="@string/action_disconnect"
+            android:text="@string/action_hide_controls"
             android:textColor="@android:color/white" />
 
     </LinearLayout>

@@ -310,6 +310,7 @@ class HostActivity : AppCompatActivity() {
         Quality.LOW -> R.string.quality_low
         Quality.BALANCED -> R.string.quality_balanced
         Quality.HIGH -> R.string.quality_high
+        Quality.FULL_HD_60 -> R.string.quality_full_hd_60
         Quality.NATIVE -> R.string.quality_native
     }
 }

@@ -62,6 +62,7 @@
     <string name="quality_low">Low — 960px, easiest on a weak network</string>
     <string name="quality_balanced">Balanced — 1280px, 30fps</string>
     <string name="quality_high">High — 1600px, 30fps</string>
+    <string name="quality_full_hd_60">Full HD 60fps — 1080p, smoothest, needs 5GHz Wi-Fi</string>
     <string name="quality_native">Native resolution — sharpest, needs a fast link</string>
 
     <!-- Pairing -->
@@ -97,21 +98,12 @@
     <string name="title_connection_failed">Could not connect</string>
     <string name="title_disconnected">Disconnected</string>
 
-    <string name="action_remote_back">Back</string>
-    <string name="action_remote_home">Home</string>
-    <string name="action_remote_recents">Recents</string>
-    <string name="action_remote_notifications">Notifications</string>
-    <string name="action_remote_text">Type</string>
-    <string name="action_remote_backspace">Delete</string>
     <string name="action_view_only">View only</string>
     <string name="action_enable_touch">Enable touch</string>
     <string name="action_disconnect">Disconnect</string>
-    <string name="action_toggle_controls">Controls</string>
+    <string name="action_hide_controls">Hide controls</string>
+    <string name="action_view_controls">View controls</string>
 
-    <string name="title_send_text">Type on the other tablet</string>
-    <string name="message_send_text">Text is appended to whichever field is focused on the other tablet.</string>
-    <string name="hint_text_to_send">Text</string>
-    <string name="action_send">Send</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_close">Close</string>
 
@@ -128,5 +120,6 @@
 
     <string name="error_missing_permission">Screen capture permission is missing.</string>
     <string name="error_encoder">Video encoder failed: %1$s</string>
+    <string name="host_quality_reduced">This tablet\'s encoder could not manage that setting, so quality was reduced to %1$s.</string>
     <string name="error_server">Network error: %1$s</string>
 </resources>

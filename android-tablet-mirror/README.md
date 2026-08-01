@@ -159,8 +159,17 @@ is between your tablets.
 After that first pairing, neither tablet asks anything again: the kitchen tablet
 connects and authenticates on its own, including after a reboot or a Wi-Fi drop.
 
-The viewer's bottom bar has Back / Home / Recents / Notifications, text entry,
-and a **View only** toggle. `Controls` hides the bar.
+The viewer's only controls are **View only** and **Disconnect**, bottom-right,
+with a **Hide controls** toggle. There are deliberately no navigation or typing
+buttons: the mirror includes the host's own navigation bar and on-screen keyboard,
+so those are tapped directly on the image.
+
+One caveat if your host tablet uses **gesture navigation** rather than a
+three-button bar: there is nothing on screen to tap for Back or Home, and an
+injected swipe cannot trigger the system's own navigation gestures. Switch that
+tablet to three-button navigation (Settings → System → Gestures → System
+navigation), or ask and the Back/Home buttons can come back — the protocol still
+supports them.
 
 **Paired tablets** and **connection history** are both visible on the host
 screen, so you can see which device is trusted and when it last connected. Use
@@ -217,7 +226,12 @@ finding its way back on its own.
 | Low | 960 px | 2.5 Mbps | Congested or 2.4 GHz Wi-Fi |
 | Balanced | 1280 px | 6 Mbps | Default |
 | High | 1600 px | 10 Mbps | Good 5 GHz link |
+| Full HD 60fps | 1920 px @ 60fps | 16 Mbps | Smoothest; needs 5 GHz and a capable encoder |
 | Native | unscaled | 14 Mbps | Reading small text, fast link only |
+
+Not every tablet's encoder can manage 1080p60. If the codec refuses the chosen
+preset the host steps down automatically (High, then Balanced, then Low) and says
+so, rather than failing to share at all.
 
 ## Running this in front of a POS
 

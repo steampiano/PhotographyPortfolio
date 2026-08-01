@@ -231,21 +231,46 @@ class ScreenCaptureService : Service() {
         capturedHeight = metrics.heightPixels
         if (capturedWidth <= 0 || capturedHeight <= 0) return
 
-        encoder = try {
-            ScreenEncoder(
-                projection = active,
-                displayWidth = capturedWidth,
-                displayHeight = capturedHeight,
-                densityDpi = metrics.densityDpi,
-                quality = quality,
-                listener = encoderListener,
-            ).also { it.start() }
-        } catch (e: Exception) {
-            Log.e(TAG, "encoder failed to start", e)
-            publish { it.copy(message = getString(R.string.error_encoder, e.message ?: "")) }
-            null
+        // The chosen preset may be beyond this tablet's encoder — 1080p60 in
+        // particular is not universal. Step down rather than refusing to share:
+        // a softer picture beats a blank one, and nobody has to know why.
+        var lastError: Exception? = null
+        for (attempt in fallbackChain(quality)) {
+            val started = try {
+                ScreenEncoder(
+                    projection = active,
+                    displayWidth = capturedWidth,
+                    displayHeight = capturedHeight,
+                    densityDpi = metrics.densityDpi,
+                    quality = attempt,
+                    listener = encoderListener,
+                ).also { it.start() }
+            } catch (e: Exception) {
+                Log.w(TAG, "encoder rejected ${attempt.name}: ${e.message}")
+                lastError = e
+                null
+            }
+            if (started != null) {
+                encoder = started
+                if (attempt != quality) {
+                    Log.i(TAG, "fell back from ${quality.name} to ${attempt.name}")
+                    publish {
+                        it.copy(message = getString(R.string.host_quality_reduced, attempt.name))
+                    }
+                }
+                return
+            }
+        }
+
+        Log.e(TAG, "no encoder configuration worked", lastError)
+        publish {
+            it.copy(message = getString(R.string.error_encoder, lastError?.message ?: ""))
         }
     }
+
+    /** The chosen preset, then progressively easier ones, without repeats. */
+    private fun fallbackChain(chosen: Quality): List<Quality> =
+        listOf(chosen, Quality.HIGH, Quality.BALANCED, Quality.LOW).distinct()
 
     private fun stopEncoder() {
         encoder?.stop()
