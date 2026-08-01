@@ -214,13 +214,10 @@ revoking capture, ends it.
   remembered**, by deliberate platform design: any app that could silently begin
   capturing your screen would be spyware. Expect one confirmation per sharing
   session, i.e. after a reboot or after tapping Stop.
-- The app asks for the **whole display**. Some builds therefore drop the "share one
-  app" option; others (One UI on Android 16, for one) still offer it, and there is
-  no way to force it away. It matters because capturing a single app's window
-  misaligns every remote touch — touches are replayed against full-display
-  coordinates. So if that option is picked, the host **detects it and refuses
-  remote input**, saying what to change, rather than letting taps land in the wrong
-  place on a till.
+- The app asks for the **whole display**, so Android 14+ does not offer the
+  "share one app" choice. That is not only one fewer decision: capturing a single
+  app's window would misalign every remote touch, because touches are replayed
+  against full-display coordinates.
 
 Two things worth doing once, on the tablets themselves:
 

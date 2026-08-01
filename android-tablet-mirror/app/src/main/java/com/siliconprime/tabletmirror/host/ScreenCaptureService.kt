@@ -51,8 +51,6 @@ data class HostState(
     val accessibilityEnabled: Boolean = false,
     /** Whether this tablet is willing to accept remote input at all. */
     val controlAllowed: Boolean = true,
-    /** The operator picked "a single app" instead of the whole screen. */
-    val partialCapture: Boolean = false,
     val fingerprint: String = "",
     val hardwareBackedKey: Boolean = false,
     val message: String? = null,
@@ -97,14 +95,6 @@ class ScreenCaptureService : Service() {
      * acting on that would end a session the operator never asked to end.
      */
     private var encoderRestarting = false
-
-    /**
-     * True when the operator chose "a single app" rather than the whole screen.
-     *
-     * Read from the input gate on the server thread, hence volatile.
-     */
-    @Volatile
-    private var partialCapture = false
 
     /** Read for every inbound input message, so it is resolved once up front. */
     private lateinit var settings: HostSettings
@@ -185,8 +175,7 @@ class ScreenCaptureService : Service() {
             trustStore = PreferencesTrustStore(this),
             pairingGate = pairingGate,
             deviceName = deviceName,
-            // Partial capture is a hard block, not a preference: see partialCapture.
-            controlAllowed = { settings.controlAllowed && !partialCapture },
+            controlAllowed = { settings.controlAllowed },
             log = ConnectionLog(this),
             callbacks = serverCallbacks,
         )
@@ -223,7 +212,6 @@ class ScreenCaptureService : Service() {
         controlJob?.cancel()
         controlJob = null
 
-        partialCapture = false
         pairingGate.closeWindow()
         advertiser?.unregister()
         advertiser = null
@@ -391,26 +379,6 @@ class ScreenCaptureService : Service() {
             stopSharing()
             stopSelf()
         }
-
-        /**
-         * Fires only for single-app capture, which is what makes it a reliable
-         * detector for it.
-         *
-         * The consent dialog on some builds offers "a single app" whatever the app
-         * asks for, and picking it silently breaks control: touches travel as
-         * fractions of the captured image and are replayed against full-display
-         * coordinates, so every tap would land somewhere other than where it was
-         * aimed. On a till that is worse than not working — it could press the wrong
-         * thing. So remote input is refused outright until capture is the whole
-         * screen, and the operator is told plainly what to change.
-         */
-        override fun onCapturedContentResize(width: Int, height: Int) {
-            if (partialCapture) return
-            Log.w(TAG, "capture is limited to a single app (${width}x$height); refusing remote input")
-            partialCapture = true
-            publish { it.copy(partialCapture = true) }
-            publishControlStatus()
-        }
     }
 
     // -----------------------------------------------------------------------
@@ -483,9 +451,8 @@ class ScreenCaptureService : Service() {
      */
     private fun publishControlStatus() {
         val accessibility = MirrorAccessibilityService.isAvailable.value
-        val allowed = settings.controlAllowed && !partialCapture
+        val allowed = settings.controlAllowed
         val detail = when {
-            partialCapture -> getString(R.string.status_control_partial_capture)
             !allowed -> getString(R.string.status_control_blocked_by_host)
             !accessibility -> getString(R.string.status_control_unavailable)
             else -> getString(R.string.status_control_ready)
