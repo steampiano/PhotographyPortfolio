@@ -22,33 +22,37 @@
         android:layout_height="wrap_content"
         android:layout_gravity="top|center_horizontal"
         android:layout_margin="12dp"
-        android:background="#B3000000"
-        android:paddingHorizontal="12dp"
-        android:paddingVertical="6dp"
+        android:background="@drawable/overlay_pill"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="8dp"
         android:textColor="@android:color/white"
         android:textSize="14sp" />
 
     <!--
-      Everything the viewer needs sits in one row in the bottom-right corner.
-      Back is spelled out rather than left to the host's own navigation, which may
-      be gesture-only and so invisible in the mirror. Disconnect is kept away from
-      Back so the two are not confused at a glance.
+      One backdrop for every control, including the toggle.
+
+      The toggle previously sat outside this container with its own
+      android:background, which MaterialButton discards — so its white label had
+      nothing behind it and vanished over pale content. Sharing one parent means the
+      four can't drift apart in shade, and the toggle stays legible on its own once
+      the rest are hidden.
     -->
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        android:layout_margin="8dp"
+        android:layout_margin="12dp"
+        android:background="@drawable/overlay_pill"
         android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:paddingHorizontal="4dp">
 
         <LinearLayout
             android:id="@+id/control_bar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="#B3000000"
-            android:orientation="horizontal"
-            android:paddingHorizontal="4dp">
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/button_back"
@@ -83,8 +87,6 @@
             style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:background="#B3000000"
             android:minWidth="0dp"
             android:text="@string/action_hide_controls"
             android:textColor="@android:color/white" />

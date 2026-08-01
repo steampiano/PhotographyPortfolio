@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Backdrop for the viewer's overlays.
+
+  The mirrored screen underneath can be any colour, so overlay text needs a
+  backdrop of its own rather than relying on contrast that may not be there — white
+  labels over a white POS screen are invisible. Opaque enough to guarantee legible
+  white text on any content, rounded so it reads as a deliberate control surface
+  rather than a rectangle dropped on the image.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#D9000000" />
+    <corners android:radius="20dp" />
+</shape>

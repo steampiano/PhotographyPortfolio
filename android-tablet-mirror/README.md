@@ -160,7 +160,9 @@ After that first pairing, neither tablet asks anything again: the kitchen tablet
 connects and authenticates on its own, including after a reboot or a Wi-Fi drop.
 
 The viewer's controls are **Back**, **View only** and **Disconnect**, bottom-right,
-with a **Hide controls** toggle.
+with a **Hide controls** toggle. All four share one opaque rounded backdrop: the
+mirrored screen underneath can be any colour, so white labels need a surface of
+their own rather than contrast that may not be there.
 
 **Back** is a labelled button rather than something to discover, because the
 host's own Back may not be tappable in the mirror at all: a tablet using gesture
