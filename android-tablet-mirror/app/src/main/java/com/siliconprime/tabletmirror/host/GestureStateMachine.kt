@@ -245,12 +245,21 @@ class GestureStateMachine(
         const val MAX_POINTERS = 10
 
         /**
-         * How long a press may stay undecided before it is treated as a hold or a
-         * drag rather than a tap. Comfortably under Android's 500ms long-press
-         * threshold, and it delays nothing: a release before this dispatches at
-         * once.
+         * How long a press may stay undecided before it is treated as a hold rather
+         * than a tap.
+         *
+         * Sized against how people actually tap, not against what feels brisk. A
+         * deliberate tap — someone aiming at a mirrored screen rather than their own
+         * — is commonly 250-400ms, and anything above this threshold gets dispatched
+         * as a held touch, which the host's UI then reads as a long press: home
+         * screen icons offer to uninstall instead of opening. Erring high keeps
+         * ordinary taps on the clean single-stroke path.
+         *
+         * Still clear of Android's 500ms long-press timeout, so a genuine long press
+         * remains distinguishable, and it delays nothing: a release before this
+         * dispatches at once.
          */
-        const val TAP_DEADLINE_MS = 200L
+        const val TAP_DEADLINE_MS = 350L
 
         /** Length of a synthesised tap: long enough to register, short enough not to hold. */
         const val TAP_DURATION_MS = 60L

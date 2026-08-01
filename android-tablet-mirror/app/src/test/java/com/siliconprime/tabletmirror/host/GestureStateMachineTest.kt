@@ -70,6 +70,30 @@ class GestureStateMachineTest {
     }
 
     @Test
+    fun `a slow but ordinary tap still goes out as a single stroke`() {
+        down(0, 40f, 40f)
+        // 300ms is a perfectly normal deliberate tap, and it must not be mistaken
+        // for a hold: that is what makes home screen icons offer to uninstall.
+        now += 300
+        assertTrue(machine.poll().isEmpty())
+
+        up(0, 40f, 40f)
+        val segment = machine.poll().single()
+        assertFalse("a 300ms press is a tap, not a hold", segment.willContinue)
+        assertFalse(segment.continuation)
+    }
+
+    @Test
+    fun `the tap deadline stays clear of Android's long-press threshold`() {
+        // Above 500ms the platform would call it a long press anyway, so deciding
+        // later than that could never produce a click.
+        assertTrue(
+            "deadline must leave room before the 500ms long-press timeout",
+            GestureStateMachine.TAP_DEADLINE_MS in 250L..450L,
+        )
+    }
+
+    @Test
     fun `a press held past the deadline becomes a continued stroke`() {
         down(0, 10f, 10f)
         assertTrue(machine.poll().isEmpty())
