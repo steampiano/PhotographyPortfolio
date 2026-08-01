@@ -13,8 +13,11 @@ android {
         // which the whole remote-control path is built on, arrives in Oreo.
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        // Launchers cache app icons keyed on package and version, so a same-version
+        // reinstall can keep showing a stale icon. Bumping this on each installed
+        // build is the non-destructive way to make them re-read it.
+        versionCode = 2
+        versionName = "1.1"
     }
 
     buildTypes {
