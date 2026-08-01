@@ -313,10 +313,14 @@ hardware-backed path is the stronger claim and the one worth confirming.
 **Remote control needs an accessibility service.** Unavoidable for a
 user-installed app. Consequences:
 
-- A tap is sent as one self-contained stroke, decided by waiting up to 200ms to
+- A tap is sent as one self-contained stroke, decided by waiting up to 350ms to
   see whether the press becomes a drag. That ceiling costs a tap nothing — a
   release dispatches immediately — but it is why taps register as clicks rather
   than as a press being held.
+- A tap is also dispatched as a *stationary* press when the release lands within
+  the host's touch slop. Finger wobble is magnified when the viewer's video is
+  smaller than the host's display, and a tap that travels gets claimed as a scroll
+  by any scrollable ancestor, which cancels the click.
 - Drags are dispatched as short chained segments, so dragging has a small inherent
   lag (tens of milliseconds) beyond network latency.
 - **If another accessibility service that reads the screen is enabled on the host

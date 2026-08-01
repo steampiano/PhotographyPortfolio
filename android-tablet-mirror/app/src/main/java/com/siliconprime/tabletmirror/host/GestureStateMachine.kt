@@ -26,6 +26,11 @@ import com.siliconprime.tabletmirror.net.TouchAction
 class GestureStateMachine(
     private val clock: () -> Long,
     private val maxPointers: Int = MAX_POINTERS,
+    /**
+     * The host's own touch slop, in display pixels. Movement within this is not a
+     * drag as far as the host's UI is concerned, so a tap must stay inside it.
+     */
+    private val touchSlopPx: Float = DEFAULT_TOUCH_SLOP_PX,
 ) {
     data class Point(val x: Float, val y: Float)
 
@@ -158,6 +163,14 @@ class GestureStateMachine(
         pointers.clear()
     }
 
+    /** True when nothing in [queued] strays further than slop from the press point. */
+    private fun withinSlop(pointer: Pointer, queued: List<Point>): Boolean =
+        queued.all { point ->
+            val dx = point.x - pointer.x
+            val dy = point.y - pointer.y
+            dx * dx + dy * dy <= touchSlopPx * touchSlopPx
+        }
+
     private fun segmentFor(id: Int, pointer: Pointer): Segment? {
         if (pointer.finished) return null
 
@@ -179,12 +192,28 @@ class GestureStateMachine(
             return null
         }
 
-        val moves = pointer.queued.toList()
+        val queued = pointer.queued.toList()
         pointer.queued.clear()
 
         // Released before anything was ever dispatched: no stroke to close, and no
         // position worth tapping.
-        if (moves.isEmpty() && pointer.lifting && !pointer.started) return null
+        if (queued.isEmpty() && pointer.lifting && !pointer.started) return null
+
+        // A tap must not travel. The release coordinate is never exactly the press
+        // coordinate — a finger always wobbles a pixel or two — and that wobble is
+        // magnified whenever the viewer's video is smaller than the host's display,
+        // since coordinates are scaled up on arrival. Send the stroke with that drift
+        // in it and any scrollable ancestor claims the gesture as a scroll and
+        // cancels the click: the button ripples and then does nothing.
+        //
+        // So within the platform's own touch slop, a tap is dispatched as a
+        // stationary press at the point it started. Beyond slop it was a real flick,
+        // and the path is kept.
+        val moves = if (!pointer.started && pointer.lifting && withinSlop(pointer, queued)) {
+            emptyList()
+        } else {
+            queued
+        }
 
         // Safety net against a viewer that vanishes mid-hold without releasing:
         // otherwise idle segments would be dispatched forever.
@@ -263,6 +292,12 @@ class GestureStateMachine(
 
         /** Length of a synthesised tap: long enough to register, short enough not to hold. */
         const val TAP_DURATION_MS = 60L
+
+        /**
+         * Fallback slop, used only if the platform value cannot be read. Android's
+         * default is 8dp, which is 16px at 2x density — a middling tablet.
+         */
+        const val DEFAULT_TOUCH_SLOP_PX = 16f
 
         /** Segment length. Short keeps drags responsive; too short gets coalesced. */
         const val SEGMENT_MS = 32L

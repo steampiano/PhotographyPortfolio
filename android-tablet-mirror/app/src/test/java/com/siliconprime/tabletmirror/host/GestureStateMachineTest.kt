@@ -11,7 +11,7 @@ import org.junit.Test
 class GestureStateMachineTest {
 
     private var now = 1_000L
-    private val machine = GestureStateMachine(clock = { now })
+    private val machine = GestureStateMachine(clock = { now }, touchSlopPx = 16f)
 
     private fun p(x: Float, y: Float) = GestureStateMachine.Point(x, y)
 
@@ -128,6 +128,40 @@ class GestureStateMachineTest {
         assertTrue(segment.willContinue)
         assertEquals(listOf(p(30f, 0f)), segment.moves)
         assertNull(machine.pendingWakeUpMs())
+    }
+
+    @Test
+    fun `a tap that wobbles within slop is dispatched without moving`() {
+        down(0, 100f, 100f)
+        // A finger always drifts a little between press and release, and that drift
+        // is magnified when the viewer's video is smaller than the host's screen.
+        up(0, 106f, 104f)
+
+        val segment = machine.poll().single()
+        assertEquals(p(100f, 100f), segment.anchor)
+        // Carrying the drift into the stroke lets a scrollable ancestor claim the
+        // gesture as a scroll, which cancels the click: the button ripples and then
+        // does nothing.
+        assertTrue("a tap must not travel", segment.moves.isEmpty())
+        assertFalse(segment.willContinue)
+    }
+
+    @Test
+    fun `a release beyond slop keeps its movement`() {
+        down(0, 100f, 100f)
+        up(0, 400f, 100f)
+        // That far is a real flick, not wobble, so the path is preserved.
+        assertEquals(listOf(p(400f, 100f)), machine.poll().single().moves)
+    }
+
+    @Test
+    fun `slop is measured from the press point, not between samples`() {
+        down(0, 0f, 0f)
+        // Each step is small, but the total is well beyond slop.
+        machine.submit(TouchAction.MOVE, listOf(0), listOf(p(10f, 0f)))
+        machine.submit(TouchAction.MOVE, listOf(0), listOf(p(20f, 0f)))
+        machine.submit(TouchAction.UP, listOf(0), listOf(p(30f, 0f)))
+        assertEquals(3, machine.poll().single().moves.size)
     }
 
     @Test

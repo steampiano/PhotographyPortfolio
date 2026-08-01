@@ -8,6 +8,7 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.SystemClock
 import android.util.Log
+import android.view.ViewConfiguration
 
 /**
  * Platform half of remote touch injection: owns the injector thread, turns
@@ -22,7 +23,15 @@ class GestureInjector(private val service: AccessibilityService) {
     private val thread = HandlerThread("gesture-injector").apply { start() }
     private val handler = Handler(thread.looper)
 
-    private val machine = GestureStateMachine(clock = SystemClock::uptimeMillis)
+    // Take slop from the platform rather than assuming a density: it decides
+    // whether a tap's wobble reads as a drag, so it has to match what the host's own
+    // views use.
+    private val machine = GestureStateMachine(
+        clock = SystemClock::uptimeMillis,
+        touchSlopPx = runCatching {
+            ViewConfiguration.get(service).scaledTouchSlop.toFloat()
+        }.getOrDefault(GestureStateMachine.DEFAULT_TOUCH_SLOP_PX),
+    )
 
     /**
      * The live stroke per pointer. `continueStroke` must be called on the exact
