@@ -114,8 +114,11 @@ class GestureStateMachineTest {
 
         now += GestureStateMachine.TAP_DEADLINE_MS
         assertEquals(0L, machine.pendingWakeUpMs())
+
         machine.poll()
-        // Once dispatched there is nothing left waiting on a timer.
+        machine.onGestureFinished(cancelled = false)
+        // The press has been committed, so nothing is waiting on the tap deadline
+        // any more.
         assertNull(machine.pendingWakeUpMs())
     }
 
@@ -127,6 +130,9 @@ class GestureStateMachineTest {
         val segment = machine.poll().single()
         assertTrue(segment.willContinue)
         assertEquals(listOf(p(30f, 0f)), segment.moves)
+
+        machine.onGestureFinished(cancelled = false)
+        // Nothing is waiting on the tap deadline: the movement already settled it.
         assertNull(machine.pendingWakeUpMs())
     }
 
@@ -372,6 +378,61 @@ class GestureStateMachineTest {
         // Continuing a cancelled stroke is illegal, so nothing may be carried over.
         assertTrue(machine.isIdle)
         assertTrue(machine.livePointerIds.isEmpty())
+    }
+
+    // -----------------------------------------------------------------------
+    // Recovering from a lost dispatch result
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun `a gesture whose result never arrives does not wedge input forever`() {
+        down(0, 10f, 10f)
+        up(0, 10f, 10f)
+        assertEquals(1, machine.poll().size)
+
+        // The platform never calls back. Without a watchdog this is terminal:
+        // inFlight stays set and every later tap is dropped in silence, which looks
+        // like "it worked once or twice and then stopped".
+        assertTrue(machine.poll().isEmpty())
+
+        now += GestureStateMachine.DISPATCH_TIMEOUT_MS + 1
+        assertTrue("the stuck gesture must be abandoned", machine.expireStuckGesture())
+
+        down(1, 20f, 20f)
+        up(1, 20f, 20f)
+        assertEquals("input must work again afterwards", 1, machine.poll().size)
+    }
+
+    @Test
+    fun `a gesture still within the timeout is left alone`() {
+        downAndHold(0, 0f, 0f)
+        machine.poll()
+        now += GestureStateMachine.DISPATCH_TIMEOUT_MS - 1
+        assertFalse("a merely slow device must not lose its gesture", machine.expireStuckGesture())
+    }
+
+    @Test
+    fun `expiring is a no-op when nothing is in flight`() {
+        assertFalse(machine.expireStuckGesture())
+        now += GestureStateMachine.DISPATCH_TIMEOUT_MS * 10
+        assertFalse(machine.expireStuckGesture())
+    }
+
+    @Test
+    fun `the watchdog is what the machine waits on while a gesture is out`() {
+        downAndHold(0, 0f, 0f)
+        machine.poll()
+        val wake = machine.pendingWakeUpMs()
+        assertNotNull("something must re-poll, or the watchdog never runs", wake)
+        assertTrue(wake!! <= GestureStateMachine.DISPATCH_TIMEOUT_MS)
+    }
+
+    @Test
+    fun `the timeout leaves room for the longest segment we ever send`() {
+        assertTrue(
+            "must not fire on a slow device mid-gesture",
+            GestureStateMachine.DISPATCH_TIMEOUT_MS > GestureStateMachine.MAX_SEGMENT_MS * 5,
+        )
     }
 
     @Test

@@ -337,6 +337,11 @@ user-installed app. Consequences:
   text, and anything that needs a real key event (Enter, Tab, arrow keys), will
   not respond.
 - Some system surfaces cannot be touched by an accessibility service at all.
+- Only one gesture may be dispatched at a time, and the platform reports the
+  result by callback. A watchdog abandons a gesture whose result never arrives,
+  because otherwise a single lost callback would silently drop every later touch.
+  If `no result for the dispatched gesture` shows up in Logcat, the platform is
+  dropping results and that is worth knowing.
 
 **A sleeping host captures black.** The service holds a partial wake lock, which
 keeps the CPU alive but cannot keep the display on. Set a long screen timeout on

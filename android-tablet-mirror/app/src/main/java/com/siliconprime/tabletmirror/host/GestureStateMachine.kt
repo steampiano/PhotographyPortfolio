@@ -69,6 +69,7 @@ class GestureStateMachine(
     /** Insertion ordered so stroke order stays stable between dispatches. */
     private val pointers = LinkedHashMap<Int, Pointer>()
     private var inFlight = false
+    private var inFlightSince = 0L
 
     val livePointerIds: Set<Int> get() = pointers.keys.toSet()
 
@@ -137,7 +138,26 @@ class GestureStateMachine(
             return emptyList()
         }
         inFlight = true
+        inFlightSince = clock()
         return segments
+    }
+
+    /**
+     * Recovers from a dispatch whose result never came back.
+     *
+     * Only one gesture may be in flight, and that flag is otherwise cleared only by
+     * the platform's completion callback. A single lost callback would therefore
+     * wedge input permanently — taps would work once or twice and then be dropped
+     * silently, with nothing to show why. Returns true if a stuck gesture was
+     * abandoned, so the caller can log it and drop its stroke objects.
+     */
+    fun expireStuckGesture(): Boolean {
+        if (!inFlight || clock() - inFlightSince < DISPATCH_TIMEOUT_MS) return false
+        inFlight = false
+        // The strokes belong to a gesture of unknown state, so nothing may be
+        // continued from them.
+        pointers.clear()
+        return true
     }
 
     /** Reports the outcome of the gesture returned by the last [poll]. */
@@ -264,6 +284,8 @@ class GestureStateMachine(
      */
     fun pendingWakeUpMs(): Long? {
         val now = clock()
+        // While a gesture is out, the thing worth waking for is the watchdog.
+        if (inFlight) return (inFlightSince + DISPATCH_TIMEOUT_MS - now).coerceAtLeast(0L)
         return pointers.values
             .filter { !it.started && !it.lifting && it.queued.isEmpty() }
             .minOfOrNull { (it.downAt + TAP_DEADLINE_MS - now).coerceAtLeast(0L) }
@@ -306,5 +328,13 @@ class GestureStateMachine(
 
         /** Longest a pointer may stay down with no fresh input from the viewer. */
         const val MAX_HOLD_MS = 30_000L
+
+        /**
+         * How long to wait for a dispatched gesture's result before assuming it is
+         * lost. Generous next to the longest segment we ever send (120ms), so it
+         * cannot fire on a merely slow device, but short enough that a dropped
+         * callback costs one noticeable pause rather than every tap thereafter.
+         */
+        const val DISPATCH_TIMEOUT_MS = 1_500L
     }
 }

@@ -72,12 +72,21 @@ class GestureInjector(private val service: AccessibilityService) {
      * this a finger held perfectly still would never be dispatched at all.
      */
     private fun scheduleWakeUp() {
-        val delay = machine.pendingWakeUpMs() ?: return
+        // Always drop the previous timer first: leaving stale ones queued was
+        // harmless but made the timing hard to reason about.
         handler.removeCallbacks(wakeUp)
+        val delay = machine.pendingWakeUpMs() ?: return
         handler.postDelayed(wakeUp, delay.coerceAtLeast(1L))
     }
 
     private fun pump() {
+        if (machine.expireStuckGesture()) {
+            // Worth a log rather than silent recovery: if this appears in Logcat,
+            // the platform is dropping gesture results and that is the real story.
+            Log.w(TAG, "no result for the dispatched gesture; resetting to keep input alive")
+            strokes.clear()
+        }
+
         val segments = machine.poll()
         if (segments.isEmpty()) {
             pruneStrokes()
