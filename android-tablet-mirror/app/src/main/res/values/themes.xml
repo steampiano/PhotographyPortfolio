@@ -3,4 +3,15 @@
     <style name="Theme.TabletMirror" parent="Theme.Material3.DayNight">
         <item name="android:statusBarColor">?attr/colorSurface</item>
     </style>
+
+    <!--
+      The viewer is nothing but the mirrored screen, so it carries no title bar.
+      A header would both waste height and misreport what you are looking at: the
+      title of this screen is whatever the other tablet is showing.
+    -->
+    <style name="Theme.TabletMirror.Viewer" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
 </resources>

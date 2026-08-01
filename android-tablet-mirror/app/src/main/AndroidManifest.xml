@@ -42,7 +42,8 @@
             android:name=".ui.ViewerActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|density"
             android:exported="false"
-            android:label="@string/title_viewer" />
+            android:label="@string/title_viewer"
+            android:theme="@style/Theme.TabletMirror.Viewer" />
 
         <service
             android:name=".host.ScreenCaptureService"
