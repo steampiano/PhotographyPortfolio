@@ -1,12 +1,16 @@
 package com.siliconprime.tabletmirror.crypto
 
+import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyInfo
 import android.security.keystore.KeyProperties
 import android.util.Log
-import java.security.KeyStore
+import java.security.KeyFactory
 import java.security.KeyPairGenerator
+import java.security.KeyStore
 import java.security.PrivateKey
 import java.security.Signature
+import java.security.spec.ECGenParameterSpec
 
 /**
  * This device's identity key, held in the Android Keystore.
@@ -85,10 +89,10 @@ class KeystoreIdentity private constructor(
 
         private fun createKey(strongBox: Boolean) {
             val spec = KeyGenParameterSpec.Builder(ALIAS, KeyProperties.PURPOSE_SIGN)
-                .setAlgorithmParameter(java.security.spec.ECGenParameterSpec(Identity.CURVE))
+                .setAlgorithmParameterSpec(ECGenParameterSpec(Identity.CURVE))
                 .setDigests(KeyProperties.DIGEST_SHA256)
                 .apply {
-                    if (strongBox && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                    if (strongBox && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                         setIsStrongBoxBacked(true)
                     }
                 }
@@ -101,11 +105,13 @@ class KeystoreIdentity private constructor(
         @Suppress("DEPRECATION")
         private fun isInsideSecureHardware(store: KeyStore): Boolean = runCatching {
             val privateKey = store.getKey(ALIAS, null) as PrivateKey
-            val factory = java.security.KeyFactory.getInstance(privateKey.algorithm, KEYSTORE)
-            val info = factory.getKeySpec(privateKey, android.security.keystore.KeyInfo::class.java)
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                info.securityLevel != android.security.keystore.KeyProperties.SECURITY_LEVEL_SOFTWARE
+            val factory = KeyFactory.getInstance(privateKey.algorithm, KEYSTORE)
+            val info = factory.getKeySpec(privateKey, KeyInfo::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                info.securityLevel != KeyProperties.SECURITY_LEVEL_SOFTWARE
             } else {
+                // isInsideSecureHardware is deprecated in favour of securityLevel,
+                // but it is the only option below API 31.
                 info.isInsideSecureHardware
             }
         }.getOrDefault(false)
