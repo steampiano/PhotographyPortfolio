@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.projection.MediaProjectionConfig
 import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Bundle
@@ -125,8 +126,29 @@ class HostActivity : AppCompatActivity() {
             notificationRequest.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
         val manager = getSystemService(MediaProjectionManager::class.java)
-        projectionRequest.launch(manager.createScreenCaptureIntent())
+        projectionRequest.launch(screenCaptureIntent(manager))
     }
+
+    /**
+     * Asks for the whole display rather than letting the operator pick a single
+     * app.
+     *
+     * From Android 14 the consent dialog offers "share one app" as well, and that
+     * option would quietly break this app: remote touches arrive as fractions of
+     * the captured image and are replayed against full-display coordinates, so
+     * capturing only one app's window would leave every tap landing in the wrong
+     * place. Declaring the config up front removes the choice, which also means one
+     * less decision each time sharing starts.
+     */
+    private fun screenCaptureIntent(manager: MediaProjectionManager): Intent =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            manager.createScreenCaptureIntent(
+                MediaProjectionConfig.createConfigForDefaultDisplay(),
+            )
+        } else {
+            // Before 14 there was no chooser: the intent always meant the display.
+            manager.createScreenCaptureIntent()
+        }
 
     private fun startSharing(resultCode: Int, data: Intent) {
         val port = binding.port.text?.toString()?.toIntOrNull() ?: Protocol.DEFAULT_PORT

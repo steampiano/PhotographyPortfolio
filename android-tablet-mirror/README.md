@@ -193,6 +193,10 @@ Designed so that nothing needs touching once it is running.
   remembered**, by deliberate platform design: any app that could silently begin
   capturing your screen would be spyware. Expect one confirmation per sharing
   session, i.e. after a reboot or after tapping Stop.
+- The app asks for the **whole display**, so Android 14+ does not offer the
+  "share one app" choice. That is not only one fewer decision: capturing a single
+  app's window would misalign every remote touch, because touches are replayed
+  against full-display coordinates.
 
 Two things worth doing once, on the tablets themselves:
 
