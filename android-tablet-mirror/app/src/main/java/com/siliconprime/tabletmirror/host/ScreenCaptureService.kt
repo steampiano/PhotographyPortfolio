@@ -20,6 +20,7 @@ import android.util.Log
 import android.view.Display
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
+import androidx.core.content.IntentCompat
 import com.siliconprime.tabletmirror.R
 import com.siliconprime.tabletmirror.crypto.DeviceIdentity
 import com.siliconprime.tabletmirror.crypto.Identity
@@ -115,7 +116,9 @@ class ScreenCaptureService : Service() {
 
     private fun beginSharing(intent: Intent) {
         val resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, 0)
-        val resultData: Intent? = intent.getParcelableExtra(EXTRA_RESULT_DATA)
+        // The untyped getParcelableExtra is deprecated from API 33; the compat
+        // helper uses the type-checked overload where it exists.
+        val resultData = IntentCompat.getParcelableExtra(intent, EXTRA_RESULT_DATA, Intent::class.java)
         val port = intent.getIntExtra(EXTRA_PORT, Protocol.DEFAULT_PORT)
         quality = runCatching {
             Quality.valueOf(intent.getStringExtra(EXTRA_QUALITY) ?: Quality.BALANCED.name)
