@@ -218,7 +218,17 @@ class GestureStateMachine(
         //
         // It delays nothing in practice: the deadline is a ceiling, not a wait. A
         // release arriving after 40ms dispatches at 40ms.
-        if (!pointer.started && !pointer.lifting && pointer.queued.isEmpty() &&
+        //
+        // Crucially the test is "has not moved beyond slop", not "has no samples at
+        // all". A real finger emits a MOVE or two of jitter between press and
+        // release, and requiring zero samples let a single jittery pixel defeat the
+        // whole thing: the press fell through, dispatched as a held stroke, and
+        // marked the pointer started — so the release then took the chained path and
+        // no click ever registered. It also made the failure random, since whether
+        // jitter arrived before the release decided it. Tapping repeatedly
+        // eventually produced one clean press, which worked.
+        if (!pointer.started && !pointer.lifting &&
+            withinSlop(pointer, pointer.queued) &&
             clock() - pointer.downAt < TAP_DEADLINE_MS
         ) {
             return null
@@ -299,7 +309,7 @@ class GestureStateMachine(
         // While a gesture is out, the thing worth waking for is the watchdog.
         if (inFlight) return (inFlightSince + DISPATCH_TIMEOUT_MS - now).coerceAtLeast(0L)
         return pointers.values
-            .filter { !it.started && !it.lifting && it.queued.isEmpty() }
+            .filter { !it.started && !it.lifting && withinSlop(it, it.queued) }
             .minOfOrNull { (it.downAt + TAP_DEADLINE_MS - now).coerceAtLeast(0L) }
     }
 

@@ -137,6 +137,42 @@ class GestureStateMachineTest {
     }
 
     @Test
+    fun `jitter within slop does not turn a tap into a held stroke`() {
+        down(0, 100f, 100f)
+        // A real finger emits a MOVE or two of roll before it lifts. Treating that
+        // as the start of a drag is what made taps fail at random: whether jitter
+        // beat the release to the machine decided whether the tap worked.
+        move(0, 102f, 101f)
+        move(0, 103f, 100f)
+        assertTrue("jitter must not commit the press", machine.poll().isEmpty())
+
+        up(0, 102f, 101f)
+        val segment = machine.poll().single()
+        assertFalse("must still be a tap", segment.willContinue)
+        assertFalse(segment.continuation)
+        assertTrue("and must not travel", segment.moves.isEmpty())
+        assertEquals(p(100f, 100f), segment.anchor)
+    }
+
+    @Test
+    fun `a jittering press still gets re-polled so a held finger is dispatched`() {
+        down(0, 100f, 100f)
+        move(0, 101f, 101f)
+        // Without this the wake-up filter would skip a press that had any sample,
+        // and a finger held still after a wobble would never dispatch at all.
+        assertNotNull(machine.pendingWakeUpMs())
+    }
+
+    @Test
+    fun `movement beyond slop still starts a drag at once`() {
+        down(0, 100f, 100f)
+        move(0, 100f, 140f)
+        val segment = machine.poll().single()
+        assertTrue("a real drag must not wait for the tap deadline", segment.willContinue)
+        assertEquals(listOf(p(100f, 140f)), segment.moves)
+    }
+
+    @Test
     fun `a tap that wobbles within slop is dispatched without moving`() {
         down(0, 100f, 100f)
         // A finger always drifts a little between press and release, and that drift
