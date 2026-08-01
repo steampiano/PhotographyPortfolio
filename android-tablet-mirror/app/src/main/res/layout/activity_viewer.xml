@@ -45,7 +45,8 @@
         android:background="@drawable/overlay_pill"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingHorizontal="4dp">
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="2dp">
 
         <LinearLayout
             android:id="@+id/control_bar"

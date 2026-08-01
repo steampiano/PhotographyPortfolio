@@ -4,12 +4,18 @@
 
   The mirrored screen underneath can be any colour, so overlay text needs a
   backdrop of its own rather than relying on contrast that may not be there — white
-  labels over a white POS screen are invisible. Opaque enough to guarantee legible
-  white text on any content, rounded so it reads as a deliberate control surface
-  rather than a rectangle dropped on the image.
+  labels over a white POS screen are invisible.
+
+  Three things do the work: a near-opaque fill so white text is always legible, a
+  fully rounded radius so it reads as a control surface rather than a rectangle
+  dropped on the image, and a faint light stroke that keeps the edge defined
+  against dark content, where the fill alone would bleed into the background.
 -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#D9000000" />
-    <corners android:radius="20dp" />
+    <solid android:color="#E0000000" />
+    <corners android:radius="24dp" />
+    <stroke
+        android:width="1dp"
+        android:color="#40FFFFFF" />
 </shape>
