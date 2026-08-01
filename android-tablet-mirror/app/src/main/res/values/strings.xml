@@ -98,6 +98,7 @@
     <string name="title_connection_failed">Could not connect</string>
     <string name="title_disconnected">Disconnected</string>
 
+    <string name="action_remote_back">Back</string>
     <string name="action_view_only">View only</string>
     <string name="action_enable_touch">Enable touch</string>
     <string name="action_disconnect">Disconnect</string>

@@ -27,6 +27,7 @@ import com.siliconprime.tabletmirror.net.HostBrowser
 import com.siliconprime.tabletmirror.net.HostStatus
 import com.siliconprime.tabletmirror.net.PairingGate
 import com.siliconprime.tabletmirror.net.Protocol
+import com.siliconprime.tabletmirror.net.RemoteAction
 import com.siliconprime.tabletmirror.net.TouchAction
 import com.siliconprime.tabletmirror.net.TouchBatch
 import com.siliconprime.tabletmirror.net.TouchPoint
@@ -292,6 +293,7 @@ class ViewerActivity : AppCompatActivity() {
     // -----------------------------------------------------------------------
 
     private fun wireControls() {
+        binding.buttonBack.setOnClickListener { sendBackToHost() }
         binding.buttonDisconnect.setOnClickListener { finish() }
 
         binding.buttonViewOnly.setOnClickListener {
@@ -334,6 +336,23 @@ class ViewerActivity : AppCompatActivity() {
         }
         if (pairingDialog?.isShowing == true) return
         pairingDialog = PairingDialog.show(this, request, pairingGate)
+    }
+
+    /**
+     * Sends Back to the other tablet.
+     *
+     * Spelled out as a button because the host's own Back may not be tappable in
+     * the mirror at all: a tablet using gesture navigation shows no button, only an
+     * edge swipe, and an injected swipe cannot trigger system navigation gestures.
+     */
+    private fun sendBackToHost() {
+        if (!controlAvailable) {
+            // The host explains which gate is shut; repeating its words beats
+            // guessing on this side.
+            setStatus(controlDetail.ifEmpty { getString(R.string.viewer_control_unavailable) })
+            return
+        }
+        connection?.sendGlobalAction(RemoteAction.BACK)
     }
 
     private fun setStatus(text: String?) {

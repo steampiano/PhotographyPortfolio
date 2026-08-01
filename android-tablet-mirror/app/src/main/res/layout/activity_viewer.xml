@@ -30,8 +30,9 @@
 
     <!--
       Everything the viewer needs sits in one row in the bottom-right corner.
-      Navigation and typing are deliberately absent: the mirrored image includes
-      the host's own navigation bar and keyboard, so those are tapped directly.
+      Back is spelled out rather than left to the host's own navigation, which may
+      be gesture-only and so invisible in the mirror. Disconnect is kept away from
+      Back so the two are not confused at a glance.
     -->
     <LinearLayout
         android:layout_width="wrap_content"
@@ -48,6 +49,15 @@
             android:background="#B3000000"
             android:orientation="horizontal"
             android:paddingHorizontal="4dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/button_back"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="0dp"
+                android:text="@string/action_remote_back"
+                android:textColor="@android:color/white" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/button_view_only"

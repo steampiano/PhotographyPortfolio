@@ -65,6 +65,10 @@ class HostActivity : AppCompatActivity() {
         binding = ActivityHostBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // A visible arrow to go back, rather than relying on the system gesture
+        // that someone new to Android has no way of guessing.
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
         trustStore = PreferencesTrustStore(this)
         settings = HostSettings(this)
         log = ConnectionLog(this)
@@ -312,5 +316,10 @@ class HostActivity : AppCompatActivity() {
         Quality.HIGH -> R.string.quality_high
         Quality.FULL_HD_60 -> R.string.quality_full_hd_60
         Quality.NATIVE -> R.string.quality_native
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return true
     }
 }

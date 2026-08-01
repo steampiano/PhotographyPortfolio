@@ -56,6 +56,10 @@ class ConnectActivity : AppCompatActivity() {
         binding = ActivityConnectBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // A visible arrow to go back, rather than relying on the system gesture
+        // that someone new to Android has no way of guessing.
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
         binding.hostList.layoutManager = LinearLayoutManager(this)
         binding.hostList.adapter = adapter
 
@@ -170,5 +174,10 @@ class ConnectActivity : AppCompatActivity() {
                 itemView.setOnClickListener { onClick(host) }
             }
         }
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return true
     }
 }

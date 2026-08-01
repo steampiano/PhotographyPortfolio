@@ -159,17 +159,21 @@ is between your tablets.
 After that first pairing, neither tablet asks anything again: the kitchen tablet
 connects and authenticates on its own, including after a reboot or a Wi-Fi drop.
 
-The viewer's only controls are **View only** and **Disconnect**, bottom-right,
-with a **Hide controls** toggle. There are deliberately no navigation or typing
-buttons: the mirror includes the host's own navigation bar and on-screen keyboard,
-so those are tapped directly on the image.
+The viewer's controls are **Back**, **View only** and **Disconnect**, bottom-right,
+with a **Hide controls** toggle.
 
-One caveat if your host tablet uses **gesture navigation** rather than a
-three-button bar: there is nothing on screen to tap for Back or Home, and an
-injected swipe cannot trigger the system's own navigation gestures. Switch that
-tablet to three-button navigation (Settings → System → Gestures → System
-navigation), or ask and the Back/Home buttons can come back — the protocol still
-supports them.
+**Back** is a labelled button rather than something to discover, because the
+host's own Back may not be tappable in the mirror at all: a tablet using gesture
+navigation shows no button, only an edge swipe, and an injected swipe cannot
+trigger the system's navigation gestures. Everything else on the host — its
+keyboard, its Home and Recents if it uses a three-button bar — appears in the
+mirror and is tapped directly.
+
+If Home and Recents also need buttons (a host on gesture navigation has neither),
+ask: the protocol still carries them, only the buttons were removed.
+
+The app's own screens carry a **←** in the title bar, so leaving a screen never
+depends on knowing Android's back gesture.
 
 **Paired tablets** and **connection history** are both visible on the host
 screen, so you can see which device is trusted and when it last connected. Use
