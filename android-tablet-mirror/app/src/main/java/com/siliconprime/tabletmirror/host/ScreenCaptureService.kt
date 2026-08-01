@@ -65,8 +65,12 @@ data class HostState(
  * obtained. The ongoing notification is also the honest signal to whoever is
  * holding this tablet that its screen is being sent elsewhere.
  *
- * The encoder only runs while a viewer is actually connected — capturing into a
- * hardware encoder with nobody watching would just burn battery.
+ * The encoder runs for as long as sharing does, whether or not anyone is
+ * watching. It used to start and stop with the viewer, which saved a little CPU
+ * but made the session fragile: releasing the projection's virtual display can
+ * make the platform stop the projection outright, so a viewer hanging up could end
+ * sharing and force someone to walk over and restart it. Sharing now stops only
+ * when the operator stops it or the system revokes capture.
  */
 class ScreenCaptureService : Service() {
 
@@ -84,6 +88,13 @@ class ScreenCaptureService : Service() {
     private var capturedHeight = 0
     private var rotationRestartPending = false
     private var controlJob: Job? = null
+
+    /**
+     * Set while we deliberately tear the encoder down to rebuild it. Releasing the
+     * virtual display can make the platform report the projection as stopped, and
+     * acting on that would end a session the operator never asked to end.
+     */
+    private var encoderRestarting = false
 
     /** Read for every inbound input message, so it is resolved once up front. */
     private lateinit var settings: HostSettings
@@ -178,6 +189,8 @@ class ScreenCaptureService : Service() {
         acquireWakeLock()
         registerDisplayListener()
         observeControlAvailability()
+        // Runs for as long as sharing does, so a viewer can come and go freely.
+        startEncoder()
 
         publish {
             HostState(
@@ -301,10 +314,15 @@ class ScreenCaptureService : Service() {
             rotationRestartPending = true
             mainHandler.postDelayed({
                 rotationRestartPending = false
-                if (server?.hasClient == true) {
+                // Rebuild whenever sharing is live, not only with a viewer attached:
+                // the encoder now outlives any one connection, so its geometry has to
+                // keep up regardless of who is watching.
+                if (projection != null) {
                     Log.i(TAG, "display geometry changed, rebuilding encoder")
+                    encoderRestarting = true
                     stopEncoder()
                     startEncoder()
+                    encoderRestarting = false
                 }
             }, ROTATION_DEBOUNCE_MS)
         }
@@ -348,6 +366,14 @@ class ScreenCaptureService : Service() {
 
     private val projectionCallback = object : MediaProjection.Callback() {
         override fun onStop() {
+            if (encoderRestarting) {
+                // Our own doing: releasing the virtual display to rebuild it can be
+                // reported as the projection stopping. Acting on it would end a
+                // session nobody asked to end. If the projection really has gone, the
+                // rebuild fails and reports that instead.
+                Log.i(TAG, "ignoring projection stop raised by our own encoder restart")
+                return
+            }
             // The user revoked screen capture from the system UI.
             Log.i(TAG, "projection stopped by the system")
             stopSharing()
@@ -362,7 +388,8 @@ class ScreenCaptureService : Service() {
     private val serverCallbacks = object : HostServer.Callbacks {
         override fun onClientConnected(deviceName: String) {
             mainHandler.post {
-                startEncoder()
+                // The encoder is already running: it lives for the whole sharing
+                // session, not just while someone is watching.
                 publishControlStatus()
                 publish { it.copy(clientName = deviceName, message = null) }
                 updateNotification(deviceName)
@@ -377,7 +404,18 @@ class ScreenCaptureService : Service() {
 
         override fun onClientDisconnected(reason: String?) {
             mainHandler.post {
-                stopEncoder()
+                // Deliberately leaves the encoder and the projection alone.
+                //
+                // Tearing the encoder down here released the VirtualDisplay, and on
+                // several Android and OEM builds releasing a projection's last
+                // virtual display fires MediaProjection.Callback.onStop — which ends
+                // the whole session. The viewer hanging up would then stop sharing
+                // on this tablet, and someone had to walk over and start it again.
+                //
+                // Keeping it alive costs a little CPU with nobody watching, since
+                // frames are simply dropped when there is no client. On a
+                // mains-powered till that is an easy trade for a session that
+                // survives every disconnect.
                 publish { it.copy(clientName = null, message = reason) }
                 updateNotification(null)
             }

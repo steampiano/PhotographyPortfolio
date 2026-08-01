@@ -201,7 +201,13 @@ Designed so that nothing needs touching once it is running.
 - It only gives up for problems retrying cannot fix — a declined pairing, a
   version mismatch, or nothing paired at all — and then says which.
 
-**Cashier tablet (host): one tap, plus the system prompt.**
+**Cashier tablet (host): one tap, plus the system prompt — then leave it alone.**
+
+Sharing stays up once started. It survives the kitchen tablet disconnecting,
+reconnecting, and going away for hours: the capture session belongs to the host and
+is independent of whether anyone is watching. Only stopping it yourself, or Android
+revoking capture, ends it.
+
 
 - Quality and port are remembered, so *Start sharing* needs no decisions.
 - Android then asks you to confirm screen capture. **This cannot be skipped or
