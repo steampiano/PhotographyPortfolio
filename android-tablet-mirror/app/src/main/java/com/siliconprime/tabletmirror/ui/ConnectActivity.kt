@@ -71,7 +71,6 @@ class ConnectActivity : AppCompatActivity() {
         binding.hostList.layoutManager = LinearLayoutManager(this)
         binding.hostList.adapter = adapter
 
-        // Recents first, so the pairing instruction can override the generic hint.
         renderRecentHosts()
         prefill()
 
@@ -97,8 +96,12 @@ class ConnectActivity : AppCompatActivity() {
 
         if (intent.getBooleanExtra(EXTRA_PAIRING, false)) {
             binding.pairMode.isChecked = true
-            val name = recent?.name?.takeIf { it.isNotEmpty() } ?: address.orEmpty()
-            binding.recentHint.text = getString(R.string.connect_pair_again_hint, name)
+        }
+        // Whoever sent us here explains why, in place rather than behind a dialog
+        // that has to be dismissed before the screen underneath can be used.
+        intent.getStringExtra(EXTRA_MESSAGE)?.let {
+            binding.notice.text = it
+            binding.notice.visibility = View.VISIBLE
         }
     }
 
@@ -194,22 +197,26 @@ class ConnectActivity : AppCompatActivity() {
         private const val EXTRA_ADDRESS = "address"
         private const val EXTRA_PORT = "port"
         private const val EXTRA_PAIRING = "pairing"
+        private const val EXTRA_MESSAGE = "message"
 
         /**
          * Opens the chooser even when a host is already remembered. [prefill] and
          * [pairing] carry the tablet the caller was already dealing with, so being
-         * sent here from a failed session does not lose its address.
+         * sent here from a failed session does not lose its address, and [message]
+         * says why the caller gave up on it.
          */
         fun pickIntent(
             context: Context,
             prefill: Endpoint? = null,
             pairing: Boolean = false,
+            message: String? = null,
         ): Intent = Intent(context, ConnectActivity::class.java).apply {
             // Reuse the chooser's place in the stack rather than piling up a new one
             // each time somebody switches tablet.
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
             putExtra(EXTRA_PICK, true)
             putExtra(EXTRA_PAIRING, pairing)
+            message?.let { putExtra(EXTRA_MESSAGE, it) }
             prefill?.let {
                 putExtra(EXTRA_ADDRESS, it.address)
                 putExtra(EXTRA_PORT, it.port)

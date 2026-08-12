@@ -107,12 +107,7 @@
     <string name="control_help_body">%1$s\n\nOn that tablet, open Tablet Mirror and check both of these:\n\n1. "Let the paired tablet touch this screen" is switched on.\n2. The accessibility service is turned on — the app offers a button for it.\n\nYou can still watch in the meantime.</string>
 
     <!-- Unpaired -->
-    <string name="title_not_paired">No longer paired</string>
-    <string name="viewer_not_paired">%1$s does not recognise this tablet any more, so it is refusing every attempt to connect. That normally means it was unpaired there.\n\nPairing again clears this tablet\'s side too, so you will not have to unpair from the other one first.</string>
-    <string name="action_pair_again">Pair again</string>
-    <string name="action_keep_trying">Keep trying</string>
-    <string name="viewer_retrying_unpaired">Not paired with %1$s any more. Still trying (%2$ds) — or use Switch tablet.</string>
-    <string name="connect_pair_again_hint">Ready when you are: on %1$s tap "Pair a tablet", then tap Connect here.</string>
+    <string name="viewer_not_paired">%1$s is no longer paired with this tablet, so it refused the connection. Retrying will not fix that.\n\nTo pair again: on %1$s tap "Pair a tablet", then tap Connect below. Both tablets will show a code to compare. You do not have to unpair anything first.</string>
 
     <string name="action_remote_back">Back</string>
     <string name="action_view_only">View only</string>

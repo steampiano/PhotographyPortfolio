@@ -235,13 +235,23 @@ object Handshake {
                 "That tablet is offering to pair, but pairing was not started here.",
             )
         }
-        if (pinned != null && challenge.pairing) {
-            // The peer thinks it has never met us while we have it pinned. Either
-            // the app was reinstalled there, or this is not the tablet we paired
-            // with. Refuse rather than silently re-pairing.
+        if (pinned != null && challenge.pairing && !authority.isPairingOpen()) {
+            // The peer thinks it has never met us while we have it pinned. Either it
+            // was unpaired there, or the app was reinstalled, or this is not the
+            // tablet we paired with at all. Refuse rather than silently re-pairing:
+            // accepting an unsolicited pairing offer would let anything holding that
+            // address replace a pin we already have.
+            //
+            // Only *unsolicited* though. With pairing deliberately opened on this
+            // side too, replacing the pin is exactly what was asked for, and the code
+            // comparison below is the same check that authorised the original
+            // pairing. Refusing here regardless used to deadlock the pair: neither
+            // tablet would re-pair while this one held its half of a dead pin, so the
+            // only way out was to unpair by hand on both.
             throw HandshakeException(
                 HandshakeException.Reason.NOT_PAIRED,
-                "That tablet no longer recognises this one. Unpair on both tablets, then pair again.",
+                "That tablet no longer recognises this one. " +
+                    "Open pairing on both tablets, then connect again.",
             )
         }
 
@@ -294,7 +304,9 @@ object Handshake {
         }
 
         return HandshakeResult(
-            peerName = pinned?.name ?: challenge.deviceName,
+            // A pairing exchange carries the peer's current name; the pinned one may
+            // be what it was called when it was first paired, possibly long ago.
+            peerName = if (challenge.pairing) challenge.deviceName else pinned?.name ?: challenge.deviceName,
             peerPublicKey = challenge.identityKey,
             sas = keys.sas,
             newlyPaired = challenge.pairing,

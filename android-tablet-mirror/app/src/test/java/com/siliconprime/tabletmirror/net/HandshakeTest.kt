@@ -250,23 +250,92 @@ class HandshakeTest {
     }
 
     @Test
-    fun `a host that forgot us is refused rather than silently re-paired`() {
+    fun `an unsolicited offer to re-pair from a host that forgot us is refused`() {
         val hostIdentity = SoftwareIdentity()
-        val viewerIdentity = SoftwareIdentity()
         // The viewer still trusts the host, but the host's store was wiped.
         val viewerTrust = InMemoryTrustStore(
             listOf(PairedPeer(hostIdentity.publicKey, "Cashier Tablet", 1L)),
         )
         connect(
             hostIdentity = hostIdentity,
-            viewerIdentity = viewerIdentity,
+            viewerIdentity = SoftwareIdentity(),
             hostTrust = InMemoryTrustStore(),
             viewerTrust = viewerTrust,
+            // Nobody asked to pair on this side, so an offer to replace the pin is
+            // an offer from something that wants to be the host, not the host.
+            viewerAuthority = Authority(open = false),
         ).use { ends ->
             assertEquals(
                 HandshakeException.Reason.NOT_PAIRED,
                 (ends.viewerResult.exceptionOrNull() as HandshakeException).reason,
             )
+            // The stale pin survives, so nothing was quietly replaced.
+            assertEquals(1, viewerTrust.all().size)
+            assertArrayEquals(hostIdentity.publicKey, viewerTrust.all().first().publicKey)
+        }
+    }
+
+    @Test
+    fun `a host that forgot us can be re-paired without unpairing by hand`() {
+        // The deadlock this replaced: unpairing on the host left the viewer holding
+        // half a dead pin, and the viewer refused to re-pair while it held it — so
+        // pairing could not be repaired from either tablet without a manual unpair on
+        // both. With pairing deliberately opened here, the code comparison is the
+        // same check that authorised the original pairing, so it may proceed.
+        val hostIdentity = SoftwareIdentity()
+        val viewerIdentity = SoftwareIdentity()
+        val viewerTrust = InMemoryTrustStore(
+            listOf(PairedPeer(hostIdentity.publicKey, "Old Name", 1L)),
+        )
+        val hostTrust = InMemoryTrustStore()
+
+        connect(
+            hostIdentity = hostIdentity,
+            viewerIdentity = viewerIdentity,
+            hostTrust = hostTrust,
+            viewerTrust = viewerTrust,
+            hostAuthority = Authority(open = true),
+            viewerAuthority = Authority(open = true),
+        ).use { ends ->
+            assertTrue(ends.viewerResult.isSuccess)
+            assertTrue(ends.hostResult.isSuccess)
+            assertTrue(ends.viewerResult.getOrThrow().newlyPaired)
+
+            // Both sides end up pinned again, and the viewer's stale entry was
+            // replaced rather than duplicated.
+            assertEquals(1, viewerTrust.all().size)
+            assertArrayEquals(hostIdentity.publicKey, viewerTrust.all().first().publicKey)
+            assertEquals(1, hostTrust.all().size)
+            assertArrayEquals(viewerIdentity.publicKey, hostTrust.all().first().publicKey)
+
+            // Re-pairing refreshes the name rather than keeping the one it was
+            // pinned under.
+            assertEquals("Cashier Tablet", viewerTrust.all().first().name)
+            assertEquals("Cashier Tablet", ends.viewerResult.getOrThrow().peerName)
+        }
+    }
+
+    @Test
+    fun `re-pairing still needs both codes to be confirmed`() {
+        val hostIdentity = SoftwareIdentity()
+        val viewerTrust = InMemoryTrustStore(
+            listOf(PairedPeer(hostIdentity.publicKey, "Cashier Tablet", 1L)),
+        )
+        connect(
+            hostIdentity = hostIdentity,
+            viewerIdentity = SoftwareIdentity(),
+            hostTrust = InMemoryTrustStore(),
+            viewerTrust = viewerTrust,
+            // Someone compares the codes and they differ.
+            viewerAuthority = Authority(open = true, accept = false),
+        ).use { ends ->
+            assertEquals(
+                HandshakeException.Reason.PAIRING_DECLINED,
+                (ends.viewerResult.exceptionOrNull() as HandshakeException).reason,
+            )
+            // A refused comparison must not leave the old pin replaced.
+            assertEquals(1, viewerTrust.all().size)
+            assertArrayEquals(hostIdentity.publicKey, viewerTrust.all().first().publicKey)
         }
     }
 

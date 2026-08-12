@@ -17,6 +17,21 @@
         android:orientation="vertical"
         android:padding="24dp">
 
+        <!--
+          Why the caller sent us here. Shown in place rather than as a dialog: the
+          instructions it carries have to be readable while the screen underneath is
+          being used, and a dialog would have to be dismissed first.
+        -->
+        <TextView
+            android:id="@+id/notice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/notice_panel"
+            android:padding="16dp"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:visibility="gone" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

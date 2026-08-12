@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Backdrop for an explanation of why you have landed on a screen you did not ask
+  for. Tinted rather than outlined, so it reads as a message about the page rather
+  than another thing on the page to tap.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="?attr/colorSurfaceVariant" />
+    <corners android:radius="12dp" />
+</shape>

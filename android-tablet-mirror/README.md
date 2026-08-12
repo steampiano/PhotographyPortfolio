@@ -206,12 +206,19 @@ Designed so that nothing needs touching once it is running.
   back is never a dead end. Without it the only exit was *Disconnect*, which lands
   on a screen that forwards straight back to the same unreachable tablet.
 
-**If the cashier tablet unpairs this one**, the viewer now says so instead of
-retrying a refusal for ever. It offers to pair again, to pick a different tablet, or
-to keep trying — and *Pair again* clears this tablet's side of the dead pin first,
-so you no longer have to walk over and unpair from the cashier tablet as well. The
-retry loop keeps running underneath the prompt, so if somebody re-pairs from the
-other end the picture comes back on its own.
+**If the cashier tablet unpairs this one**, the viewer stops retrying and goes
+straight to the chooser, with the address filled in, pairing already ticked, and a
+note saying what happened. There is no "keep trying" — a refusal is not a blip, and
+a countdown for something that will never succeed is just a slow lie.
+
+Re-pairing then needs nothing else undone. Opening pairing on **both** tablets is
+always enough, whatever stale state either side is holding: a tablet that still has
+a pin for a host that has forgotten it will replace that pin, as long as pairing was
+deliberately opened here too and the codes are compared as usual. Refusing that
+outright is what used to deadlock the pair — neither side would re-pair while this
+one held half a dead pin, so the only way out was to unpair by hand on both. An
+*unsolicited* offer to re-pair is still refused, which is the case that guard was
+written for.
 
 Tablets you have used before are listed on the connect screen, most recent first;
 tapping one connects straight away, and the address field is pre-filled with the
