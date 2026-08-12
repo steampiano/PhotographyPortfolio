@@ -1,33 +1,32 @@
 PROGRAM:MAT3470
 ClrHome
 Lbl 0
-Menu("MAT 3470 EXAM2","BALLS+BOXES",1,"T-TRIANGLE",2,"INCL-EXCL",3,"MULTINOMIAL",4,"GF+RECURRENCE",5,"CALCULATE",7,"QUIT",9)
+Menu("MAT 3470 EXAM2","C DISTRIBUTNS",1,"E INCL-EXCL",2,"F RECURRENCE",3,"G COIN/GENFN",4,"STD PROBS 8-14",5,"CALCULATE",6,"OFF SCOPE *",7)
 Lbl 1
+Menu("C  P31-40","BALLS+BOXES",11,"T-TRIANGLE",12,"MULTINOMIAL",13,"MAIN MENU",0)
+Lbl 11
 ClrHome
-Disp "BALLS+BOXES KEY","N BALLS INTO","K BOXES.","ASK 3 THINGS:","BALLS DISTINCT?","BOXES DISTINCT?","ANY BOX EMPTY?"
+Disp "BALLS+BOXES KEY","M BALLS INTO","N BOXES.","ASK 2 THINGS:","BALLS DISTINCT?","ANY BOX EMPTY?","BOXES ARE ALWAYS","DISTINCT HERE"
 Pause
 ClrHome
-Disp "DIFF BALLS","DIFF BOXES","EMPTY OK: K^N","NO EMPTY:"," T(N,K)","EX 6 BALLS,5","BOXES,NO EMPTY","=T(6,5)=1800"
+Disp "DIFF BALLS","DIFF BOXES","EMPTY OK: N^M","NO EMPTY:"," T(M,N)","EX 6 BALLS,5","BOXES,NO EMPTY","=T(6,5)=1800"
 Pause
 ClrHome
-Disp "SAME BALLS","DIFF BOXES","EMPTY OK:"," C(N+K-1,N)"," =(K CHOOSE N)R","NO EMPTY:"," C(N-1,K-1)"
+Disp "SAME BALLS","DIFF BOXES","EMPTY OK:"," C(M+N-1,M)"," =(N C M)R","NO EMPTY:"," C(M-1,N-1)"
 Pause
 ClrHome
 Disp "SAME BALLS EX","6 SAME BALLS","5 DIFF BOXES","EMPTY OK:"," C(6+5-1,6)"," =C(10,6)=210","NO EMPTY:"," C(5,4)=5"
 Pause
 ClrHome
-Disp "FIXED BOX SIZES","DIFF BALLS","SIZES N1..NK:"," N!/(N1!..NK!)","THIS IS THE","MULTINOMIAL","EX 6 PEOPLE","2,2,2: 6!/2!2!2!"
+Disp "QUICK SUMMARY","DIFF BALLS:"," N^M FREE"," T(M,N) NO EMPTY","SAME BALLS:"," C(M+N-1,M) FREE"," C(M-1,N-1) NO"," EMPTY"
+Pause
+Goto 1
+Lbl 12
+ClrHome
+Disp "T-TRIANGLE","T(M,N)=NUMBER OF","ONTO FUNCTIONS","M THINGS ONTO","N THINGS","= M DIFF BALLS","INTO N DIFF BOX","NO BOX EMPTY"
 Pause
 ClrHome
-Disp "QUICK SUMMARY","DIFF BALLS,DIFF","BOX: K^N /T(N,K)","SAME BALLS,DIFF","BOX: C(N+K-1,N)"," / C(N-1,K-1)","FORM IS","FREE / NO EMPTY"
-Pause
-Goto 0
-Lbl 2
-ClrHome
-Disp "T-TRIANGLE","T(N,K)=NUMBER OF","ONTO FUNCTIONS","N THINGS ONTO","K THINGS","= N DIFF BALLS","INTO K DIFF BOX","NO BOX EMPTY"
-Pause
-ClrHome
-Disp "T RECURRENCE","T(N,K)=K*["," T(N-1,K)"," +T(N-1,K-1)]","EDGES:","T(N,1)=1","T(N,N)=N!","BUILD ROW BY ROW"
+Disp "T RECURRENCE","T(M,N)=N*["," T(M-1,N-1)"," +T(M-1,N)]","FOR 1<N<M","EDGES:","T(M,1)=1","T(M,M)=M!"
 Pause
 ClrHome
 Disp "T ROWS","R1: 1","R2: 1 2","R3: 1 6 6","R4: 1 14 36 24","R5: 1 30 150 240","    120","R6 NEXT PAGE"
@@ -36,35 +35,12 @@ ClrHome
 Disp "T ROW 6","1 62 540","1560 1800 720","SO T(6,3)=540","T(6,5)=1800","T(6,2)=62","CHECK T(6,6)=720","=6!"
 Pause
 ClrHome
-Disp "T CLOSED FORM","T(N,K)=SUM"," (-1)^I*C(K,I)*"," (K-I)^N","I=0 TO K","FROM INCL-EXCL","ON EMPTY BOXES","ALSO T=K!*S(N,K)"
+Disp "T CLOSED FORM","T(M,N)=SUM"," (-1)^I*C(N,I)*"," (N-I)^M","I=0 TO N","FROM INCL-EXCL","ON EMPTY BOXES","SEE E3 FOR WHY"
 Pause
-Goto 0
-Lbl 3
+Goto 1
+Lbl 13
 ClrHome
-Disp "INCL-EXCL SETUP","NAME BAD EVENTS","A1,A2,...,AN","S0=TOTAL","S1=SUM |AI|","S2=SUM |AI.AJ|","SK=SUM OF ALL","K-WAY OVERLAPS"
-Pause
-ClrHome
-Disp "INCL-EXCL FORM","NONE OF THEM:","|A1'..AN'|="," S0-S1+S2-S3+...","AT LEAST ONE:"," S1-S2+S3-..."," =S0-(NONE)","SIGNS ALTERNATE"
-Pause
-ClrHome
-Disp "DIVISIBLE EX","1-210 BY 2,3,5,7","S1=105+70+42+30","S2=35+21+15+14"," +10+6 = 101","S3=7+5+3+2=17","S4=1, NONE=48","ANS 210-48=162"
-Pause
-ClrHome
-Disp "DERANGEMENTS","NOTHING IN ITS","OWN PLACE","AI = ITEM I IS","IN RIGHT PLACE","D(N)=N!-C(N,1)*"," (N-1)!+C(N,2)*"," (N-2)!-..."
-Pause
-ClrHome
-Disp "DERANGE VALUES","D1=0 D2=1 D3=2","D4=9 D5=44","D6=265 D7=1854","FAST ROUND(N!/E)","D5=120-120+60"," -20+5-1=44"
-Pause
-ClrHome
-Disp "NO 2 ADJACENT","EX 11223344","AI= BOTH I ARE","NEXT TO EACH","OTHER (GLUE)","S0=8!/2^4=2520","GLUE J PAIRS:","(8-J)!/2^(4-J)"
-Pause
-ClrHome
-Disp "NO 2 ADJ ANSWER","S0=2520","S1=4*7!/8=2520","S2=6*6!/4=1080","S3=4*5!/2=240","S4=4!=24","2520-2520+1080"," -240+24 = 864"
-Pause
-Goto 0
-Lbl 4
-ClrHome
-Disp "MULTINOMIAL CO","(M;M1,M2,..MK)"," = M!/(M1!*M2!"," *...*MK!)","M1+M2+..+MK=M","COUNTS WAYS TO","SPLIT M ITEMS","INTO NAMED SETS"
+Disp "DISTRIBUTION NO","(M;M1,M2,..MN)"," = M!/(M1!*M2!"," *...*MN!)","M1+M2+..+MN=M","= STD PROB #11","AND #12: WORD","REARRANGEMENTS"
 Pause
 ClrHome
 Disp "TRINOMIAL THM","(A+B+C)^M=SUM OF","(M;M1,M2,M3)"," A^M1 B^M2 C^M3","OVER ALL MI>=0","WITH M1+M2+M3=M","TERMS: C(M+2,2)"
@@ -73,34 +49,68 @@ ClrHome
 Disp "PLUG-IN TRICKS","SUM OF ALL","(M;M1,M2,M3)"," = 3^M"," (LET A=B=C=1)","IF A+B+C=1 THEN","SUM = 1^M = 1","EX 1/2+1/6+1/3"
 Pause
 ClrHome
-Disp "ALL MI >= 1","SUM OF","(M;M1,M2,M3)","WITH EVERY","MI >= 1 EQUALS"," T(M,3)","EX M=6: T(6,3)"," = 540"
+Disp "ALL MI >= 1","SUM OF","(M;M1,M2,M3)","WITH EVERY","MI >= 1 EQUALS"," T(M,3)","THIS IS THE","DEFINITION OF T"
 Pause
 ClrHome
 Disp "FIND A COEFF","IN (X+2Y+3Z)^10","COEFF OF"," X^2 Y^3 Z^5","A=X,B=2Y,C=3Z","(10;2,3,5)=2520","2520*2^3*3^5"," = 4898880"
 Pause
-Goto 0
-Lbl 5
-Menu("PICK A TOPIC","GEN FUNCTIONS",51,"RECURRENCE",52,"MAIN MENU",0)
-Lbl 51
+Goto 1
+Lbl 2
+Menu("E INCL-EXCL","THE METHOD",21,"E3 E4 E5",22,"EXAM EXAMPLES",23,"MAIN MENU",0)
+Lbl 21
 ClrHome
-Disp "GEN FUNCTIONS","ONE FACTOR PER","ITEM TYPE","POWERS = HOW","MANY YOU USE","MULTIPLY OUT,","READ COEFF OF","X^(TARGET)"
+Disp "INCL-EXCL SETUP","NAME BAD EVENTS","A,B,C,...","S0=|U| TOTAL","S1=SUM |A|","S2=SUM |AB|","SK=SUM OF ALL","K-WAY OVERLAPS"
 Pause
 ClrHome
-Disp "GF FACTORS","ANY AMOUNT:"," 1+X+X^2+..."," =1/(1-X)","AT MOST 3:"," 1+X+X^2+X^3","AT LEAST 1:"," X+X^2+..."
+Disp "INCL-EXCL FORM","NONE OF THEM:","|A'B'C'..|="," S0-S1+S2-S3+...","AT LEAST ONE:"," S1-S2+S3-..."," =S0-(NONE)","SIGNS ALTERNATE"
 Pause
 ClrHome
-Disp "COIN EXAMPLE","3 Q,6 D,10 N","MAKE 100 CENTS","Q:1+X^25+X^50"," +X^75","D:1+X^10+..."," +X^60","N:1+X^5+..+X^50"
+Disp "2 AND 3 SETS","|AUB|=|A|+|B|"," -|AB|","|AUBUC|="," |A|+|B|+|C|"," -|AB|-|AC|-|BC|"," +|ABC|"
+Pause
+Goto 2
+Lbl 22
+ClrHome
+Disp "E3 ONTO WORDS","5 LETTERS FROM","A 3-LETTER SET","TOTAL 3^5=243","A=LETTER 1 GONE","|A|=|B|=|C|=32","PAIRS=1 EACH","TRIPLE=0"
 Pause
 ClrHome
-Disp "COIN ANSWER","MULTIPLY THE 3","FACTORS, TAKE","COEFF OF X^100","ANSWER = 15","CHECK BY HAND:","LIST QDN POWERS","15 COMBINATIONS"
-Pause
-Goto 0
-Lbl 52
-ClrHome
-Disp "RECURRENCE","X(N+2)=A*X(N+1)"," +B*X(N)","STEP 1 WRITE","CHAR EQUATION"," R^2=A*R+B"," R^2-A*R-B=0"
+Disp "E3 ANSWER","UNION=96-3+0"," =93 MISSING","NO MISSING:","243-93=150","=T(5,3) CHECK","COMPLEMENT IS","THE FAST WAY"
 Pause
 ClrHome
-Disp "RECURRENCE 2","STEP 2 SOLVE","FOR ROOTS R1,R2","(EIGENVALUES)","STEP 3 WRITE","X(N)=A*R1^N"," +B*R2^N"
+Disp "E4 DERANGEMENT","REARRANGE 1234","AT LEAST ONE IN","ITS OWN SPOT:","S1=C(4,1)3!=24","S2=C(4,2)2!=12","S3=4 S4=1","24-12+4-1=15"
+Pause
+ClrHome
+Disp "E4 ANSWER","AT LEAST ONE =15","SO D4=4!-15","=24-15=9","MATCHES D4=9","EITHER DO S0-S1","+S2-... DIRECTLY","OR COMPLEMENT"
+Pause
+ClrHome
+Disp "E5 DIVISIBLE","1-60 BY 2,3,OR 5","|A|=30 |B|=20","|C|=12","PAIRS 10,6,4","TRIPLE 2","UNION=62-20+2"," =44"
+Pause
+ClrHome
+Disp "E5 PART B","REL PRIME TO 60","= NOT DIV BY","2,3 OR 5","60-44=16","THIS IS EULER","PHI(60)=16"
+Pause
+Goto 2
+Lbl 23
+ClrHome
+Disp "DIVISIBLE EX","1-210 BY 2,3,5,7","S1=105+70+42+30","S2=35+21+15+14"," +10+6 = 101","S3=7+5+3+2=17","S4=1, NONE=48","ANS 210-48=162"
+Pause
+ClrHome
+Disp "DERANGE VALUES","D2=1 D3=2 D4=9","D5=44 D6=265","D7=1854","DN=N!-C(N,1)*"," (N-1)!+C(N,2)*"," (N-2)!-...","FAST ROUND(N!/E)"
+Pause
+ClrHome
+Disp "NO 2 ADJACENT","EX 11223344","A(I)=BOTH I ARE","NEXT TO EACH","OTHER (GLUE)","S0=8!/2^4=2520","GLUE J PAIRS:","(8-J)!/2^(4-J)"
+Pause
+ClrHome
+Disp "NO 2 ADJ ANSWER","S0=2520","S1=4*7!/8=2520","S2=6*6!/4=1080","S3=4*5!/2=240","S4=4!=24","2520-2520+1080"," -240+24 = 864"
+Pause
+ClrHome
+Disp "EMPTY BOX EX","5 RED,4 BLUE","INTO 3 BOXES","NO EMPTY BOX","A(I)=BOX I EMPTY","S0=C(7,5)*C(6,4)"," =21*15=315","315-90+3-0=228"
+Pause
+Goto 2
+Lbl 3
+ClrHome
+Disp "F RECURRENCE","X(N+2)=A*X(N+1)"," +B*X(N)","STEP 1 WRITE","CHAR EQUATION"," R^2=A*R+B"," R^2-A*R-B=0"
+Pause
+ClrHome
+Disp "F STEPS 2-3","STEP 2 SOLVE","FOR ROOTS R1,R2","(EIGENVALUES)","STEP 3 WRITE","X(N)=A*R1^N"," +B*R2^N"
 Pause
 ClrHome
 Disp "REPEATED ROOT","IF R1=R2=R THEN","X(N)=(A+B*N)*R^N","STEP 4 PLUG IN","2 KNOWN TERMS","SOLVE 2 EQNS","FOR A AND B"
@@ -111,40 +121,73 @@ Pause
 ClrHome
 Disp "RECUR SOLVE","N=1: 2A-B=1","N=2: 4A+B=3","ADD: 6A=4","A=2/3, B=1/3","XN=(2/3)2^N"," +(1/3)(-1)^N","X30=(2^31+1)/3"
 Pause
+ClrHome
+Disp "SETTING ONE UP","LET XN = COUNT","FOR SIZE N","SPLIT BY WHAT","THE FIRST TERM","IS, THEN COUNT","EACH CASE WITH","A SMALLER XK"
+Pause
 Goto 0
-Lbl 7
-Menu("CALCULATE","C AND P",71,"C WITH REPEATS",72,"T(N,K) ONTO",73,"MULTINOMIAL",74,"DERANGEMENT",75,"BALLS+BOXES",76,"MAIN MENU",0)
-Lbl 71
+Lbl 4
+ClrHome
+Disp "G GEN FUNCTNS","ONE FACTOR PER","ITEM TYPE","POWERS = HOW","MANY YOU USE","MULTIPLY OUT,","READ COEFF OF","X^(TARGET)"
+Pause
+ClrHome
+Disp "GF FACTORS","ANY AMOUNT:"," 1+X+X^2+..."," =1/(1-X)","AT MOST 3:"," 1+X+X^2+X^3","AT LEAST 1:"," X+X^2+..."
+Pause
+ClrHome
+Disp "COIN PROBLEM","3 Q,6 D,10 N","MAKE 100 CENTS","Q:1+X^25+X^50"," +X^75","D:1+X^10+..."," +X^60","N:1+X^5+..+X^50"
+Pause
+ClrHome
+Disp "COIN ANSWER","MULTIPLY THE 3","FACTORS, TAKE","COEFF OF X^100","ANSWER = 15","CHECK BY HAND:","LIST QDN POWERS","15 COMBINATIONS"
+Pause
+ClrHome
+Disp "COIN BY HAND","LOOP OVER THE","BIG COIN FIRST","Q=0..3, THEN D,","THEN N IS FORCED","COUNT THE CASES","THAT LAND ON","THE TARGET"
+Pause
+Goto 0
+Lbl 5
+ClrHome
+Disp "STD PROBS 8-9","#8 DIFF BALLS"," DIFF BOXES"," = FUNCTIONS"," N^M","#9 SAME BALLS"," DIFF BOX"," C(M+N-1,M)"
+Pause
+ClrHome
+Disp "STD PROBS 10-11","#10 SAME,DIFF"," NO EMPTY BOX"," C(M-1,N-1)","#11 DIFF BALLS"," DIFF BOX,SIZES"," M!/(M1!..MN!)"
+Pause
+ClrHome
+Disp "STD PROBS 12-14","#12 REARRANGE"," A WORD, SAME"," FORMULA AS #11","#13 DIFF BALLS"," NO EMPTY T(M,N)","#14 WORDS,ALL"," LETTERS T(M,N)"
+Pause
+Goto 0
+Lbl 6
+Menu("CALCULATE","C AND P",61,"C REPEATS (R)",62,"T(M,N) ONTO",63,"MULTINOMIAL",64,"DERANGEMENT",65,"BALLS+BOXES",66,"BACK / QUIT",QQ)
+Lbl QQ
+Menu("EXIT","MAIN MENU",0,"BACK",6,"QUIT",9)
+Lbl 61
 ClrHome
 Input "N=",N
-Input "R=",R
+Input "K=",K
 ClrHome
-Disp "C(N,R) =",N nCr R,"P(N,R) =",N nPr R
+Disp "C(N,K) =",N nCr K,"P(N,K) =",N nPr K
 Pause
-Goto 7
-Lbl 72
+Goto 6
+Lbl 62
 ClrHome
-Disp "PICK R FROM N","TYPES, REPEATS","ALLOWED"
+Disp "PICK K FROM N","TYPES, REPEATS","ALLOWED"
 Input "TYPES N=",N
-Input "PICKS R=",R
+Input "LENGTH K=",K
 ClrHome
-Disp "(N CHOOSE R)R =",(N+R-1) nCr R
+Disp "(N C K)R =",(N+K-1) nCr K,"NO MISSING =",(K-1) nCr (N-1)
 Pause
-Goto 7
-Lbl 73
+Goto 6
+Lbl 63
 ClrHome
-Disp "ONTO FUNCTIONS","N DIFF BALLS","K DIFF BOXES","NO BOX EMPTY"
-Input "BALLS N=",N
-Input "BOXES K=",K
+Disp "ONTO FUNCTIONS","M DIFF BALLS","N DIFF BOXES","NO BOX EMPTY"
+Input "BALLS M=",M
+Input "BOXES N=",N
 0→T
-For(I,0,K-1)
-T+(-1)^I*(K nCr I)*(K-I)^N→T
+For(I,0,N-1)
+T+(-1)^I*(N nCr I)*(N-I)^M→T
 End
 ClrHome
-Disp "T(N,K) =",T
+Disp "T(M,N) =",T
 Pause
-Goto 7
-Lbl 74
+Goto 6
+Lbl 64
 ClrHome
 Disp "MULTINOMIAL","M!/(M1!*M2!*..)"
 Input "HOW MANY PARTS",G
@@ -158,8 +201,8 @@ End
 ClrHome
 Disp "TOTAL M =",M,"ANSWER =",M!/W
 Pause
-Goto 7
-Lbl 75
+Goto 6
+Lbl 65
 ClrHome
 Disp "DERANGEMENTS","NOTHING IN ITS","OWN PLACE"
 Input "N=",N
@@ -168,13 +211,13 @@ For(I,0,N)
 D+(-1)^I*(N nCr I)*(N-I)!→D
 End
 ClrHome
-Disp "D(N) =",D
+Disp "DN =",D
 Pause
-Goto 7
-Lbl 76
+Goto 6
+Lbl 66
 ClrHome
-Input "BALLS N=",N
-Input "BOXES K=",K
+Input "BALLS M=",M
+Input "BOXES N=",N
 Menu("THE BALLS ARE","ALL DIFFERENT",BA,"ALL IDENTICAL",BB)
 Lbl BA
 Menu("EMPTY BOXES?","ALLOWED",B1,"NOT ALLOWED",B2)
@@ -182,26 +225,92 @@ Lbl BB
 Menu("EMPTY BOXES?","ALLOWED",B3,"NOT ALLOWED",B4)
 Lbl B1
 ClrHome
-Disp "DIFF BALLS","EMPTY OK","K^N =",K^N
+Disp "DIFF BALLS","EMPTY OK","N^M =",N^M
 Pause
-Goto 7
+Goto 6
 Lbl B2
 0→T
-For(I,0,K-1)
-T+(-1)^I*(K nCr I)*(K-I)^N→T
+For(I,0,N-1)
+T+(-1)^I*(N nCr I)*(N-I)^M→T
 End
 ClrHome
-Disp "DIFF BALLS","NO EMPTY BOX","T(N,K) =",T
+Disp "DIFF BALLS","NO EMPTY BOX","T(M,N) =",T
 Pause
-Goto 7
+Goto 6
 Lbl B3
 ClrHome
-Disp "SAME BALLS","EMPTY OK","C(N+K-1,N) =",(N+K-1) nCr N
+Disp "SAME BALLS","EMPTY OK","C(M+N-1,M) =",(M+N-1) nCr M
 Pause
-Goto 7
+Goto 6
 Lbl B4
 ClrHome
-Disp "SAME BALLS","NO EMPTY BOX","C(N-1,K-1) =",(N-1) nCr (K-1)
+Disp "SAME BALLS","NO EMPTY BOX","C(M-1,N-1) =",(M-1) nCr (N-1)
+Pause
+Goto 6
+Lbl 7
+ClrHome
+Disp "OFF SCOPE *","PROF SAYS THESE","ARE NOT ON THIS","EXAM. KEPT FOR","BACKGROUND ONLY","A,B = EXAM I","D = SKIPPED","FLAGPOLE P41-43"
+Pause
+Menu("OFF SCOPE *","A STRINGS",71,"B COMBINATIONS",72,"C FLAGPOLE",73,"D PARTITIONS",74,"H POLYA",75,"MAIN MENU",0)
+Lbl 71
+ClrHome
+Disp "A STRINGS *","EXAM I MATERIAL","ORDER MATTERS","LEN K FROM N:"," N^K","NO REPEATS:"," N!/(N-K)!","PROD RULE N1*N2"
+Pause
+ClrHome
+Disp "A STD PROBS *","#1 STRING LEN K"," N^K","#2 NO REPEATS"," N!/(N-K)!","DERANGEMENTS DN","D2=1 D3=2 D4=9","D5=44"
+Pause
+Goto 7
+Lbl 72
+ClrHome
+Disp "B COMBS *","EXAM I MATERIAL","C(N,K)=N!/"," (K!(N-K)!)","PASCAL:","C(N,K)+C(N,K+1)"," =C(N+1,K+1)"
+Pause
+ClrHome
+Disp "B BIT STRINGS *","M ZEROS,N ONES"," C(M+N,N)","NO 2 ADJACENT 1S"," C(M+1,N)","0-DOMINATED:"," C(M+N,N)"," -C(M+N,N-1)"
+Pause
+ClrHome
+Disp "B STD PROBS *","#3 C(N,K)","#4 NO 2 ADJ 1S"," C(M+1,N)","#5 NO MISSING"," C(K-1,N-1)","#6 REPEATS"," C(N+K-1,K)"
+Pause
+Goto 7
+Lbl 73
+ClrHome
+Disp "FLAGPOLE *","OMITTED P41-43","M DIFF FLAGS ON","N DIFF POLES","ORDER ON A POLE","MATTERS:"," N(N+1)..(N+M-1)"," (N+M-1)!/(N-1)!"
+Pause
+ClrHome
+Disp "FLAGPOLE EX *","3 FLAGS 2 POLES","2*3*4 = 24","SAME FLAGS ON","N DIFF POLES:"," C(M+N-1,M)","SAME AS BALLS","IN BOXES"
+Pause
+Goto 7
+Lbl 74
+ClrHome
+Disp "D SET PARTS *","SECTION SKIPPED","S(M,N)=T(M,N)/N!","STIRLING 2ND","KIND: SPLIT AN","M-SET INTO N","NONEMPTY PARTS","=IDENTICAL BOXES"
+Pause
+ClrHome
+Disp "D STIRLING *","S(M,N) ="," S(M-1,N-1)"," + N*S(M-1,N)","R3: 1 3 1","R4: 1 7 6 1","R5: 1 15 25 10 1","R6: 1 31 90 65.."
+Pause
+ClrHome
+Disp "D NUM PARTS *","P(M,N)=WAYS TO","WRITE INTEGER M","AS N POSITIVE","PARTS, ORDER","DOES NOT MATTER","=SAME BALLS IN","IDENTICAL BOXES"
+Pause
+ClrHome
+Disp "D P RECUR *","P(M,N) ="," P(M-1,N-1)"," + P(M-N,N)","P(M,1)=1","P(M,M)=1","P(M,2)=INT(M/2)","P(8,3)=5"
+Pause
+ClrHome
+Disp "D P VARIANTS *","PARTS ALL >= K:"," PK(M,N)"," =P(M-(K-1)N,N)","PARTS UNEQUAL:"," P*(M,N)"," =P(M-C(N,2),N)","EX P*(11,3)=5"
+Pause
+Goto 7
+Lbl 75
+ClrHome
+Disp "H POLYA *","NOT ON THIS EXAM","COUNT COLORINGS","WHEN SYMMETRIES","MAKE SOME THE","SAME (ROTATION)","4 STEPS FOLLOW"
+Pause
+ClrHome
+Disp "H STEP 1-2 *","EACH MOVE SPLITS","OBJECTS INTO","CYCLES. LENGTH I","GIVES FACTOR XI","CYCLE INDEX =","AVERAGE OF ALL","THE CYCLE CODES"
+Pause
+ClrHome
+Disp "H STEP 3-4 *","CYCLE POLY: SET","EVERY XI = X","K COLORS: X=K","PATTERN INV: SET","XI=A1^I+..+AK^I","COEFF COUNTS","COLOR AMOUNTS"
+Pause
+ClrHome
+Disp "H EXAMPLE *","9 SQUARES ROT","BY 0,90,180,270","CODES X1^9,","X1X4^2 TWICE,","X1X2^4","POLY (X^9+2X^3"," +X^5)/4, X=2"
+Pause
+ClrHome
+Disp "H ANSWER *","(512+16+32)/4","=560/4","=140 COLORINGS","WITH 2 COLORS"
 Pause
 Goto 7
 Lbl 9
