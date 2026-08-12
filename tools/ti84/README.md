@@ -81,9 +81,13 @@ MAT 3470 EXAM2
  2 C DISTRIBUTNS   balls+boxes / T-triangle / multinomial / std probs 8-14
  3 E INCL-EXCL     the method / E3 E4 E5 / worked exam examples
  4 F+G METHODS     recurrences / generating functions, the coin problem
- 5 EXAM I REVIEW   A strings / B combinations / paths+ballot / answers
- 6 CALCULATE       computes things
- 7 NOTATION+MORE   notation key / off-scope material
+ 5 CALCULATE       computes things
+ 6 MORE / REVIEW   notation key / Exam I review / off-scope material
+ 7 QUIT
+
+The `ON` key breaks out of a running TI-BASIC program from anywhere
+(`ERR:BREAK` → `1:Quit`), which is the escape hatch if you're ever stuck
+mid-page.
 
 WHICH FORMULA?
  1 BALLS INTO BOX  asks distinct? empty? → names the formula and where to compute it
