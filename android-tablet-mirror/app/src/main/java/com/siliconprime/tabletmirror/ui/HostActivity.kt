@@ -11,6 +11,9 @@ import android.os.Bundle
 import android.provider.Settings
 import android.view.View
 import android.widget.ArrayAdapter
+import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -68,6 +71,9 @@ class HostActivity : AppCompatActivity() {
         // A visible arrow to go back, rather than relying on the system gesture
         // that someone new to Android has no way of guessing.
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        // The action bar already clears the status bar; this is about the task bar
+        // along the bottom, which was covering the end of this screen.
+        SystemBars.pad(binding.scroll, top = false)
 
         trustStore = PreferencesTrustStore(this)
         settings = HostSettings(this)
@@ -222,18 +228,38 @@ class HostActivity : AppCompatActivity() {
         binding.buttonUnpair.setOnClickListener { confirmUnpair(peers) }
     }
 
+    /**
+     * Lists the paired tablets as outlined rows rather than plain dialog items.
+     *
+     * As bare text a device name reads as a caption — a statement of what you are
+     * paired with — and gives no sign that tapping it is the thing that unpairs. The
+     * outline and the ripple say "target", which is what this list actually is.
+     */
     private fun confirmUnpair(peers: List<PairedPeer>) {
-        val labels = peers.map { "${it.name} — ${it.fingerprint}" }.toTypedArray()
-        AlertDialog.Builder(this)
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            val margin = (24 * resources.displayMetrics.density).toInt()
+            setPadding(margin, margin / 2, margin, 0)
+        }
+        val dialog = AlertDialog.Builder(this)
             .setTitle(R.string.title_unpair)
-            .setItems(labels) { _, index ->
-                val peer = peers[index]
+            .setView(ScrollView(this).apply { addView(container) })
+            .setNegativeButton(R.string.action_cancel, null)
+            .create()
+
+        for (peer in peers) {
+            val row = layoutInflater.inflate(R.layout.item_host, container, false)
+            row.findViewById<TextView>(R.id.host_name).text = peer.name
+            row.findViewById<TextView>(R.id.host_address).text = peer.fingerprint
+            row.setOnClickListener {
                 trustStore.forget(peer.publicKey)
                 log.record(ConnectionLog.Event.UNPAIRED, "${peer.name} (${peer.fingerprint})")
                 renderPairedDevices()
+                dialog.dismiss()
             }
-            .setNegativeButton(R.string.action_cancel, null)
-            .show()
+            container.addView(row)
+        }
+        dialog.show()
     }
 
     // -----------------------------------------------------------------------

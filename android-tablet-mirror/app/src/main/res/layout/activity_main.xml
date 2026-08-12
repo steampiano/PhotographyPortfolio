@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/scroll"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true">
@@ -51,6 +52,27 @@
             android:layout_marginTop="4dp"
             android:text="@string/main_control_hint"
             android:textAppearance="?attr/textAppearanceBodySmall" />
+
+        <!--
+          The button above goes straight back to the last tablet, which is the point
+          of it — but that left no route to the chooser at all once a tablet had been
+          remembered. This is that route.
+        -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_choose_other"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/main_choose_other_tablet"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/choose_other_hint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:visibility="gone" />
 
         <View
             android:layout_width="match_parent"

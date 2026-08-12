@@ -33,8 +33,11 @@ import com.siliconprime.tabletmirror.net.TouchBatch
 import com.siliconprime.tabletmirror.net.TouchPoint
 import com.siliconprime.tabletmirror.net.VideoConfig
 import com.siliconprime.tabletmirror.util.NetUtil
+import com.siliconprime.tabletmirror.viewer.CandidateSweep
 import com.siliconprime.tabletmirror.viewer.Endpoint
 import com.siliconprime.tabletmirror.viewer.HostCandidates
+import com.siliconprime.tabletmirror.viewer.RecentHost
+import com.siliconprime.tabletmirror.viewer.RecentHosts
 import com.siliconprime.tabletmirror.viewer.ReconnectPolicy
 import com.siliconprime.tabletmirror.viewer.SessionEnd
 import com.siliconprime.tabletmirror.viewer.VideoDecoder
@@ -70,6 +73,9 @@ class ViewerActivity : AppCompatActivity() {
 
     private var controlAvailable = false
     private var controlDetail = ""
+
+    /** False until the host has said either way; "connecting" is not a refusal. */
+    private var controlStatusKnown = false
     private var viewOnly = false
     private var hostLabel = ""
 
@@ -79,6 +85,7 @@ class ViewerActivity : AppCompatActivity() {
 
     // Reconnection state.
     private val policy = ReconnectPolicy()
+    private val sweep = CandidateSweep()
     private val handler = Handler(Looper.getMainLooper())
     private var browser: HostBrowser? = null
     private val discovered = LinkedHashSet<Endpoint>()
@@ -90,6 +97,10 @@ class ViewerActivity : AppCompatActivity() {
     private var connectedOnce = false
     private var requestedEndpoint: Endpoint? = null
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
+
+    /** Set once the operator has been told, so the dialog does not keep reappearing. */
+    private var unpairedAcknowledged = false
+    private var unpairedDialog: AlertDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -127,6 +138,8 @@ class ViewerActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         givenUp = true
+        unpairedDialog?.dismiss()
+        unpairedDialog = null
         handler.removeCallbacksAndMessages(null)
         unregisterNetworkCallback()
         browser?.stop()
@@ -172,10 +185,13 @@ class ViewerActivity : AppCompatActivity() {
 
     private fun onAttemptFailed(reason: String?, end: SessionEnd) {
         connection = null
+        controlStatusKnown = false
         decoder?.stop()
         decoder = null
 
         if (end == SessionEnd.LOCAL || givenUp || isFinishing) return
+
+        sweep.record(end)
 
         if (policy.isFatal(end, hasPairedHost = trustStore.all().isNotEmpty())) {
             giveUp(reason)
@@ -187,9 +203,17 @@ class ViewerActivity : AppCompatActivity() {
         candidateIndex++
         if (candidateIndex < candidates.size) {
             connectToCurrentCandidate()
-        } else {
-            scheduleRetry()
+            return
         }
+
+        // Nowhere left that could have been the host, and everywhere said the same
+        // thing: this tablet has been unpaired. Silently retrying that forever is
+        // what used to strand the kitchen with a countdown and no way out.
+        if (sweep.allNotPaired && !unpairedAcknowledged) {
+            showUnpaired()
+            return
+        }
+        scheduleRetry()
     }
 
     private fun scheduleRetry() {
@@ -198,12 +222,15 @@ class ViewerActivity : AppCompatActivity() {
         val delay = policy.delayFor(attempt)
         rebuildCandidates()
         candidateIndex = 0
+        sweep.reset()
         registerNetworkCallback()
 
         binding.progress.visibility = View.GONE
         setStatus(
             getString(
-                R.string.viewer_retrying,
+                // Once the refusal is known, keep saying so. A bare countdown reads
+                // as "nearly there" for something that will not resolve itself.
+                if (unpairedAcknowledged) R.string.viewer_retrying_unpaired else R.string.viewer_retrying,
                 hostLabel.ifEmpty { requestedEndpoint?.address.orEmpty() },
                 (delay / 1000).coerceAtLeast(1).toInt(),
             ),
@@ -222,6 +249,7 @@ class ViewerActivity : AppCompatActivity() {
         handler.removeCallbacksAndMessages(RETRY_TOKEN)
         rebuildCandidates()
         candidateIndex = 0
+        sweep.reset()
         connectToCurrentCandidate()
     }
 
@@ -249,6 +277,65 @@ class ViewerActivity : AppCompatActivity() {
             }
             .setOnDismissListener { finish() }
             .show()
+    }
+
+    /**
+     * The host is refusing us because it no longer holds our pin.
+     *
+     * Offering to pair again from here matters more than the wording: the viewer
+     * also refuses a host that has forgotten it, so re-pairing would fail while this
+     * tablet still holds its side of a dead pin. Clearing that pin is the step that
+     * used to mean walking to the till and unpairing from there.
+     */
+    private fun showUnpaired() {
+        unpairedAcknowledged = true
+        binding.progress.visibility = View.GONE
+        val endpoint = candidates.firstOrNull() ?: requestedEndpoint
+        val name = hostLabel.ifEmpty { endpoint?.address.orEmpty() }
+
+        unpairedDialog = AlertDialog.Builder(this)
+            .setTitle(R.string.title_not_paired)
+            .setMessage(getString(R.string.viewer_not_paired, name))
+            .setPositiveButton(R.string.action_pair_again) { _, _ -> pairAgain() }
+            .setNeutralButton(R.string.action_choose_other) { _, _ ->
+                givenUp = true
+                startActivity(ConnectActivity.pickIntent(this))
+                finish()
+            }
+            // Dismissing is a real answer, not a deferral.
+            .setNegativeButton(R.string.action_keep_trying, null)
+            .show()
+
+        // The retry loop carries on underneath. If someone re-pairs from the other
+        // tablet while this is on screen, the picture comes back on its own and the
+        // dialog goes with it — nobody has to be standing here to accept anything.
+        scheduleRetry()
+    }
+
+    private fun pairAgain() {
+        val endpoint = candidates.firstOrNull() ?: requestedEndpoint
+        forgetPinFor(endpoint)
+        givenUp = true
+        startActivity(ConnectActivity.pickIntent(this, endpoint, pairing = true))
+        finish()
+    }
+
+    /**
+     * Drops the pin for one host, found by the fingerprint recorded when we last
+     * authenticated it. Deliberately not "clear the trust store": this tablet may
+     * also be a host in its own right, and wiping every pin would unpair that too.
+     */
+    private fun forgetPinFor(endpoint: Endpoint?) {
+        val recents = prefs.recentHosts
+        val known = endpoint?.let { RecentHosts.forEndpoint(recents, it) }
+        // The host may have moved address since we last reached it, in which case
+        // there is no exact match. Falling back is only safe with one tablet on the
+        // list; with several, forgetting a guess could unpair the wrong one.
+            ?: recents.singleOrNull()
+            ?: return
+        trustStore.all()
+            .firstOrNull { it.fingerprint == known.fingerprint }
+            ?.let { trustStore.forget(it.publicKey) }
     }
 
     private fun startDiscovery() {
@@ -296,6 +383,19 @@ class ViewerActivity : AppCompatActivity() {
         binding.buttonBack.setOnClickListener { sendBackToHost() }
         binding.buttonDisconnect.setOnClickListener { finish() }
 
+        // The way out of a connection that is not coming back. Without it the only
+        // exit was Disconnect, which lands on a screen that forwards straight to the
+        // same unreachable tablet — a loop with no door.
+        binding.buttonSwitch.setOnClickListener {
+            givenUp = true
+            startActivity(ConnectActivity.pickIntent(this))
+            finish()
+        }
+
+        // The status line is the only thing on screen when input is refused, so it
+        // is also where the explanation belongs.
+        binding.status.setOnClickListener { showControlHelp() }
+
         binding.buttonViewOnly.setOnClickListener {
             viewOnly = !viewOnly
             binding.buttonViewOnly.setText(
@@ -326,6 +426,25 @@ class ViewerActivity : AppCompatActivity() {
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             hide(WindowInsetsCompat.Type.systemBars())
         }
+        // The video stays full-bleed; only the overlays move, so a display cutout or
+        // a transient bar cannot sit on top of the controls or the status line.
+        SystemBars.margin(binding.controlPill)
+        SystemBars.margin(binding.status)
+    }
+
+    /**
+     * Explains a refusal that this side cannot do anything about. The host reports
+     * which of its two gates is shut, and this repeats that verbatim before adding
+     * what to do about it, so the two tablets never disagree about the reason.
+     */
+    private fun showControlHelp() {
+        if (controlAvailable || !controlStatusKnown) return
+        val detail = controlDetail.ifEmpty { getString(R.string.viewer_control_unavailable) }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.title_control_help)
+            .setMessage(getString(R.string.control_help_body, detail))
+            .setPositiveButton(R.string.action_close, null)
+            .show()
     }
 
     private fun renderPairingRequest(request: PairingGate.Request?) {
@@ -347,9 +466,7 @@ class ViewerActivity : AppCompatActivity() {
      */
     private fun sendBackToHost() {
         if (!controlAvailable) {
-            // The host explains which gate is shut; repeating its words beats
-            // guessing on this side.
-            setStatus(controlDetail.ifEmpty { getString(R.string.viewer_control_unavailable) })
+            showControlHelp()
             return
         }
         connection?.sendGlobalAction(RemoteAction.BACK)
@@ -372,6 +489,8 @@ class ViewerActivity : AppCompatActivity() {
             }
             if (viewOnly) add(getString(R.string.viewer_view_only))
         }
+        // Only offer the explanation when there is one to give.
+        binding.status.isClickable = controlStatusKnown && !controlAvailable
         // With control live and nothing to warn about, get out of the way.
         setStatus(
             if (parts.size <= 1 && controlAvailable && !viewOnly) {
@@ -481,8 +600,16 @@ class ViewerActivity : AppCompatActivity() {
             hostLabel = hostName
             attempt = 0
             connectedOnce = true
-            // Remember what worked, so next time the app opens straight into it.
-            candidates.getOrNull(candidateIndex)?.let { prefs.lastEndpoint = it }
+            sweep.reset()
+            unpairedAcknowledged = false
+            // Someone re-paired from the other end while this was on screen.
+            unpairedDialog?.dismiss()
+            unpairedDialog = null
+            // Remember what worked, so next time the app opens straight into it. The
+            // fingerprint rides along because it is what names the pin later.
+            candidates.getOrNull(candidateIndex)?.let {
+                prefs.remember(RecentHost(it.address, it.port, hostName, fingerprint))
+            }
             unregisterNetworkCallback()
             if (newlyPaired) {
                 setStatus(getString(R.string.viewer_paired, hostName, fingerprint))
@@ -512,6 +639,7 @@ class ViewerActivity : AppCompatActivity() {
         override fun onStatus(status: HostStatus) = runOnUiThread {
             controlAvailable = status.controlAvailable
             controlDetail = status.detail
+            controlStatusKnown = true
             refreshStatus()
         }
 

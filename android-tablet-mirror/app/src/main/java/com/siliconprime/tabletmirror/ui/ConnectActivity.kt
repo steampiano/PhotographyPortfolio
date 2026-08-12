@@ -15,20 +15,24 @@ import com.siliconprime.tabletmirror.databinding.ActivityConnectBinding
 import com.siliconprime.tabletmirror.net.DiscoveredHost
 import com.siliconprime.tabletmirror.net.HostBrowser
 import com.siliconprime.tabletmirror.net.Protocol
+import com.siliconprime.tabletmirror.viewer.Endpoint
+import com.siliconprime.tabletmirror.viewer.RecentHost
 import com.siliconprime.tabletmirror.viewer.ViewerPrefs
 
 /**
- * Finds a host to control: pick a discovered one, or type an address when the
- * network blocks multicast discovery.
+ * Finds a host to control: pick one used before, pick one discovered on the
+ * network, or type an address when the network blocks multicast discovery.
  *
  * Once a tablet has been paired this screen normally does not appear at all. It
  * forwards straight through to the last host, so opening the app is the only
  * action needed to get a picture back. Pass [pickIntent] to reach it deliberately
- * and choose something else.
+ * and choose something else — which is what every "switch tablet" route in the app
+ * does, because a screen that always forwards is a screen you can never get to.
  */
 class ConnectActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityConnectBinding
+    private lateinit var prefs: ViewerPrefs
     private lateinit var browser: HostBrowser
     private val adapter = HostAdapter(::onHostChosen)
 
@@ -41,9 +45,10 @@ class ConnectActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        prefs = ViewerPrefs(this)
 
         // Straight back to the tablet we were driving, unless asked to choose.
-        val remembered = ViewerPrefs(this).lastEndpoint
+        val remembered = prefs.lastEndpoint
         if (remembered != null && !intent.getBooleanExtra(EXTRA_PICK, false)) {
             forwarded = true
             startActivity(
@@ -59,14 +64,60 @@ class ConnectActivity : AppCompatActivity() {
         // A visible arrow to go back, rather than relying on the system gesture
         // that someone new to Android has no way of guessing.
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        // The action bar already clears the status bar; this is about the task bar
+        // along the bottom, which was covering the Connect button.
+        SystemBars.pad(binding.scroll, top = false)
 
         binding.hostList.layoutManager = LinearLayoutManager(this)
         binding.hostList.adapter = adapter
 
-        binding.port.setText(Protocol.DEFAULT_PORT.toString())
+        // Recents first, so the pairing instruction can override the generic hint.
+        renderRecentHosts()
+        prefill()
+
         binding.buttonConnect.setOnClickListener { connectManually() }
 
         browser = HostBrowser(this)
+    }
+
+    /**
+     * Fills in whichever tablet the caller had in mind, falling back to the one used
+     * last. Arriving here after being unpaired should not mean reading an address off
+     * the other tablet and typing it back in.
+     */
+    private fun prefill() {
+        val recent = prefs.recentHosts.firstOrNull()
+        val address = intent.getStringExtra(EXTRA_ADDRESS) ?: recent?.address
+        val port = intent.getIntExtra(EXTRA_PORT, 0).takeIf { it in 1..65535 }
+            ?: recent?.port
+            ?: Protocol.DEFAULT_PORT
+
+        binding.address.setText(address.orEmpty())
+        binding.port.setText(port.toString())
+
+        if (intent.getBooleanExtra(EXTRA_PAIRING, false)) {
+            binding.pairMode.isChecked = true
+            val name = recent?.name?.takeIf { it.isNotEmpty() } ?: address.orEmpty()
+            binding.recentHint.text = getString(R.string.connect_pair_again_hint, name)
+        }
+    }
+
+    private fun renderRecentHosts() {
+        val hosts = prefs.recentHosts
+        binding.recentList.removeAllViews()
+        if (hosts.isEmpty()) {
+            binding.recentHint.setText(R.string.connect_no_recent)
+            return
+        }
+        val inflater = LayoutInflater.from(this)
+        for (host in hosts) {
+            val row = inflater.inflate(R.layout.item_host, binding.recentList, false)
+            row.findViewById<TextView>(R.id.host_name).text =
+                host.name.ifEmpty { host.address }
+            row.findViewById<TextView>(R.id.host_address).text = "${host.address}:${host.port}"
+            row.setOnClickListener { onRecentChosen(host) }
+            binding.recentList.addView(row)
+        }
     }
 
     override fun onStart() {
@@ -88,6 +139,19 @@ class ConnectActivity : AppCompatActivity() {
         super.onStop()
     }
 
+    /** A tablet already paired with: no decisions left to make, so just go. */
+    private fun onRecentChosen(host: RecentHost) {
+        binding.address.setText(host.address)
+        binding.port.setText(host.port.toString())
+        if (binding.pairMode.isChecked) {
+            // Re-pairing is an attended act; let the operator press Connect once the
+            // other tablet is showing "ready to pair".
+            return
+        }
+        connect(Endpoint(host.address, host.port), pairing = false)
+    }
+
+    /** A tablet found on the network may still need pairing, so only fill the fields. */
     private fun onHostChosen(host: DiscoveredHost) {
         binding.address.setText(host.address)
         binding.port.setText(host.port.toString())
@@ -102,19 +166,22 @@ class ConnectActivity : AppCompatActivity() {
             port !in 1..65535 -> showError(getString(R.string.connect_bad_port))
             else -> {
                 binding.error.visibility = View.GONE
-                // Pairing is only attempted when asked for. Without this, an
-                // impostor answering on the host's address could provoke a pairing
-                // prompt during ordinary use.
-                startActivity(
-                    ViewerActivity.intent(
-                        context = this,
-                        address = address,
-                        port = port,
-                        pairing = binding.pairMode.isChecked,
-                    ),
-                )
+                connect(Endpoint(address, port), binding.pairMode.isChecked)
             }
         }
+    }
+
+    private fun connect(endpoint: Endpoint, pairing: Boolean) {
+        // Pairing is only attempted when asked for. Without this, an impostor
+        // answering on the host's address could provoke a pairing prompt during
+        // ordinary use.
+        //
+        // This screen stays on the stack deliberately: leaving the viewer then lands
+        // back on the chooser, which is where someone who has just disconnected wants
+        // to be, rather than at the role picker two steps further out.
+        startActivity(
+            ViewerActivity.intent(this, endpoint.address, endpoint.port, pairing),
+        )
     }
 
     private fun showError(message: String) {
@@ -124,10 +191,30 @@ class ConnectActivity : AppCompatActivity() {
 
     companion object {
         private const val EXTRA_PICK = "pick"
+        private const val EXTRA_ADDRESS = "address"
+        private const val EXTRA_PORT = "port"
+        private const val EXTRA_PAIRING = "pairing"
 
-        /** Opens the chooser even when a host is already remembered. */
-        fun pickIntent(context: Context): Intent =
-            Intent(context, ConnectActivity::class.java).putExtra(EXTRA_PICK, true)
+        /**
+         * Opens the chooser even when a host is already remembered. [prefill] and
+         * [pairing] carry the tablet the caller was already dealing with, so being
+         * sent here from a failed session does not lose its address.
+         */
+        fun pickIntent(
+            context: Context,
+            prefill: Endpoint? = null,
+            pairing: Boolean = false,
+        ): Intent = Intent(context, ConnectActivity::class.java).apply {
+            // Reuse the chooser's place in the stack rather than piling up a new one
+            // each time somebody switches tablet.
+            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            putExtra(EXTRA_PICK, true)
+            putExtra(EXTRA_PAIRING, pairing)
+            prefill?.let {
+                putExtra(EXTRA_ADDRESS, it.address)
+                putExtra(EXTRA_PORT, it.port)
+            }
+        }
     }
 
     private class HostAdapter(

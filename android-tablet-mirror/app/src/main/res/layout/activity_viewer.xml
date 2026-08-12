@@ -38,6 +38,7 @@
       the rest are hidden.
     -->
     <LinearLayout
+        android:id="@+id/control_pill"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
@@ -48,40 +49,61 @@
         android:paddingHorizontal="8dp"
         android:paddingVertical="2dp">
 
-        <LinearLayout
+        <!--
+          Scrollable so a narrow window cannot push the toggle off the screen: in
+          portrait the four actions are wider than the short edge of the tablet, and
+          a clipped control bar would take the way out with it.
+        -->
+        <HorizontalScrollView
             android:id="@+id/control_bar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:layout_weight="1"
+            android:scrollbars="none">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/button_back"
-                style="@style/Widget.Material3.Button.TextButton"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:minWidth="0dp"
-                android:text="@string/action_remote_back"
-                android:textColor="@android:color/white" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/button_view_only"
-                style="@style/Widget.Material3.Button.TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:minWidth="0dp"
-                android:text="@string/action_view_only"
-                android:textColor="@android:color/white" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button_back"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="0dp"
+                    android:text="@string/action_remote_back"
+                    android:textColor="@android:color/white" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/button_disconnect"
-                style="@style/Widget.Material3.Button.TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:minWidth="0dp"
-                android:text="@string/action_disconnect"
-                android:textColor="@android:color/white" />
-        </LinearLayout>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button_view_only"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="0dp"
+                    android:text="@string/action_view_only"
+                    android:textColor="@android:color/white" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button_switch"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="0dp"
+                    android:text="@string/action_switch_tablet"
+                    android:textColor="@android:color/white" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button_disconnect"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="0dp"
+                    android:text="@string/action_disconnect"
+                    android:textColor="@android:color/white" />
+            </LinearLayout>
+        </HorizontalScrollView>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/button_toggle_bar"

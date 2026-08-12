@@ -52,6 +52,10 @@ class ReconnectPolicy(
      * nothing paired the app genuinely needs a person, but if this tablet *is*
      * paired then an unpaired answer usually means we reached the wrong device —
      * a recycled DHCP address, say — and another candidate may still be right.
+     *
+     * That is only true for a *single* refusal though. [CandidateSweep] decides the
+     * other half: when every address tried in a pass says the same thing, the answer
+     * is not a stray device, it is the host disowning us.
      */
     fun isFatal(end: SessionEnd, hasPairedHost: Boolean): Boolean = when (end) {
         SessionEnd.LOCAL -> true
@@ -67,6 +71,41 @@ class ReconnectPolicy(
         /** Enough doubling to reach the ceiling, and no more. */
         private const val MAX_SHIFT = 16
     }
+}
+
+/**
+ * The verdict of one full pass over the candidate list.
+ *
+ * This exists because "not paired" was previously invisible. Being unpaired on the
+ * other tablet leaves this one retrying a host that will never let it in, forever,
+ * with nothing on screen but a countdown — and no way out, because the connect
+ * screen forwards straight back to the same host. Someone then has to walk to the
+ * till and unpair from that end, which is exactly the errand this app is meant to
+ * save.
+ *
+ * A single refusal is still not enough to conclude anything: with several addresses
+ * in play, one of them may simply be a different device that picked up the host's
+ * old DHCP lease. Only when *every* place tried in a pass gives the same answer is
+ * it worth telling the operator, because at that point there is nowhere left that
+ * could have been the real host.
+ */
+class CandidateSweep {
+
+    private var attempted = 0
+    private var notPaired = 0
+
+    fun record(end: SessionEnd) {
+        attempted++
+        if (end == SessionEnd.NOT_PAIRED) notPaired++
+    }
+
+    fun reset() {
+        attempted = 0
+        notPaired = 0
+    }
+
+    /** Every address tried this pass answered "I do not know you". */
+    val allNotPaired: Boolean get() = attempted > 0 && notPaired == attempted
 }
 
 /**

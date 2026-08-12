@@ -1,9 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  One tappable tablet: discovered on the network, used before, or paired and up for
+  unpairing. All three are the same thing to a reader — a device you are being asked
+  to choose — so they share a row, and the outline says it is a target rather than a
+  caption.
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="?attr/selectableItemBackground"
+    android:layout_marginVertical="4dp"
+    android:background="@drawable/tappable_row"
+    android:minHeight="56dp"
     android:orientation="vertical"
+    android:paddingHorizontal="16dp"
     android:paddingVertical="12dp">
 
     <TextView

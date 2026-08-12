@@ -14,6 +14,8 @@
     <string name="main_share_hint">This tablet is the one being watched and controlled.</string>
     <string name="main_control_other_tablet">Control another tablet</string>
     <string name="main_control_hint">This tablet watches and drives the other one.</string>
+    <string name="main_choose_other_tablet">Pick a different tablet</string>
+    <string name="main_choose_other_hint">Opens the chooser instead of going straight back to %1$s.</string>
     <string name="main_remote_control_heading">Remote control on this tablet</string>
     <string name="main_control_enabled">Enabled. A paired tablet can tap and type here while you are sharing.</string>
     <string name="main_control_disabled">Off. Without it this tablet can still be watched, but not controlled.</string>
@@ -74,6 +76,9 @@
 
     <!-- Connect -->
     <string name="connect_intro">Pick the tablet you want to control. After the first pairing it connects on its own.</string>
+    <string name="connect_recent_label">Tablets you have used</string>
+    <string name="connect_recent_hint">Tap one to connect straight away.</string>
+    <string name="connect_no_recent">None yet. Pick one below, or type its address.</string>
     <string name="connect_found_label">Tablets on this network</string>
     <string name="connect_searching">Searching…</string>
     <string name="connect_discovery_failed">%1$s Enter the address shown on the other tablet instead.</string>
@@ -91,16 +96,28 @@
     <string name="action_choose_other">Choose another tablet</string>
     <string name="viewer_paired">Paired with %1$s (%2$s).</string>
     <string name="viewer_control_unavailable">That tablet is not accepting remote input.</string>
-    <string name="viewer_control_unavailable_short">View only</string>
+    <string name="viewer_control_unavailable_short">No remote input — tap for help</string>
     <string name="viewer_view_only">View only</string>
     <string name="viewer_decode_error">Could not decode the video: %1$s</string>
     <string name="viewer_session_ended">The session ended.</string>
     <string name="title_connection_failed">Could not connect</string>
     <string name="title_disconnected">Disconnected</string>
 
+    <string name="title_control_help">Remote input is off</string>
+    <string name="control_help_body">%1$s\n\nOn that tablet, open Tablet Mirror and check both of these:\n\n1. "Let the paired tablet touch this screen" is switched on.\n2. The accessibility service is turned on — the app offers a button for it.\n\nYou can still watch in the meantime.</string>
+
+    <!-- Unpaired -->
+    <string name="title_not_paired">No longer paired</string>
+    <string name="viewer_not_paired">%1$s does not recognise this tablet any more, so it is refusing every attempt to connect. That normally means it was unpaired there.\n\nPairing again clears this tablet\'s side too, so you will not have to unpair from the other one first.</string>
+    <string name="action_pair_again">Pair again</string>
+    <string name="action_keep_trying">Keep trying</string>
+    <string name="viewer_retrying_unpaired">Not paired with %1$s any more. Still trying (%2$ds) — or use Switch tablet.</string>
+    <string name="connect_pair_again_hint">Ready when you are: on %1$s tap "Pair a tablet", then tap Connect here.</string>
+
     <string name="action_remote_back">Back</string>
     <string name="action_view_only">View only</string>
     <string name="action_enable_touch">Enable touch</string>
+    <string name="action_switch_tablet">Switch tablet</string>
     <string name="action_disconnect">Disconnect</string>
     <string name="action_hide_controls">Hide controls</string>
     <string name="action_view_controls">View controls</string>

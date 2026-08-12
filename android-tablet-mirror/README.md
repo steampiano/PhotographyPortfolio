@@ -103,8 +103,10 @@ without looking at the other screen.
 | `host/GestureStateMachine.kt` | Pointer stream → gesture segments (pure, tested) |
 | `host/GestureInjector.kt` | Segments → chained `StrokeDescription`s |
 | `viewer/ViewerConnection.kt` | Client socket, read and send loops |
-| `viewer/ReconnectPolicy.kt` | Retry backoff and where to try next (pure, tested) |
-| `viewer/ViewerPrefs.kt` | Remembers the tablet this one drives |
+| `viewer/ReconnectPolicy.kt` | Retry backoff, where to try next, unpaired detection (pure, tested) |
+| `viewer/RecentHosts.kt` | The short list of tablets this one has driven (pure, tested) |
+| `viewer/ViewerPrefs.kt` | Remembers the tablets this one drives |
+| `ui/SystemBars.kt` | Keeps content clear of the status, navigation and task bars |
 | `viewer/VideoDecoder.kt` | H.264 → Surface |
 | `util/Geometry.kt` | Letterbox fitting, coordinate mapping, encoder sizing |
 
@@ -200,6 +202,22 @@ Designed so that nothing needs touching once it is running.
   address just fails the handshake and gets skipped.
 - It only gives up for problems retrying cannot fix — a declined pairing, a
   version mismatch, or nothing paired at all — and then says which.
+- **Switch tablet** is always in the control bar, so a session that will not come
+  back is never a dead end. Without it the only exit was *Disconnect*, which lands
+  on a screen that forwards straight back to the same unreachable tablet.
+
+**If the cashier tablet unpairs this one**, the viewer now says so instead of
+retrying a refusal for ever. It offers to pair again, to pick a different tablet, or
+to keep trying — and *Pair again* clears this tablet's side of the dead pin first,
+so you no longer have to walk over and unpair from the cashier tablet as well. The
+retry loop keeps running underneath the prompt, so if somebody re-pairs from the
+other end the picture comes back on its own.
+
+Tablets you have used before are listed on the connect screen, most recent first;
+tapping one connects straight away, and the address field is pre-filled with the
+last one. The role picker gains a **Pick a different tablet** button once there is
+something to pick between — the main button deliberately skips the chooser, and that
+previously left no route to it at all.
 
 **Cashier tablet (host): one tap, plus the system prompt — then leave it alone.**
 
