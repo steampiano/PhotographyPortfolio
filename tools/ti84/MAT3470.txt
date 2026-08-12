@@ -1,0 +1,208 @@
+PROGRAM:MAT3470
+ClrHome
+Lbl 0
+Menu("MAT 3470 EXAM2","BALLS+BOXES",1,"T-TRIANGLE",2,"INCL-EXCL",3,"MULTINOMIAL",4,"GF+RECURRENCE",5,"CALCULATE",7,"QUIT",9)
+Lbl 1
+ClrHome
+Disp "BALLS+BOXES KEY","N BALLS INTO","K BOXES.","ASK 3 THINGS:","BALLS DISTINCT?","BOXES DISTINCT?","ANY BOX EMPTY?"
+Pause
+ClrHome
+Disp "DIFF BALLS","DIFF BOXES","EMPTY OK: K^N","NO EMPTY:"," T(N,K)","EX 6 BALLS,5","BOXES,NO EMPTY","=T(6,5)=1800"
+Pause
+ClrHome
+Disp "SAME BALLS","DIFF BOXES","EMPTY OK:"," C(N+K-1,N)"," =(K CHOOSE N)R","NO EMPTY:"," C(N-1,K-1)"
+Pause
+ClrHome
+Disp "SAME BALLS EX","6 SAME BALLS","5 DIFF BOXES","EMPTY OK:"," C(6+5-1,6)"," =C(10,6)=210","NO EMPTY:"," C(5,4)=5"
+Pause
+ClrHome
+Disp "FIXED BOX SIZES","DIFF BALLS","SIZES N1..NK:"," N!/(N1!..NK!)","THIS IS THE","MULTINOMIAL","EX 6 PEOPLE","2,2,2: 6!/2!2!2!"
+Pause
+ClrHome
+Disp "QUICK SUMMARY","DIFF BALLS,DIFF","BOX: K^N /T(N,K)","SAME BALLS,DIFF","BOX: C(N+K-1,N)"," / C(N-1,K-1)","FORM IS","FREE / NO EMPTY"
+Pause
+Goto 0
+Lbl 2
+ClrHome
+Disp "T-TRIANGLE","T(N,K)=NUMBER OF","ONTO FUNCTIONS","N THINGS ONTO","K THINGS","= N DIFF BALLS","INTO K DIFF BOX","NO BOX EMPTY"
+Pause
+ClrHome
+Disp "T RECURRENCE","T(N,K)=K*["," T(N-1,K)"," +T(N-1,K-1)]","EDGES:","T(N,1)=1","T(N,N)=N!","BUILD ROW BY ROW"
+Pause
+ClrHome
+Disp "T ROWS","R1: 1","R2: 1 2","R3: 1 6 6","R4: 1 14 36 24","R5: 1 30 150 240","    120","R6 NEXT PAGE"
+Pause
+ClrHome
+Disp "T ROW 6","1 62 540","1560 1800 720","SO T(6,3)=540","T(6,5)=1800","T(6,2)=62","CHECK T(6,6)=720","=6!"
+Pause
+ClrHome
+Disp "T CLOSED FORM","T(N,K)=SUM"," (-1)^I*C(K,I)*"," (K-I)^N","I=0 TO K","FROM INCL-EXCL","ON EMPTY BOXES","ALSO T=K!*S(N,K)"
+Pause
+Goto 0
+Lbl 3
+ClrHome
+Disp "INCL-EXCL SETUP","NAME BAD EVENTS","A1,A2,...,AN","S0=TOTAL","S1=SUM |AI|","S2=SUM |AI.AJ|","SK=SUM OF ALL","K-WAY OVERLAPS"
+Pause
+ClrHome
+Disp "INCL-EXCL FORM","NONE OF THEM:","|A1'..AN'|="," S0-S1+S2-S3+...","AT LEAST ONE:"," S1-S2+S3-..."," =S0-(NONE)","SIGNS ALTERNATE"
+Pause
+ClrHome
+Disp "DIVISIBLE EX","1-210 BY 2,3,5,7","S1=105+70+42+30","S2=35+21+15+14"," +10+6 = 101","S3=7+5+3+2=17","S4=1, NONE=48","ANS 210-48=162"
+Pause
+ClrHome
+Disp "DERANGEMENTS","NOTHING IN ITS","OWN PLACE","AI = ITEM I IS","IN RIGHT PLACE","D(N)=N!-C(N,1)*"," (N-1)!+C(N,2)*"," (N-2)!-..."
+Pause
+ClrHome
+Disp "DERANGE VALUES","D1=0 D2=1 D3=2","D4=9 D5=44","D6=265 D7=1854","FAST ROUND(N!/E)","D5=120-120+60"," -20+5-1=44"
+Pause
+ClrHome
+Disp "NO 2 ADJACENT","EX 11223344","AI= BOTH I ARE","NEXT TO EACH","OTHER (GLUE)","S0=8!/2^4=2520","GLUE J PAIRS:","(8-J)!/2^(4-J)"
+Pause
+ClrHome
+Disp "NO 2 ADJ ANSWER","S0=2520","S1=4*7!/8=2520","S2=6*6!/4=1080","S3=4*5!/2=240","S4=4!=24","2520-2520+1080"," -240+24 = 864"
+Pause
+Goto 0
+Lbl 4
+ClrHome
+Disp "MULTINOMIAL CO","(M;M1,M2,..MK)"," = M!/(M1!*M2!"," *...*MK!)","M1+M2+..+MK=M","COUNTS WAYS TO","SPLIT M ITEMS","INTO NAMED SETS"
+Pause
+ClrHome
+Disp "TRINOMIAL THM","(A+B+C)^M=SUM OF","(M;M1,M2,M3)"," A^M1 B^M2 C^M3","OVER ALL MI>=0","WITH M1+M2+M3=M","TERMS: C(M+2,2)"
+Pause
+ClrHome
+Disp "PLUG-IN TRICKS","SUM OF ALL","(M;M1,M2,M3)"," = 3^M"," (LET A=B=C=1)","IF A+B+C=1 THEN","SUM = 1^M = 1","EX 1/2+1/6+1/3"
+Pause
+ClrHome
+Disp "ALL MI >= 1","SUM OF","(M;M1,M2,M3)","WITH EVERY","MI >= 1 EQUALS"," T(M,3)","EX M=6: T(6,3)"," = 540"
+Pause
+ClrHome
+Disp "FIND A COEFF","IN (X+2Y+3Z)^10","COEFF OF"," X^2 Y^3 Z^5","A=X,B=2Y,C=3Z","(10;2,3,5)=2520","2520*2^3*3^5"," = 4898880"
+Pause
+Goto 0
+Lbl 5
+Menu("PICK A TOPIC","GEN FUNCTIONS",51,"RECURRENCE",52,"MAIN MENU",0)
+Lbl 51
+ClrHome
+Disp "GEN FUNCTIONS","ONE FACTOR PER","ITEM TYPE","POWERS = HOW","MANY YOU USE","MULTIPLY OUT,","READ COEFF OF","X^(TARGET)"
+Pause
+ClrHome
+Disp "GF FACTORS","ANY AMOUNT:"," 1+X+X^2+..."," =1/(1-X)","AT MOST 3:"," 1+X+X^2+X^3","AT LEAST 1:"," X+X^2+..."
+Pause
+ClrHome
+Disp "COIN EXAMPLE","3 Q,6 D,10 N","MAKE 100 CENTS","Q:1+X^25+X^50"," +X^75","D:1+X^10+..."," +X^60","N:1+X^5+..+X^50"
+Pause
+ClrHome
+Disp "COIN ANSWER","MULTIPLY THE 3","FACTORS, TAKE","COEFF OF X^100","ANSWER = 15","CHECK BY HAND:","LIST QDN POWERS","15 COMBINATIONS"
+Pause
+Goto 0
+Lbl 52
+ClrHome
+Disp "RECURRENCE","X(N+2)=A*X(N+1)"," +B*X(N)","STEP 1 WRITE","CHAR EQUATION"," R^2=A*R+B"," R^2-A*R-B=0"
+Pause
+ClrHome
+Disp "RECURRENCE 2","STEP 2 SOLVE","FOR ROOTS R1,R2","(EIGENVALUES)","STEP 3 WRITE","X(N)=A*R1^N"," +B*R2^N"
+Pause
+ClrHome
+Disp "REPEATED ROOT","IF R1=R2=R THEN","X(N)=(A+B*N)*R^N","STEP 4 PLUG IN","2 KNOWN TERMS","SOLVE 2 EQNS","FOR A AND B"
+Pause
+ClrHome
+Disp "RECUR EXAMPLE","X(N+2)=X(N+1)"," +2*X(N)","X1=1, X2=3","R^2-R-2=0","(R-2)(R+1)=0","R=2, R=-1","XN=A*2^N+B(-1)^N"
+Pause
+ClrHome
+Disp "RECUR SOLVE","N=1: 2A-B=1","N=2: 4A+B=3","ADD: 6A=4","A=2/3, B=1/3","XN=(2/3)2^N"," +(1/3)(-1)^N","X30=(2^31+1)/3"
+Pause
+Goto 0
+Lbl 7
+Menu("CALCULATE","C AND P",71,"C WITH REPEATS",72,"T(N,K) ONTO",73,"MULTINOMIAL",74,"DERANGEMENT",75,"BALLS+BOXES",76,"MAIN MENU",0)
+Lbl 71
+ClrHome
+Input "N=",N
+Input "R=",R
+ClrHome
+Disp "C(N,R) =",N nCr R,"P(N,R) =",N nPr R
+Pause
+Goto 7
+Lbl 72
+ClrHome
+Disp "PICK R FROM N","TYPES, REPEATS","ALLOWED"
+Input "TYPES N=",N
+Input "PICKS R=",R
+ClrHome
+Disp "(N CHOOSE R)R =",(N+R-1) nCr R
+Pause
+Goto 7
+Lbl 73
+ClrHome
+Disp "ONTO FUNCTIONS","N DIFF BALLS","K DIFF BOXES","NO BOX EMPTY"
+Input "BALLS N=",N
+Input "BOXES K=",K
+0→T
+For(I,0,K-1)
+T+(-1)^I*(K nCr I)*(K-I)^N→T
+End
+ClrHome
+Disp "T(N,K) =",T
+Pause
+Goto 7
+Lbl 74
+ClrHome
+Disp "MULTINOMIAL","M!/(M1!*M2!*..)"
+Input "HOW MANY PARTS",G
+0→M
+1→W
+For(I,1,G)
+Input "PART SIZE=",S
+M+S→M
+W*S!→W
+End
+ClrHome
+Disp "TOTAL M =",M,"ANSWER =",M!/W
+Pause
+Goto 7
+Lbl 75
+ClrHome
+Disp "DERANGEMENTS","NOTHING IN ITS","OWN PLACE"
+Input "N=",N
+0→D
+For(I,0,N)
+D+(-1)^I*(N nCr I)*(N-I)!→D
+End
+ClrHome
+Disp "D(N) =",D
+Pause
+Goto 7
+Lbl 76
+ClrHome
+Input "BALLS N=",N
+Input "BOXES K=",K
+Menu("THE BALLS ARE","ALL DIFFERENT",BA,"ALL IDENTICAL",BB)
+Lbl BA
+Menu("EMPTY BOXES?","ALLOWED",B1,"NOT ALLOWED",B2)
+Lbl BB
+Menu("EMPTY BOXES?","ALLOWED",B3,"NOT ALLOWED",B4)
+Lbl B1
+ClrHome
+Disp "DIFF BALLS","EMPTY OK","K^N =",K^N
+Pause
+Goto 7
+Lbl B2
+0→T
+For(I,0,K-1)
+T+(-1)^I*(K nCr I)*(K-I)^N→T
+End
+ClrHome
+Disp "DIFF BALLS","NO EMPTY BOX","T(N,K) =",T
+Pause
+Goto 7
+Lbl B3
+ClrHome
+Disp "SAME BALLS","EMPTY OK","C(N+K-1,N) =",(N+K-1) nCr N
+Pause
+Goto 7
+Lbl B4
+ClrHome
+Disp "SAME BALLS","NO EMPTY BOX","C(N-1,K-1) =",(N-1) nCr (K-1)
+Pause
+Goto 7
+Lbl 9
+ClrHome
