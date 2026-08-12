@@ -97,6 +97,13 @@ class ViewerActivity : AppCompatActivity() {
     private var requestedEndpoint: Endpoint? = null
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
 
+    /**
+     * Which connection attempt is the live one. Read from the connection's own
+     * threads, so volatile.
+     */
+    @Volatile
+    private var sessionGeneration = 0
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -130,6 +137,53 @@ class ViewerActivity : AppCompatActivity() {
 
         candidates = mutableListOf(requestedEndpoint!!)
         connectToCurrentCandidate()
+    }
+
+    /**
+     * Back on screen: get a picture up now, not after a backoff.
+     *
+     * Leaving the app to change the music and coming back should feel like the
+     * mirror never went away, so this jumps any pending retry rather than waiting
+     * one out.
+     */
+    override fun onStart() {
+        super.onStart()
+        if (givenUp || isFinishing || connection != null) return
+        attempt = 0
+        retryNow()
+    }
+
+    /**
+     * Off screen: hang up, deliberately and immediately.
+     *
+     * Holding the socket open while backgrounded looks like the tolerant choice and
+     * is the opposite. Android freezes a cached process, so nothing is read or sent
+     * while the sockets stay open at the OS level — the host sees a viewer that has
+     * simply gone silent, and only gives up on it after a read timeout. For that
+     * window the single viewer slot is still held by a tablet that is not watching,
+     * so coming straight back is refused with "already sharing to another tablet"
+     * and has to be retried. Meanwhile the host has been encoding and sending video
+     * to a screen nobody can see.
+     *
+     * Hanging up cleanly sends a FIN the host acts on at once. It frees the slot,
+     * stops the streaming, and leaves the host in exactly the state it is designed
+     * to sit in — sharing, waiting for a tablet — so the return trip is a fresh
+     * connection to a host that is ready, rather than a race against a timeout.
+     */
+    override fun onStop() {
+        if (!isFinishing) {
+            handler.removeCallbacksAndMessages(RETRY_TOKEN)
+            // Invalidate in-flight callbacks before tearing down, so the hang-up
+            // cannot land on top of the connection that onStart is about to make.
+            sessionGeneration++
+            connection?.disconnect()
+            connection = null
+            decoder?.stop()
+            decoder = null
+            controlStatusKnown = false
+            sweep.reset()
+        }
+        super.onStop()
     }
 
     override fun onDestroy() {
@@ -166,6 +220,8 @@ class ViewerActivity : AppCompatActivity() {
         )
         binding.progress.visibility = View.VISIBLE
 
+        // Everything the previous attempt still has in flight is now stale.
+        val generation = ++sessionGeneration
         connection = ViewerConnection(
             hostAddress = endpoint.address,
             port = endpoint.port,
@@ -173,7 +229,7 @@ class ViewerActivity : AppCompatActivity() {
             trustStore = trustStore,
             pairingGate = pairingGate,
             deviceName = NetUtil.deviceLabel(),
-            listener = connectionListener,
+            listener = listenerFor(generation),
         ).also { it.connect() }
     }
 
@@ -556,12 +612,26 @@ class ViewerActivity : AppCompatActivity() {
         }
     }
 
-    private val connectionListener = object : ViewerConnection.Listener {
+    /**
+     * A listener bound to one connection attempt.
+     *
+     * Attempts can overlap: hanging up is asynchronous, so a callback from a
+     * connection we have already abandoned can land after its replacement is live.
+     * With a single shared listener that stale callback would null out the *new*
+     * connection, or worse, push frames from the old stream into the new decoder —
+     * two H.264 streams interleaved into one decoder is a corrupt picture, not a
+     * dropped one. [generation] makes a stale callback a no-op.
+     */
+    private fun listenerFor(generation: Int) = object : ViewerConnection.Listener {
+
+        private fun current(): Boolean = generation == sessionGeneration
+
         override fun onConnected(
             hostName: String,
             fingerprint: String,
             newlyPaired: Boolean,
         ) = runOnUiThread {
+            if (!current()) return@runOnUiThread
             hostLabel = hostName
             attempt = 0
             connectedOnce = true
@@ -581,6 +651,7 @@ class ViewerActivity : AppCompatActivity() {
         }
 
         override fun onVideoConfig(config: VideoConfig) = runOnUiThread {
+            if (!current()) return@runOnUiThread
             // Also arrives when the host rotates, which changes the frame geometry.
             pendingConfig = config
             binding.progress.visibility = View.VISIBLE
@@ -588,6 +659,9 @@ class ViewerActivity : AppCompatActivity() {
         }
 
         override fun onFrame(payload: ByteArray) {
+            // Not on the main thread, so this reads sessionGeneration directly. A
+            // stale frame must never reach the live decoder.
+            if (!current()) return
             if (payload.size <= FrameHeader.SIZE) return
             decoder?.submit(
                 payload,
@@ -598,6 +672,7 @@ class ViewerActivity : AppCompatActivity() {
         }
 
         override fun onStatus(status: HostStatus) = runOnUiThread {
+            if (!current()) return@runOnUiThread
             controlAvailable = status.controlAvailable
             controlDetail = status.detail
             controlStatusKnown = true
@@ -605,6 +680,7 @@ class ViewerActivity : AppCompatActivity() {
         }
 
         override fun onClosed(reason: String?, end: SessionEnd) = runOnUiThread {
+            if (!current()) return@runOnUiThread
             onAttemptFailed(reason, end)
         }
     }
