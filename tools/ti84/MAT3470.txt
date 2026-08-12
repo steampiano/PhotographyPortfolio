@@ -228,8 +228,14 @@ Lbl 61
 ClrHome
 Input "N=",N
 Input "K=",K
+1->C
+1->P
+For(J,1,K)
+C*(N-J+1)/J->C
+P*(N-J+1)->P
+End
 ClrHome
-Disp "C(N,K) =",N nCr K,"P(N,K) =",N nPr K
+Disp "C(N,K) =",C,"P(N,K) =",P
 Pause
 Goto 6
 Lbl 62
@@ -237,8 +243,16 @@ ClrHome
 Disp "PICK K FROM N","TYPES, REPEATS","ALLOWED"
 Input "TYPES N=",N
 Input "LENGTH K=",K
+1->C
+For(J,1,K)
+C*(N+K-J)/J->C
+End
+1->D
+For(J,1,N-1)
+D*(K-J)/J->D
+End
 ClrHome
-Disp "(N C K)R =",(N+K-1) nCr K,"NO MISSING =",(K-1) nCr (N-1)
+Disp "(N C K)R =",C,"NO MISSING =",D
 Pause
 Goto 6
 Lbl 63
@@ -248,7 +262,11 @@ Input "BALLS M=",M
 Input "BOXES N=",N
 0->T
 For(I,0,N-1)
-T+(0-1)^I*(N nCr I)*(N-I)^M->T
+1->C
+For(J,1,I)
+C*(N-J+1)/J->C
+End
+T+(0-1)^I*C*(N-I)^M->T
 End
 ClrHome
 Disp "T(M,N) =",T
@@ -256,29 +274,36 @@ Pause
 Goto 6
 Lbl 64
 ClrHome
-Disp "MULTINOMIAL","M!/(M1!*M2!*..)"
+Disp "MULTINOMIAL","ENTER EACH PART"
 Input "HOW MANY PARTS",G
-0->M
+0->R
 1->W
 For(I,1,G)
 Input "PART SIZE=",S
-M+S->M
-W*S!->W
+R+S->R
+1->C
+For(J,1,S)
+C*(R-J+1)/J->C
+End
+W*C->W
 End
 ClrHome
-Disp "TOTAL M =",M,"ANSWER =",M!/W
+Disp "TOTAL M =",R,"ANSWER =",W
 Pause
 Goto 6
 Lbl 65
 ClrHome
 Disp "DERANGEMENTS","NOTHING IN ITS","OWN PLACE"
 Input "N=",N
-0->D
-For(I,0,N)
-D+(0-1)^I*(N nCr I)*(N-I)!->D
+1->A
+0->B
+For(I,2,N)
+(I-1)*(A+B)->C
+B->A
+C->B
 End
 ClrHome
-Disp "DN =",D
+Disp "DN =",B
 Pause
 Goto 6
 Lbl 66
@@ -298,20 +323,32 @@ Goto 6
 Lbl 84
 0->T
 For(I,0,N-1)
-T+(0-1)^I*(N nCr I)*(N-I)^M->T
+1->C
+For(J,1,I)
+C*(N-J+1)/J->C
+End
+T+(0-1)^I*C*(N-I)^M->T
 End
 ClrHome
 Disp "DIFF BALLS","NO EMPTY BOX","T(M,N) =",T
 Pause
 Goto 6
 Lbl 85
+1->C
+For(J,1,M)
+C*(M+N-J)/J->C
+End
 ClrHome
-Disp "SAME BALLS","EMPTY OK","C(M+N-1,M) =",(M+N-1) nCr M
+Disp "SAME BALLS","EMPTY OK","C(M+N-1,M) =",C
 Pause
 Goto 6
 Lbl 86
+1->C
+For(J,1,N-1)
+C*(M-J)/J->C
+End
 ClrHome
-Disp "SAME BALLS","NO EMPTY BOX","C(M-1,N-1) =",(M-1) nCr (N-1)
+Disp "SAME BALLS","NO EMPTY BOX","C(M-1,N-1) =",C
 Pause
 Goto 6
 Lbl 7
