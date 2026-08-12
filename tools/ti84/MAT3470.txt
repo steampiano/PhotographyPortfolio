@@ -246,9 +246,9 @@ ClrHome
 Disp "ONTO FUNCTIONS","M DIFF BALLS","N DIFF BOXES","NO BOX EMPTY"
 Input "BALLS M=",M
 Input "BOXES N=",N
-0→T
+0->T
 For(I,0,N-1)
-T+(-1)^I*(N nCr I)*(N-I)^M→T
+T+(-1)^I*(N nCr I)*(N-I)^M->T
 End
 ClrHome
 Disp "T(M,N) =",T
@@ -258,12 +258,12 @@ Lbl 64
 ClrHome
 Disp "MULTINOMIAL","M!/(M1!*M2!*..)"
 Input "HOW MANY PARTS",G
-0→M
-1→W
+0->M
+1->W
 For(I,1,G)
 Input "PART SIZE=",S
-M+S→M
-W*S!→W
+M+S->M
+W*S!->W
 End
 ClrHome
 Disp "TOTAL M =",M,"ANSWER =",M!/W
@@ -273,9 +273,9 @@ Lbl 65
 ClrHome
 Disp "DERANGEMENTS","NOTHING IN ITS","OWN PLACE"
 Input "N=",N
-0→D
+0->D
 For(I,0,N)
-D+(-1)^I*(N nCr I)*(N-I)!→D
+D+(-1)^I*(N nCr I)*(N-I)!->D
 End
 ClrHome
 Disp "DN =",D
@@ -296,9 +296,9 @@ Disp "DIFF BALLS","EMPTY OK","N^M =",N^M
 Pause
 Goto 6
 Lbl B2
-0→T
+0->T
 For(I,0,N-1)
-T+(-1)^I*(N nCr I)*(N-I)^M→T
+T+(-1)^I*(N nCr I)*(N-I)^M->T
 End
 ClrHome
 Disp "DIFF BALLS","NO EMPTY BOX","T(M,N) =",T

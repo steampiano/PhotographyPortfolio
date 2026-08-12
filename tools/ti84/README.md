@@ -35,23 +35,43 @@ on the main menu, and every page there is marked with `*`. Nothing was deleted.
 
 ## Getting it onto the calculator
 
-The file is plain TI-BASIC source, not a `.8xp` binary. Three ways in:
+The file is plain TI-BASIC source, not a `.8xp` binary. It's pure ASCII, so it
+pastes cleanly anywhere.
 
-1. **TI Connect CE** — Program Editor → New Program → name it `MAT3470` → paste
-   the contents of `MAT3470.txt` → Send to calculator.
-2. **SourceCoder 3** (cemetech.net/sc) — import the `.txt`, export as `.8xp`,
-   send with TI Connect CE.
-3. **Type it in** — `PRGM` → `NEW` → `MAT3470`. Slow but works.
+**Simplest — TI Connect CE alone** (free from TI; you need it either way to
+transfer files):
+
+1. **Actions → New Program**, name it `MAT3470`
+2. Paste the contents of `MAT3470.txt`
+3. Connect the calculator by USB, turn it on, **Send**
+
+**Alternative — SourceCoder 3** (cemetech.net/sc, browser-based): click
+**New File**, not *Upload File* — Upload only accepts existing calculator files
+(`.8xp`, `.asm`, …), not `.txt`. Pick the TI-83/84 Plus BASIC program type, name
+it `MAT3470`, paste the text, export `.8xp`, then send with TI Connect CE.
+
+**No PC at all** — type it in: `PRGM` → `NEW` → `MAT3470`. A long evening.
 
 Notes on the source text:
 
-- `→` is the STO▸ key. If your import tool wants ASCII, `->` also works.
+- `->` is the STO▸ key (10 of them, all in the calculator routines). Both
+  SourceCoder and the on-calculator editor produce the real `→` token; the
+  ASCII form is just what pastes safely.
 - `nCr` and `nPr` are the `MATH` → `PRB` → `3` and `2` tokens, not three
   letters typed out.
 - Runs on the TI-84 Plus and TI-84 Plus CE. Screens are laid out for the
   16-column monochrome home screen, so they just look roomy on a CE.
 
 Run it with `PRGM` → `MAT3470` → `ENTER`. `ENTER` advances each page.
+
+### Gotchas
+
+- **The cable** must be a data cable, not charge-only. TI-84 Plus / Silver uses
+  **mini-USB**; TI-84 Plus CE uses **micro-USB**.
+- **RAM on a monochrome TI-84 Plus.** The source is ~13 KB and mostly string
+  literals, so expect roughly 10–11 KB on the calculator against 24 KB of user
+  RAM. You may need to archive other programs (`2nd` → `MEM` → `Mem Mgmt`). On a
+  TI-84 Plus CE (154 KB) it's a non-issue.
 
 ## Menu map
 
