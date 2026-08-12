@@ -77,13 +77,21 @@ Run it with `PRGM` → `MAT3470` → `ENTER`. `ENTER` advances each page.
 
 ```
 MAT 3470 EXAM2
- 1 C DISTRIBUTNS   balls+boxes / T-triangle / multinomial / std probs 8-14
- 2 E INCL-EXCL     the method / E3 E4 E5 / worked exam examples
- 3 F RECURRENCE    characteristic-equation method
- 4 G COIN/GENFN    generating functions, the coin problem
+ 1 WHICH FORMULA?  decision tree — start here when you're stuck
+ 2 C DISTRIBUTNS   balls+boxes / T-triangle / multinomial / std probs 8-14
+ 3 E INCL-EXCL     the method / E3 E4 E5 / worked exam examples
+ 4 F+G METHODS     recurrences / generating functions, the coin problem
  5 EXAM I REVIEW   A strings / B combinations / paths+ballot / answers
  6 CALCULATE       computes things
- 7 OFF SCOPE *     flagpole, D, H, std probs 1-7 — kept for background
+ 7 NOTATION+MORE   notation key / off-scope material
+
+WHICH FORMULA?
+ 1 BALLS INTO BOX  asks distinct? empty? → names the formula and where to compute it
+ 2 ARRANGE A WORD  M!/(M1!M2!…), and the not-all-letters-used variants
+ 3 AT LEAST/NONE   the words that mean inclusion/exclusion, plus the recipe
+ 4 SEQUENCE X(N)   → characteristic equation
+ 5 COINS/TOTALS    → generating functions
+ 6 UNSURE-TELLS    the three questions, and how to break a tie
 
 CALCULATE
  1 C AND P           nCr and nPr together
