@@ -57,13 +57,13 @@ Run it with `PRGM` → `MAT3470` → `ENTER`. `ENTER` advances each page.
 
 ```
 MAT 3470 EXAM2
- 1 C DISTRIBUTNS   balls+boxes / T-triangle / multinomial      (C p31-40)
+ 1 C DISTRIBUTNS   balls+boxes / T-triangle / multinomial / std probs 8-14
  2 E INCL-EXCL     the method / E3 E4 E5 / worked exam examples
  3 F RECURRENCE    characteristic-equation method
  4 G COIN/GENFN    generating functions, the coin problem
- 5 STD PROBS 8-14  Marcus's Standard Problems for Section C
+ 5 EXAM I REVIEW   A strings / B combinations / paths+ballot / answers
  6 CALCULATE       computes things
- 7 OFF SCOPE *     A, B, flagpole, D, H — kept for background
+ 7 OFF SCOPE *     flagpole, D, H, std probs 1-7 — kept for background
 
 CALCULATE
  1 C AND P           nCr and nPr together
@@ -226,13 +226,68 @@ For `x_{n+2} = a·x_{n+1} + b·x_n`:
 Exam problem: `x_{n+2} = x_{n+1} + 2x_n`, x₁ = 1, x₂ = 3 → `r² − r − 2 = 0` →
 r = 2, −1 → `x_n = ⅔·2ⁿ + ⅓·(−1)ⁿ`, so `x₃₀ = (2³¹ + 1)/3 = 715,827,883`.
 
+## Exam I review — menu 5
+
+Sections A and B. Not on this exam (it isn't cumulative), but on its own menu
+rather than buried, built from the July 8 2024 Exam I paper.
+
+**Strings (A)**
+
+```
+length k from an n-set          nᵏ
+no element repeated             n!/(n−k)!
+product rule                    n₁·n₂·…·n_k
+exactly r copies of one letter  C(k,r)·(n−1)^(k−r)
+exactly j different letters     C(n,j)·T(k,j)
+```
+
+That last one is worth noticing: **Exam I's "exactly two different letters"
+problem is a T-number in disguise.** Five letters from {A,B,C} using exactly
+two: `C(3,2)·T(5,2) = 3·30 = 90`, and `T(5,2) = 2⁵−2 = 30`. Same machinery as
+Section C — the two exams are closer than they look.
+
+**Combinations (B)**
+
+```
+C(n,k) = n!/(k!(n−k)!)          Pascal: C(n,k)+C(n,k+1) = C(n+1,k+1)
+binomial theorem                (a+b)ⁿ = Σ C(n,k) a^(n−k) b^k
+  Σ C(n,k) = 2ⁿ                 alternating sum = 0      evens = 2^(n−1)
+hockey stick                    C(2,2)+…+C(n,2) = C(n+1,3)
+m 0s and n 1s                   C(m+n,n)
+  …no two consecutive 1s        C(m+1,n)          (gaps method)
+combinations with repetition    (n choose k)_R = C(n+k−1,k)
+  …at least one of each         C(k−1,n−1)
+```
+
+**Paths and the ballot problem**
+
+Grid paths with only right/down moves: `C(r+d,d)`. Through a given point,
+multiply the two halves. If a diagonal move is allowed, split into cases by how
+many diagonals are used and add.
+
+0-dominated / ballot: A never behind, m votes for A and n for B, is
+`C(m+n,n) − C(m+n,n−1)` — the subtracted term counts bad paths by reflection.
+Exam I Q13: A wins 5–3, so `C(8,3) − C(8,2) = 56 − 28 = 28`, probability
+`28/56 = 1/2`.
+
+**Exam I answers** (menu `5 → EXAM I ANSWERS`, all verified):
+
+| Q | | Q | |
+|---|---|---|---|
+| 1 | 243, 80, 90 | 9 | C(8,3)·2⁵ = 1792 |
+| 3(C) | C(n+1,3) | 10 | C(6,3) = 20 |
+| 4 | 9·9·9 = 729 | 11 | 26⁵−25⁵ = 2,115,751 |
+| 5 | 3 + 90 = 93 | 12 | 36, 15, 15, 66, 36 |
+| 6(B) | 48,384 | 13 | 28, probability ½ |
+| 6(C) | 2ⁿ, 0, 2^(n−1) | 7 | 720/7776 = 5/54 |
+| 8 | 13·4·12·6 = 3744 | | |
+
 ## Off-scope material (kept, marked `*`)
 
 Reachable from menu item 7, all clearly flagged:
 
-- **A Strings** — `nᵏ`, `n!/(n−k)!`, product rule, derangement numbers (SP #1, #2)
-- **B Combinations** — `C(n,k)`, Pascal, bit strings: `C(m+n,n)`, no two adjacent
-  1s `C(m+1,n)`, 0-dominated `C(m+n,n) − C(m+n,n−1)` (SP #3–#7)
+- **Standard Problems #1–#7** — the Section A and B ones, formulas only; the
+  fuller treatment is under Exam I Review on menu 5
 - **C Flagpole** (pp.41–43) — m distinct flags on n distinct poles, order on a
   pole matters: `n(n+1)…(n+m−1) = (n+m−1)!/(n−1)!`
 - **D Partitions** — Stirling `S(m,n) = T(m,n)/n!` with
