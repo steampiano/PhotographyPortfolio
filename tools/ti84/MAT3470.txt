@@ -304,8 +304,9 @@ Lbl 87
 Menu("EXIT","MAIN MENU",0,"BACK",6,"QUIT",9)
 Lbl 61
 ClrHome
-Input "N=",N
-Input "K=",K
+Disp "C AND P","N = THE POOL","HOW MANY THERE","ARE TO PICK FROM","K = HOW MANY","YOU ACTUALLY"," PICK"
+Input "POOL N=",N
+Input "PICK K=",K
 1->C
 1->P
 For(J,1,K)
@@ -386,6 +387,7 @@ Pause
 Goto 6
 Lbl 66
 ClrHome
+Disp "BALLS+BOXES","M = HOW MANY","OBJECTS YOU ARE","PLACING","N = HOW MANY","BOXES THEY GO IN"
 Input "BALLS M=",M
 Input "BOXES N=",N
 Menu("THE BALLS ARE","ALL DIFFERENT",81,"ALL IDENTICAL",82)
