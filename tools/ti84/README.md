@@ -75,6 +75,34 @@ CALCULATE
  7 BACK / QUIT
 ```
 
+## Sample exam → where the formula lives
+
+The Aug 5 2024 Exam II doubles as the sample final. Every problem on it is
+covered; this is the lookup path for each.
+
+| Q | What it asks | § | Menu path |
+|---|---|---|---|
+| 1(A) | first six rows of the T-triangle | C | `1 → T-TRIANGLE` (rows pages) |
+| 1(B) | 6 distinct balls → 5 distinct boxes, none empty | C | `1 → BALLS+BOXES` · calc `3` → **1800** |
+| 1(C) | 6 identical balls → 5 distinct boxes | C | `1 → BALLS+BOXES` · calc `6` → **210** |
+| 2 | 1…210 divisible by 2, 3, 5 or 7 | E | `2 → EXAM EXAMPLES` → **162** |
+| 3(A) | trinomial sums (=1, =3ᵐ, all mᵢ≥1) | C | `1 → MULTINOMIAL`, plug-in tricks → **540** |
+| 3(B) | coefficient of x²y³z⁵ in (x+2y+3z)¹⁰ | C | `1 → MULTINOMIAL`, find a coeff |
+| 4 | 5 red + 4 blue into 3 boxes, none empty | C+E | `2 → EXAM EXAMPLES` → **228** |
+| 5 | coins making one dollar | G | `4 → COIN PROBLEM` → **15** |
+| 6 | recurrence, then x₃₀ | F | `3 → F RECURRENCE` → **715,827,883** |
+| 7(A) | derangements of 1,2,3,4,5 | E | `2 → E3 E4 E5` · calc `5` → **44** |
+| 7(B) | 11223344, no two consecutive equal | E | `2 → EXAM EXAMPLES` → **864** |
+| 8(A) | 6 people, 3 exams, free | C | `1 → BALLS+BOXES` → **3⁶** |
+| 8(B) | every exam taken by somebody | C | calc `3` → **T(6,3) = 540** |
+| 8(C) | split 2/2/2 and 3/2/1 | C | calc `4` → **90**, **60** |
+| 8(D) | redo (A),(B) with identical people | C | calc `6` → **28**, **10** |
+
+Note the shape of it: five of the eight problems are Section C, and the two
+Section E problems both run through inclusion/exclusion on "bad" events. If
+you're short on time, `1 → BALLS+BOXES` and `2 → THE METHOD` carry the most
+weight.
+
 ## The cheat sheet itself
 
 ### The balls-and-boxes table — Section C
