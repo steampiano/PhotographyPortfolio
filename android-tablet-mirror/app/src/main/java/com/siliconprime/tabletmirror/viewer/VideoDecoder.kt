@@ -36,6 +36,9 @@ class VideoDecoder(
     private val availableInputs = ArrayDeque<Int>()
     private val pending = ArrayDeque<Frame>()
 
+    /** Guarded by [lock], like the queue whose depth it is asked about. */
+    private val gate = FrameGate()
+
     @Volatile
     private var stopped = false
 
@@ -57,15 +60,32 @@ class VideoDecoder(
         decoder.start()
     }
 
-    /** [data] is a full access unit; [offset] skips the transport frame header. */
-    fun submit(data: ByteArray, offset: Int, size: Int, ptsUs: Long) {
+    /**
+     * [data] is a full access unit; [offset] skips the transport frame header.
+     *
+     * What may be queued is [FrameGate]'s decision, not this method's. Shedding an
+     * arbitrary frame under load looks like the cheap option and is not: every frame
+     * after it refers to something the decoder never received, so the picture stays
+     * broken until the next keyframe — silently, with the connection still up.
+     */
+    fun submit(data: ByteArray, offset: Int, size: Int, ptsUs: Long, isKeyFrame: Boolean) {
         if (stopped || size <= 0) return
         synchronized(lock) {
-            pending.addLast(Frame(data, offset, size, ptsUs))
-            while (pending.size > MAX_PENDING) {
-                // Falling behind: shedding the oldest frame costs a brief artefact,
-                // whereas queueing everything costs permanent latency.
-                pending.removeFirst()
+            when (gate.offer(isKeyFrame, pending.size)) {
+                FrameGate.Verdict.DECODE ->
+                    pending.addLast(Frame(data, offset, size, ptsUs))
+
+                FrameGate.Verdict.FLUSH_AND_DECODE -> {
+                    pending.clear()
+                    pending.addLast(Frame(data, offset, size, ptsUs))
+                }
+
+                FrameGate.Verdict.DROP_ALL -> {
+                    pending.clear()
+                    Log.i(TAG, "decoder fell behind; waiting for the next keyframe")
+                }
+
+                FrameGate.Verdict.DROP -> Unit
             }
         }
         drain()
@@ -148,8 +168,5 @@ class VideoDecoder(
     companion object {
         private const val TAG = "VideoDecoder"
         private const val MIME = MediaFormat.MIMETYPE_VIDEO_AVC
-
-        /** Roughly a third of a second at 30fps. */
-        private const val MAX_PENDING = 10
     }
 }

@@ -668,6 +668,8 @@ class ViewerActivity : AppCompatActivity() {
                 FrameHeader.SIZE,
                 payload.size - FrameHeader.SIZE,
                 FrameHeader.readPts(payload),
+                // The host has always flagged these; nothing on this side read it.
+                FrameHeader.readFlags(payload) and FrameHeader.FLAG_KEYFRAME != 0,
             )
         }
 
