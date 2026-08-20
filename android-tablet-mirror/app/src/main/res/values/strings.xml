@@ -100,6 +100,10 @@
     <string name="viewer_view_only">View only</string>
     <string name="viewer_decode_error">Could not decode the video: %1$s</string>
     <string name="viewer_session_ended">The session ended.</string>
+    <string name="viewer_picture_stalled">Picture stopped updating (%1$s). Reconnecting…</string>
+    <string name="stall_no_video">no video arriving from that tablet</string>
+    <string name="stall_awaiting_keyframe">waiting for a full frame that never came</string>
+    <string name="stall_decoder">this tablet\'s decoder stopped</string>
     <string name="title_connection_failed">Could not connect</string>
     <string name="title_disconnected">Disconnected</string>
 

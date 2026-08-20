@@ -5,6 +5,7 @@ import android.media.MediaFormat
 import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
+import android.os.SystemClock
 import android.util.Log
 import android.view.Surface
 import java.nio.ByteBuffer
@@ -45,6 +46,21 @@ class VideoDecoder(
     @Volatile
     private var renderedFirstFrame = false
 
+    /**
+     * When something was last actually put on the screen.
+     *
+     * Seeded at start rather than left at zero, so a decoder that never manages a
+     * first frame counts as stalled too — that is a freeze like any other.
+     */
+    @Volatile
+    private var lastRenderedAtMs = 0L
+
+    /** How long the picture has been standing still. */
+    fun stalledForMs(): Long = SystemClock.elapsedRealtime() - lastRenderedAtMs
+
+    /** True while the stream is broken and only a keyframe can restart it. */
+    val awaitingKeyFrame: Boolean get() = synchronized(lock) { gate.stalled }
+
     fun start() {
         val format = MediaFormat.createVideoFormat(MIME, width, height).apply {
             setByteBuffer("csd-0", ByteBuffer.wrap(csd))
@@ -53,6 +69,7 @@ class VideoDecoder(
                 setInteger(MediaFormat.KEY_LOW_LATENCY, 1)
             }
         }
+        lastRenderedAtMs = SystemClock.elapsedRealtime()
         val decoder = MediaCodec.createDecoderByType(MIME)
         codec = decoder
         decoder.setCallback(callback, handler)
@@ -150,6 +167,7 @@ class VideoDecoder(
         ) {
             val render = info.size > 0 && !stopped
             runCatching { codec.releaseOutputBuffer(index, render) }
+            if (render) lastRenderedAtMs = SystemClock.elapsedRealtime()
             if (render && !renderedFirstFrame) {
                 renderedFirstFrame = true
                 onFirstFrame()

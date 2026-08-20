@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.util.Log
 import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.View
@@ -104,6 +105,10 @@ class ViewerActivity : AppCompatActivity() {
     @Volatile
     private var sessionGeneration = 0
 
+    /** When a VIDEO_FRAME last arrived, whatever became of it. Written off-thread. */
+    @Volatile
+    private var lastFrameArrivedAtMs = 0L
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -148,6 +153,7 @@ class ViewerActivity : AppCompatActivity() {
      */
     override fun onStart() {
         super.onStart()
+        startPictureWatchdog()
         if (givenUp || isFinishing || connection != null) return
         attempt = 0
         retryNow()
@@ -171,6 +177,7 @@ class ViewerActivity : AppCompatActivity() {
      * connection to a host that is ready, rather than a race against a timeout.
      */
     override fun onStop() {
+        handler.removeCallbacks(pictureWatchdog)
         if (!isFinishing) {
             handler.removeCallbacksAndMessages(RETRY_TOKEN)
             // Invalidate in-flight callbacks before tearing down, so the hang-up
@@ -273,6 +280,71 @@ class ViewerActivity : AppCompatActivity() {
             return
         }
         scheduleRetry()
+    }
+
+    // -----------------------------------------------------------------------
+    // Picture watchdog
+    // -----------------------------------------------------------------------
+
+    /**
+     * Reconnects when the picture stops moving, which is what someone was otherwise
+     * walking over to do by hand.
+     *
+     * Deliberately blunt. A freeze can come from either end — the host's encoder
+     * going quiet, a requested keyframe that never arrives, a decoder that has
+     * stopped producing output — and a link that looks perfectly healthy throughout,
+     * because pings keep flowing and no error is ever raised. Rather than trying to
+     * detect each cause and repair it in place, this watches the only thing that
+     * actually matters to somebody standing at the tablet: whether the screen is
+     * still updating. A fresh session always starts from a keyframe, so reconnecting
+     * fixes every one of those causes.
+     *
+     * Safe against a genuinely idle till, because the host re-sends the previous
+     * frame several times a second, so an unchanged screen still decodes frames.
+     * Nothing arriving is itself the fault being looked for.
+     *
+     * The reason is reported rather than just logged: it says which side to
+     * investigate, and it is the only diagnostic available from behind the counter.
+     */
+    private val pictureWatchdog = object : Runnable {
+        override fun run() {
+            checkPicture()
+            handler.postDelayed(this, PICTURE_CHECK_MS)
+        }
+    }
+
+    private fun startPictureWatchdog() {
+        handler.removeCallbacks(pictureWatchdog)
+        handler.postDelayed(pictureWatchdog, PICTURE_CHECK_MS)
+    }
+
+    private fun checkPicture() {
+        if (givenUp || isFinishing) return
+        // No decoder yet, or a reconnect already under way: nothing to judge.
+        val active = decoder ?: return
+        if (connection == null) return
+        if (active.stalledForMs() < PICTURE_TIMEOUT_MS) return
+
+        val reason = when {
+            SystemClock.elapsedRealtime() - lastFrameArrivedAtMs > PICTURE_TIMEOUT_MS ->
+                getString(R.string.stall_no_video)
+            active.awaitingKeyFrame -> getString(R.string.stall_awaiting_keyframe)
+            else -> getString(R.string.stall_decoder)
+        }
+        Log.w(TAG, "picture stalled: $reason; reconnecting")
+        setStatus(getString(R.string.viewer_picture_stalled, reason))
+
+        // Abandon this session outright. Its callbacks are already invalidated by the
+        // generation bump, so nothing in flight can interfere with the replacement.
+        sessionGeneration++
+        connection?.disconnect()
+        connection = null
+        decoder?.stop()
+        decoder = null
+        controlStatusKnown = false
+        attempt = 0
+        sweep.reset()
+        retryNow()
     }
 
     private fun scheduleRetry() {
@@ -663,6 +735,7 @@ class ViewerActivity : AppCompatActivity() {
             // stale frame must never reach the live decoder.
             if (!current()) return
             if (payload.size <= FrameHeader.SIZE) return
+            lastFrameArrivedAtMs = SystemClock.elapsedRealtime()
             decoder?.submit(
                 payload,
                 FrameHeader.SIZE,
@@ -694,6 +767,16 @@ class ViewerActivity : AppCompatActivity() {
 
         /** GestureInjector supports ten simultaneous strokes. */
         private const val MAX_POINTER_ID = 9
+
+        private const val TAG = "ViewerActivity"
+
+        /**
+         * How long the screen may stand still before the session is abandoned. Long
+         * enough not to fight a brief scheduling hiccup, short enough that nobody
+         * reaches for the tablet first.
+         */
+        private const val PICTURE_TIMEOUT_MS = 4_000L
+        private const val PICTURE_CHECK_MS = 1_000L
 
         private val RETRY_TOKEN = Any()
 
