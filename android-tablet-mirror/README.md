@@ -202,6 +202,12 @@ Designed so that nothing needs touching once it is running.
   address just fails the handshake and gets skipped.
 - It only gives up for problems retrying cannot fix — a declined pairing, a
   version mismatch, or nothing paired at all — and then says which.
+- **A frozen picture reconnects itself.** If the screen stops updating for four
+  seconds while the link still looks healthy, the session is abandoned and remade —
+  a fresh one always begins with a keyframe, which is why reconnecting by hand
+  always fixed it, whatever the cause was. The status line names what stalled (no
+  video arriving / waiting for a full frame / the decoder stopped), which is the
+  only diagnostic available from behind a counter.
 - **Switch tablet** is always in the control bar, so a session that will not come
   back is never a dead end. Without it the only exit was *Disconnect*, which lands
   on a screen that forwards straight back to the same unreachable tablet.
