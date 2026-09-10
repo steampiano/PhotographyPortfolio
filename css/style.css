@@ -1398,18 +1398,25 @@ a {
    outside its pointer hit-region — hovering the sides or bottom of the
    pill would pass through to the row behind, so the avatar preview never
    appeared. This invisible rectangular fill restores the full hit area:
-   hovering it still counts as hovering the pill, so :hover fires across
-   the whole shape. pointer-events on the preview stay none, so it's
-   unaffected. */
+   hovering it counts as hovering the pill, and the mouseenter/mouseleave
+   handlers in the JS (which toggle .is-previewing) fire from anywhere on
+   it. Explicit longhand offsets rather than `inset` for older engines;
+   -1px also covers the 1px border ring, but no further — the pills sit
+   only 8px apart and the hit area must not reach a neighbour. */
 .people-bubble::before {
   content: "";
   position: absolute;
-  inset: -1px; /* cover the 1px border ring too, but no further — the pills
-                  sit only 8px apart and the hit area must not reach a neighbour */
+  top: -1px;
+  right: -1px;
+  bottom: -1px;
+  left: -1px;
   border-radius: 0;
+  background: transparent;
+  pointer-events: auto;
 }
 
-.people-bubble:hover {
+.people-bubble:hover,
+.people-bubble.is-previewing {
   background: rgba(255, 255, 255, 0.18);
   color: #dc3055;
 }
@@ -1444,7 +1451,8 @@ a {
   object-fit: cover;
 }
 
-.people-bubble:hover .people-bubble-preview {
+.people-bubble:hover .people-bubble-preview,
+.people-bubble.is-previewing .people-bubble-preview {
   opacity: 1;
   transform: translateX(-50%) scale(1);
 }

@@ -337,11 +337,19 @@ if (!src) {
             preview.appendChild(previewImg);
             bubble.appendChild(preview);
 
+            // mouseenter fires from anywhere on the pill (the ::before hit
+            // layer covers its rounded ends), so drive the preview from JS
+            // instead of leaning on the CSS :hover selector alone.
             let avatarLoaded = false;
             bubble.addEventListener('mouseenter', () => {
-              if (avatarLoaded) return;
-              avatarLoaded = true;
-              previewImg.src = 'avatars/' + cleanHandle.toLowerCase() + '.jpg';
+              if (!avatarLoaded) {
+                avatarLoaded = true;
+                previewImg.src = 'avatars/' + cleanHandle.toLowerCase() + '.jpg';
+              }
+              bubble.classList.add('is-previewing');
+            });
+            bubble.addEventListener('mouseleave', () => {
+              bubble.classList.remove('is-previewing');
             });
           }
 
