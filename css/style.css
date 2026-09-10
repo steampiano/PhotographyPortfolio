@@ -1215,18 +1215,17 @@ a {
   max-height: calc(100vh - 180px);
   object-fit: contain;
   background: #1a1a1a;
-  transition: width 0.25s ease, height 0.25s ease, filter 0.3s ease;
+  /* Only the loading blur animates. Zoom is a continuous slider now, so a
+     width/height transition would just lag a frame or two behind every
+     drag; the resize needs to track the thumb exactly. */
+  transition: filter 0.3s ease;
 }
 
 /* Once zoomed, photo.js sets explicit pixel width/height (computed from
    the image's own natural unzoomed size × the zoom level) instead of the
    percentage width above — object-fit has nothing left to do once the
    box and the content share the same ratio exactly, so this simply lets
-   the image grow past its wrap and become scrollable. The width/height
-   transition above applies here too — zoom is discrete +/- steps (see
-   photo.js), not a drag/gesture, so there's no continuous tracking for a
-   transition to lag behind; every change is a single, deliberate jump
-   that's safe to animate. */
+   the image grow past its wrap and become scrollable. */
 .photo-full.is-zoomed {
   width: auto;
   max-height: none;
@@ -1258,10 +1257,63 @@ a {
 .photo-zoom-controls {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 6px;
   border: 1px solid var(--border);
   border-radius: 999px;
-  padding: 4px;
+  padding: 4px 6px 4px 14px;
+}
+
+/* Range input, restyled for the dark theme. Track + thumb need the vendor
+   pseudo-elements; keep the two blocks in sync. */
+.photo-zoom-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 120px;
+  height: 32px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.photo-zoom-slider:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.photo-zoom-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.photo-zoom-slider::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.photo-zoom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -5px; /* centre the 14px thumb on the 4px track */
+  border: none;
+  border-radius: 50%;
+  background: var(--fg);
+}
+
+.photo-zoom-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: none;
+  border-radius: 50%;
+  background: var(--fg);
+}
+
+/* Firefox draws an extra inner dotted ring on focus — the global
+   :focus-visible outline is enough. */
+.photo-zoom-slider::-moz-focus-outer {
+  border: 0;
 }
 
 .photo-zoom-btn {

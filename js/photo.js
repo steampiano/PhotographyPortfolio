@@ -159,14 +159,13 @@ if (!src) {
       });
 
       // ---- Zoom controls ----
-      // Discrete +/- steps, not a gesture/transform implementation. Once
-      // zoomed, the image overflows .photo-full-wrap and can be panned two
-      // ways at once: native browser scrolling (touch-drag, trackpad, wheel,
-      // scrollbar) and a mouse press-and-drag handler further down. Both
-      // just move wrap.scrollLeft/scrollTop — no custom transform state — so
-      // this stays clear of the from-scratch pinch/pan zoom that was tried
-      // in the lightbox first and turned out too unreliable.
-      const ZOOM_STEP = 0.5;
+      // A slider (1x–3x), not +/- steps. Once zoomed, the image overflows
+      // .photo-full-wrap and can be panned two ways at once: native browser
+      // scrolling (touch-drag, trackpad, wheel, scrollbar) and a mouse
+      // press-and-drag handler further down. Both just move
+      // wrap.scrollLeft/scrollTop — no custom transform state — so this
+      // stays clear of the from-scratch pinch/pan zoom that was tried in the
+      // lightbox first and turned out too unreliable.
       const ZOOM_MAX = 3;
       let zoomLevel = 1;
       let baseWidth = 0;
@@ -176,11 +175,14 @@ if (!src) {
       const zoomControls = document.createElement('div');
       zoomControls.className = 'photo-zoom-controls';
 
-      const zoomOutBtn = document.createElement('button');
-      zoomOutBtn.type = 'button';
-      zoomOutBtn.className = 'photo-zoom-btn';
-      zoomOutBtn.setAttribute('aria-label', 'Zoom out');
-      zoomOutBtn.textContent = '−';
+      const zoomSlider = document.createElement('input');
+      zoomSlider.type = 'range';
+      zoomSlider.className = 'photo-zoom-slider';
+      zoomSlider.min = '1';
+      zoomSlider.max = String(ZOOM_MAX);
+      zoomSlider.step = '0.05';
+      zoomSlider.value = '1';
+      zoomSlider.setAttribute('aria-label', 'Zoom');
 
       const zoomResetBtn = document.createElement('button');
       zoomResetBtn.type = 'button';
@@ -188,15 +190,8 @@ if (!src) {
       zoomResetBtn.setAttribute('aria-label', 'Reset zoom');
       zoomResetBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>';
 
-      const zoomInBtn = document.createElement('button');
-      zoomInBtn.type = 'button';
-      zoomInBtn.className = 'photo-zoom-btn';
-      zoomInBtn.setAttribute('aria-label', 'Zoom in');
-      zoomInBtn.textContent = '+';
-
-      zoomControls.appendChild(zoomOutBtn);
+      zoomControls.appendChild(zoomSlider);
       zoomControls.appendChild(zoomResetBtn);
-      zoomControls.appendChild(zoomInBtn);
       toolbar.appendChild(zoomControls);
 
       // Below the image, not above it — this page's whole point is to
@@ -205,12 +200,17 @@ if (!src) {
       content.appendChild(wrap);
       content.appendChild(toolbar);
 
-      function updateZoomButtons() {
-        zoomOutBtn.disabled = zoomLevel <= 1;
+      function updateZoomUI() {
+        zoomSlider.disabled = !zoomReady;
         zoomResetBtn.disabled = zoomLevel <= 1;
-        zoomInBtn.disabled = !zoomReady || zoomLevel >= ZOOM_MAX;
+        // Reflect programmatic changes (reset button, viewport resize) back
+        // onto the slider. Setting .value never fires 'input', so the slider
+        // handler can't loop through this.
+        const v = String(zoomLevel);
+        if (zoomSlider.value !== v) zoomSlider.value = v;
+        zoomSlider.setAttribute('aria-valuetext', zoomLevel.toFixed(2).replace(/\.?0+$/, '') + '×');
       }
-      updateZoomButtons();
+      updateZoomUI();
 
       function setZoom(newLevel) {
         if (!zoomReady) return;
@@ -232,7 +232,7 @@ if (!src) {
         img.classList.toggle('is-zoomed', zoomed);
         img.style.width = (baseWidth * zoomLevel) + 'px';
         img.style.height = (baseHeight * zoomLevel) + 'px';
-        updateZoomButtons();
+        updateZoomUI();
 
         wrap.scrollLeft = centerXFraction * wrap.scrollWidth - wrap.clientWidth / 2;
         wrap.scrollTop = centerYFraction * wrap.scrollHeight - wrap.clientHeight / 2;
@@ -251,7 +251,7 @@ if (!src) {
         wrap.style.width = baseWidth + 'px';
         wrap.style.height = baseHeight + 'px';
         zoomReady = true;
-        updateZoomButtons();
+        updateZoomUI();
       }
 
       if (img.complete && img.naturalWidth) {
@@ -260,8 +260,7 @@ if (!src) {
         img.addEventListener('load', initZoomOnce, { once: true });
       }
 
-      zoomOutBtn.addEventListener('click', () => setZoom(zoomLevel - ZOOM_STEP));
-      zoomInBtn.addEventListener('click', () => setZoom(zoomLevel + ZOOM_STEP));
+      zoomSlider.addEventListener('input', () => setZoom(parseFloat(zoomSlider.value)));
       zoomResetBtn.addEventListener('click', () => setZoom(1));
 
       // ---- Drag-to-pan (mouse) ----
@@ -330,6 +329,7 @@ if (!src) {
           img.style.height = '';
           wrap.style.width = '';
           wrap.style.height = '';
+          updateZoomUI();
           initZoomOnce();
         }, 150);
       });
