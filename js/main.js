@@ -121,6 +121,14 @@ function buildHandleBubble(handle) {
   label.textContent = handle;
   bubble.appendChild(label);
 
+  // Transparent rectangular overlay that makes the pill's rounded ends
+  // hoverable/clickable (see .people-bubble-hit in the CSS). A real child,
+  // not ::before — Firefox/Zen hit-test a positioned pseudo-element oddly.
+  const hit = document.createElement('span');
+  hit.className = 'people-bubble-hit';
+  hit.setAttribute('aria-hidden', 'true');
+  bubble.appendChild(hit);
+
   const accent = AVATAR_COLORS[cleanHandle.toLowerCase()];
   if (accent) bubble.style.setProperty('--accent', accent);
 
@@ -141,9 +149,9 @@ function buildHandleBubble(handle) {
     preview.appendChild(previewImg);
     bubble.appendChild(preview);
 
-    // mouseenter fires from anywhere on the pill (the ::before hit layer
-    // covers its rounded ends), so drive the preview from JS instead of
-    // leaning on the CSS :hover selector alone.
+    // mouseenter fires from anywhere on the pill (.people-bubble-hit covers
+    // its rounded ends), so drive the preview from JS rather than leaning on
+    // the CSS :hover selector alone.
     let avatarLoaded = false;
     bubble.addEventListener('mouseenter', () => {
       if (!avatarLoaded) {

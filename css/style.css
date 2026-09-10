@@ -1013,6 +1013,28 @@ a {
   flex-wrap: nowrap;
 }
 
+/* Keep "My Gear" visually paired with "Upcoming Conventions" beside it.
+   The two .prose-col are already equal height (the .prose-columns row
+   stretches them), and the conventions side is the taller one — its ASC
+   badge carries a 60px logo. Make each column a flex stack and let the
+   gear block soak up the leftover height below its heading with auto
+   margins, so it sits centred against the middle of the badges instead of
+   clinging to the top and leaving the pair looking lopsided. The two gear
+   lists still top-align with each other (camera level with the first
+   lens). Desktop only: the columns stack on narrow screens (see the 760px
+   rule below), where there's nothing to line up against. */
+@media (min-width: 761px) {
+  .prose-col {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .gear-columns {
+    margin-top: auto;
+    margin-bottom: auto;
+  }
+}
+
 /* Matches .about-text p — same font/size as the About Me bio. */
 .gear-list {
   list-style: none;
@@ -1407,25 +1429,22 @@ a {
   transition: background 0.15s ease, color 0.15s ease;
 }
 
-/* border-radius: 999px means the pill's rounded ends and corners fall
-   outside its pointer hit-region — hovering the sides or bottom of the
-   pill would pass through to the row behind, so the avatar preview never
-   appeared. This invisible rectangular fill restores the full hit area:
-   hovering it counts as hovering the pill, and the mouseenter/mouseleave
-   handlers in the JS (which toggle .is-previewing) fire from anywhere on
-   it. Explicit longhand offsets rather than `inset` for older engines;
-   -1px also covers the 1px border ring, but no further — the pills sit
-   only 8px apart and the hit area must not reach a neighbour. */
-.people-bubble::before {
-  content: "";
+/* border-radius: 999px leaves the pill's rounded ends and corners outside
+   its own pointer hit-region, so hovering the sides or bottom used to pass
+   straight through to the row behind. This transparent rectangular child
+   (added in JS) fills the whole box and restores the hit area: hovering it
+   is hovering the pill, so the JS mouseenter/mouseleave handlers fire and
+   :hover matches everywhere on it.
+
+   A real element rather than ::before on purpose — Firefox (and Zen, built
+   on it) hit-tests an absolutely-positioned pseudo-element inconsistently,
+   which left the preview only triggering near the top of the pill. -1px
+   also covers the 1px border ring; the pills sit 8px apart, so it stays
+   well clear of the next one. */
+.people-bubble-hit {
   position: absolute;
-  top: -1px;
-  right: -1px;
-  bottom: -1px;
-  left: -1px;
+  inset: -1px;
   border-radius: 0;
-  background: transparent;
-  pointer-events: auto;
 }
 
 .people-bubble:hover,
