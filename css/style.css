@@ -1151,10 +1151,12 @@ a {
 
 /* Wraps the image so the progress bar can sit at its top edge and the
    is-loading blur's slight scale-up doesn't peek past the rounded corners.
-   Overflow toggles to auto once zoomed (see photo.js) — panning is native
-   browser scrolling (touch-drag, trackpad, scrollbar), not a custom drag
-   handler, deliberately: a from-scratch gesture/transform implementation
-   was tried in the lightbox first and turned out too unreliable. */
+   Overflow toggles to auto once zoomed (see photo.js). Panning works two
+   ways, both live at once: native browser scrolling (touch-drag, trackpad,
+   wheel, scrollbar) AND a mouse press-and-drag handler in photo.js (the
+   .is-panning class below). The earlier from-scratch pinch/pan attempt in
+   the lightbox reimplemented zoom too and got unreliable; this only adds a
+   drag that feeds the same native scroll offsets, so it stays simple. */
 .photo-full-wrap {
   position: relative;
   overflow: hidden;
@@ -1164,6 +1166,17 @@ a {
 
 .photo-full-wrap.is-zoomed {
   overflow: auto;
+  cursor: grab;
+}
+
+.photo-full-wrap.is-panning {
+  cursor: grabbing;
+  user-select: none;
+}
+
+/* No native image-drag ghost while panning with the mouse. */
+.photo-full-wrap.is-zoomed .photo-full {
+  -webkit-user-drag: none;
 }
 
 .photo-full {

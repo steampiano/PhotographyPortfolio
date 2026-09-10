@@ -159,13 +159,13 @@ if (!src) {
       });
 
       // ---- Zoom controls ----
-      // Discrete +/- steps, not a gesture/transform implementation —
-      // panning once zoomed is plain native browser scrolling (touch-drag,
-      // trackpad, scrollbar), not a custom drag handler. A from-scratch
-      // pinch/pan zoom was tried in the lightbox first and turned out too
-      // unreliable in practice; this trades that flexibility for something
-      // that just works, leaning entirely on scrolling the browser already
-      // knows how to do.
+      // Discrete +/- steps, not a gesture/transform implementation. Once
+      // zoomed, the image overflows .photo-full-wrap and can be panned two
+      // ways at once: native browser scrolling (touch-drag, trackpad, wheel,
+      // scrollbar) and a mouse press-and-drag handler further down. Both
+      // just move wrap.scrollLeft/scrollTop — no custom transform state — so
+      // this stays clear of the from-scratch pinch/pan zoom that was tried
+      // in the lightbox first and turned out too unreliable.
       const ZOOM_STEP = 0.5;
       const ZOOM_MAX = 3;
       let zoomLevel = 1;
@@ -263,6 +263,57 @@ if (!src) {
       zoomOutBtn.addEventListener('click', () => setZoom(zoomLevel - ZOOM_STEP));
       zoomInBtn.addEventListener('click', () => setZoom(zoomLevel + ZOOM_STEP));
       zoomResetBtn.addEventListener('click', () => setZoom(1));
+
+      // ---- Drag-to-pan (mouse) ----
+      // Additive to native scrolling: with a mouse, press anywhere on the
+      // zoomed image and drag to pan, as an alternative to the wheel or
+      // scrollbar. Touch is left entirely to native scrolling, which already
+      // does drag-to-pan well and shouldn't be fought with preventDefault.
+      let panning = false;
+      let panStartX = 0;
+      let panStartY = 0;
+      let panScrollLeft = 0;
+      let panScrollTop = 0;
+
+      wrap.addEventListener('pointerdown', (e) => {
+        if (e.pointerType !== 'mouse' || e.button !== 0) return;
+        if (!wrap.classList.contains('is-zoomed')) return;
+        // A press on the scrollbar gutter lands outside the client box —
+        // leave those to the native scrollbar drag.
+        const rect = wrap.getBoundingClientRect();
+        if (e.clientX - rect.left >= wrap.clientWidth) return;
+        if (e.clientY - rect.top >= wrap.clientHeight) return;
+
+        panning = true;
+        panStartX = e.clientX;
+        panStartY = e.clientY;
+        panScrollLeft = wrap.scrollLeft;
+        panScrollTop = wrap.scrollTop;
+        wrap.classList.add('is-panning');
+        wrap.setPointerCapture(e.pointerId);
+        e.preventDefault();
+      });
+
+      wrap.addEventListener('pointermove', (e) => {
+        if (!panning) return;
+        wrap.scrollLeft = panScrollLeft - (e.clientX - panStartX);
+        wrap.scrollTop = panScrollTop - (e.clientY - panStartY);
+        e.preventDefault();
+      });
+
+      function endPan(e) {
+        if (!panning) return;
+        panning = false;
+        wrap.classList.remove('is-panning');
+        if (e && e.pointerId != null && wrap.hasPointerCapture(e.pointerId)) {
+          wrap.releasePointerCapture(e.pointerId);
+        }
+      }
+      wrap.addEventListener('pointerup', endPan);
+      wrap.addEventListener('pointercancel', endPan);
+
+      // Stop the browser's own image drag-and-drop from hijacking a pan.
+      img.addEventListener('dragstart', (e) => e.preventDefault());
 
       let zoomResizeTimer;
       window.addEventListener('resize', () => {
