@@ -212,19 +212,27 @@ if (!src) {
       }
       updateZoomUI();
 
-      function setZoom(newLevel) {
+      // anchorX/anchorY (viewport coords) name the point to hold still while
+      // the image scales — the cursor for wheel/click zoom. Omitted, it
+      // holds the centre of the visible area (slider, reset, keyboard), so
+      // whatever's centred stays centred rather than snapping to a corner.
+      // Either way it's plain proportional math against scroll position, not
+      // gesture tracking.
+      function setZoom(newLevel, anchorX, anchorY) {
         if (!zoomReady) return;
         newLevel = Math.min(ZOOM_MAX, Math.max(1, newLevel));
         if (newLevel === zoomLevel) return;
 
-        // Keeps whatever's currently centered in the scrollable view still
-        // roughly centered after the resize, rather than snapping back to
-        // the top-left corner — plain proportional math against scroll
-        // position, not pointer/gesture tracking.
+        const rect = wrap.getBoundingClientRect();
+        let ax = anchorX == null ? wrap.clientWidth / 2 : anchorX - rect.left;
+        let ay = anchorY == null ? wrap.clientHeight / 2 : anchorY - rect.top;
+        ax = Math.max(0, Math.min(wrap.clientWidth, ax));
+        ay = Math.max(0, Math.min(wrap.clientHeight, ay));
+
         const oldWidth = wrap.scrollWidth || baseWidth;
         const oldHeight = wrap.scrollHeight || baseHeight;
-        const centerXFraction = (wrap.scrollLeft + wrap.clientWidth / 2) / oldWidth;
-        const centerYFraction = (wrap.scrollTop + wrap.clientHeight / 2) / oldHeight;
+        const anchorXFraction = (wrap.scrollLeft + ax) / oldWidth;
+        const anchorYFraction = (wrap.scrollTop + ay) / oldHeight;
 
         zoomLevel = newLevel;
         const zoomed = zoomLevel > 1;
@@ -234,8 +242,8 @@ if (!src) {
         img.style.height = (baseHeight * zoomLevel) + 'px';
         updateZoomUI();
 
-        wrap.scrollLeft = centerXFraction * wrap.scrollWidth - wrap.clientWidth / 2;
-        wrap.scrollTop = centerYFraction * wrap.scrollHeight - wrap.clientHeight / 2;
+        wrap.scrollLeft = anchorXFraction * wrap.scrollWidth - ax;
+        wrap.scrollTop = anchorYFraction * wrap.scrollHeight - ay;
       }
 
       function initZoomOnce() {
@@ -250,6 +258,7 @@ if (!src) {
         // default), and nothing would ever overflow enough to scroll.
         wrap.style.width = baseWidth + 'px';
         wrap.style.height = baseHeight + 'px';
+        wrap.classList.add('is-zoomable');
         zoomReady = true;
         updateZoomUI();
       }
@@ -314,6 +323,44 @@ if (!src) {
       // Stop the browser's own image drag-and-drop from hijacking a pan.
       img.addEventListener('dragstart', (e) => e.preventDefault());
 
+      // ---- Click / wheel to zoom ----
+      // Click or tap the image to zoom in on that spot; click again to go
+      // back to fit — the standard lightbox toggle (PhotoSwipe, Fancybox,
+      // Flickr…). A drag (pan) is not a click: a press that moves more than
+      // a few pixels before release suppresses the toggle.
+      const CLICK_ZOOM = 2.5;
+      const WHEEL_SENSITIVITY = 0.0025;
+      let pressX = 0;
+      let pressY = 0;
+
+      wrap.addEventListener('pointerdown', (e) => {
+        pressX = e.clientX;
+        pressY = e.clientY;
+      });
+
+      wrap.addEventListener('click', (e) => {
+        if (!zoomReady) return;
+        if (Math.abs(e.clientX - pressX) > 4 || Math.abs(e.clientY - pressY) > 4) return;
+        if (zoomLevel > 1) {
+          setZoom(1);
+        } else {
+          setZoom(CLICK_ZOOM, e.clientX, e.clientY);
+        }
+      });
+
+      // A plain wheel / two-finger scroll pans the zoomed image (native
+      // overflow scrolling — important on a trackpad). Only a pinch — which
+      // the browser delivers as ctrl+wheel — or a literal Ctrl/⌘+wheel zooms,
+      // toward the cursor, for fine adjustment between the click presets.
+      wrap.addEventListener('wheel', (e) => {
+        if (!zoomReady || (!e.ctrlKey && !e.metaKey)) return;
+        e.preventDefault();
+        let delta = e.deltaY;
+        if (e.deltaMode === 1) delta *= 16;                    // lines -> ~px
+        else if (e.deltaMode === 2) delta *= wrap.clientHeight; // pages
+        setZoom(zoomLevel - delta * WHEEL_SENSITIVITY, e.clientX, e.clientY);
+      }, { passive: false });
+
       let zoomResizeTimer;
       window.addEventListener('resize', () => {
         clearTimeout(zoomResizeTimer);
@@ -323,7 +370,7 @@ if (!src) {
           // clean 1x and re-measure, rather than keep stale dimensions.
           zoomLevel = 1;
           zoomReady = false;
-          wrap.classList.remove('is-zoomed');
+          wrap.classList.remove('is-zoomed', 'is-zoomable');
           img.classList.remove('is-zoomed');
           img.style.width = '';
           img.style.height = '';

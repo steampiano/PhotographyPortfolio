@@ -1173,17 +1173,24 @@ a {
 
 /* Wraps the image so the progress bar can sit at its top edge and the
    is-loading blur's slight scale-up doesn't peek past the rounded corners.
-   Overflow toggles to auto once zoomed (see photo.js). Panning works two
-   ways, both live at once: native browser scrolling (touch-drag, trackpad,
-   wheel, scrollbar) AND a mouse press-and-drag handler in photo.js (the
-   .is-panning class below). The earlier from-scratch pinch/pan attempt in
-   the lightbox reimplemented zoom too and got unreliable; this only adds a
-   drag that feeds the same native scroll offsets, so it stays simple. */
+   Overflow toggles to auto once zoomed (see photo.js). Zoom has several
+   entry points, all feeding the same setZoom(): the slider, click/tap on
+   the image, and the wheel. Panning likewise works every native way
+   (touch-drag, trackpad, wheel, scrollbar) plus a mouse press-and-drag
+   handler — all just move wrap.scrollLeft/scrollTop, no transform state,
+   which is what kept the earlier from-scratch pinch/pan zoom simple enough
+   to trust. */
 .photo-full-wrap {
   position: relative;
   overflow: hidden;
   border-radius: 4px;
   -webkit-overflow-scrolling: touch;
+}
+
+/* Cursor hints at the interaction: zoom-in when the image is fit, grab
+   (then grabbing) once it's zoomed and pannable. */
+.photo-full-wrap.is-zoomable:not(.is-zoomed) {
+  cursor: zoom-in;
 }
 
 .photo-full-wrap.is-zoomed {
@@ -1553,6 +1560,12 @@ a {
   padding: 10px 0;
   color: var(--muted);
   font-size: 0.8rem;
+  /* The bar floats over the bottom of the page, and its full width — the
+     empty gutters either side of the text included — was swallowing hovers
+     and clicks meant for page content scrolled behind it. Most visible on
+     the photo page: a handle pill scrolled to just above the footer had a
+     "dead" lower half. Let everything through except the actual links. */
+  pointer-events: none;
   /* Forces its own compositing layer, which helps mobile Safari keep a fixed
      element visually anchored while its dynamic address bar animates
      show/hide during scroll (most noticeable right near the top of the
@@ -1604,6 +1617,12 @@ a {
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
+}
+
+/* Re-enable pointer events on just the links (see .site-footer's
+   pointer-events: none). */
+.site-footer a {
+  pointer-events: auto;
 }
 
 .site-footer a:not(.social-link) {
