@@ -1,0 +1,8 @@
+# Local authoring tools — tracked in git, but not part of the deployed site.
+# (build.py still runs on Vercel as `npm run build`; it lives at the repo root
+#  and is intentionally NOT ignored here.)
+*.app
+*.command
+tools/
+organize-featured.html
+__pycache__/

@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Organize Featured Order (local tool)</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  body { padding-bottom: 24px; }
+  .organizer { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+  .organizer h1 { font-size: 1.6rem; margin-bottom: 8px; }
+  .organizer p { color: var(--muted); margin: 0 0 24px; }
+  .order-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .order-item {
+    display: flex; align-items: center; gap: 16px;
+    background: #141416; border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 14px; cursor: grab;
+  }
+  .order-item.dragging { opacity: 0.4; }
+  .order-item .handle { color: var(--muted); font-size: 1.2rem; user-select: none; }
+  .order-item img {
+    width: 90px; height: 90px; object-fit: cover; border-radius: 6px; flex: 0 0 auto;
+    background: #1a1a1a;
+  }
+  .order-item .meta { flex: 1 1 auto; min-width: 0; }
+  .order-item .meta .index { color: var(--muted); font-size: 0.8rem; }
+  .order-item .meta .caption { font-size: 0.95rem; margin-top: 2px; }
+  .order-item .meta .filename { color: var(--muted); font-size: 0.78rem; margin-top: 2px; word-break: break-all; }
+  .actions { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
+  .actions button {
+    background: transparent; border: 1px solid var(--border); color: var(--fg);
+    border-radius: 6px; padding: 10px 18px; font-size: 0.95rem; cursor: pointer;
+  }
+  .actions button:hover { background: var(--border); }
+  .output {
+    margin-top: 20px; width: 100%; min-height: 140px; background: #141416;
+    border: 1px solid var(--border); border-radius: 8px; color: var(--fg);
+    font-family: ui-monospace, monospace; font-size: 0.85rem; padding: 12px;
+  }
+  .status { margin-top: 10px; color: var(--muted); font-size: 0.85rem; min-height: 1.2em; }
+  .status.error { color: #ff8080; }
+  .status.ok { color: #7ddb9a; }
+  .empty { color: var(--muted); }
+
+  .panel {
+    background: #141416; border: 1px solid var(--border); border-radius: 10px;
+    padding: 20px; margin-bottom: 32px;
+  }
+  .panel h2 { font-size: 1.1rem; margin: 0 0 4px; }
+  .panel .hint { margin: 0 0 16px; }
+  .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+  .field label { font-size: 0.85rem; color: var(--muted); }
+  .field input[type="text"] {
+    background: #0e0e10; border: 1px solid var(--border); border-radius: 6px;
+    color: var(--fg); font: inherit; font-size: 0.9rem; padding: 8px 10px;
+  }
+  .field.checkbox { flex-direction: row; align-items: center; gap: 8px; }
+  .field.checkbox input { accent-color: var(--fg); }
+  input[type="file"] { color: var(--muted); font-size: 0.9rem; }
+  .primary {
+    background: var(--fg); color: var(--bg); border: none; font-weight: 600;
+  }
+  .primary:hover { opacity: 0.9; background: var(--fg); }
+  .server-only-note { font-size: 0.8rem; color: var(--muted); margin-top: 8px; }
+  details.fallback summary { cursor: pointer; color: var(--muted); font-size: 0.85rem; margin-top: 24px; }
+</style>
+</head>
+<body>
+
+<main class="organizer">
+  <h1>Organize Featured Order</h1>
+  <p>
+    A local-only authoring tool &mdash; not part of the live site.
+  </p>
+
+  <div class="panel" id="uploadPanel">
+    <h2>Add a photo</h2>
+    <p class="hint">
+      Upload a photo to add it to the site. It's saved into your photos,
+      thumbnails are generated, and (if checked below) it's featured &mdash;
+      then it appears in the list to drag into position.
+    </p>
+    <div class="field">
+      <label for="fileInput">Photo</label>
+      <input type="file" id="fileInput" accept="image/*">
+    </div>
+    <div class="field">
+      <label for="eventInput">Event (optional &mdash; also used as the folder it's filed in)</label>
+      <input type="text" id="eventInput" placeholder="e.g. TFF 2026">
+    </div>
+    <div class="field">
+      <label for="peopleInput">People (handles, comma + space separated &mdash; the @ is added for you)</label>
+      <input type="text" id="peopleInput" placeholder="e.g. alice, bob">
+    </div>
+    <div class="field">
+      <label for="captionInput">Caption (optional)</label>
+      <input type="text" id="captionInput" placeholder="">
+    </div>
+    <div class="field checkbox">
+      <input type="checkbox" id="featuredInput" checked>
+      <label for="featuredInput">Feature this photo (show it in the carousel)</label>
+    </div>
+    <button type="button" class="primary" id="uploadBtn">Upload photo</button>
+    <p class="status" id="uploadStatus"></p>
+    <p class="server-only-note" id="serverNote" hidden>
+      Uploading needs the helper server. Launch this tool with the
+      <strong>&ldquo;Organize Featured.command&rdquo;</strong> file (not plain
+      <code>python3 -m http.server</code>).
+    </p>
+  </div>
+
+  <h2 style="font-size:1.1rem;margin:0 0 6px;">Featured order</h2>
+  <p style="color:var(--muted);margin:0 0 16px;font-size:0.9rem;">
+    Showing your current featured photos in their current order &mdash; drag to rearrange.
+  </p>
+
+  <ul class="order-list" id="orderList">
+    <li class="empty">Loading&hellip;</li>
+  </ul>
+
+  <div class="actions">
+    <button type="button" class="primary" id="saveBtn">Save order</button>
+  </div>
+  <p class="status" id="status"></p>
+
+  <details class="fallback">
+    <summary>Manual fallback (if not using the helper server)</summary>
+    <div class="actions">
+      <button type="button" id="copyBtn">Copy featured-order.txt</button>
+      <button type="button" id="downloadBtn">Download featured-order.txt</button>
+    </div>
+    <textarea class="output" id="output" readonly></textarea>
+    <p class="status">
+      Save this as <code>photos/meta/featured-order.txt</code> (replacing the
+      existing file), then run <code>python3 build.py</code> and push.
+    </p>
+  </details>
+</main>
+
+<script>
+const list = document.getElementById('orderList');
+const output = document.getElementById('output');
+const status = document.getElementById('status');
+
+function filenameOf(imagePath) {
+  return imagePath.split('/').pop();
+}
+
+function buildOutput() {
+  const items = [...list.querySelectorAll('.order-item')];
+  const lines = items.map((el) => filenameOf(el.dataset.image));
+  output.value = lines.join('\n') + '\n';
+  [...list.querySelectorAll('.index')].forEach((el, i) => {
+    el.textContent = '#' + (i + 1);
+  });
+}
+
+let draggingEl = null;
+
+function makeItem(post, index) {
+  const li = document.createElement('li');
+  li.className = 'order-item';
+  li.draggable = true;
+  li.dataset.image = post.image;
+
+  li.innerHTML = `
+    <span class="handle">&#9776;</span>
+    <img src="${post.thumb || post.image}" alt="">
+    <div class="meta">
+      <div class="index">#${index + 1}</div>
+      <div class="caption">${post.caption ? escapeHtml(post.caption) : '<span class="empty">(no caption)</span>'}</div>
+      <div class="filename">${filenameOf(post.image)}</div>
+    </div>
+  `;
+
+  li.addEventListener('dragstart', () => {
+    draggingEl = li;
+    li.classList.add('dragging');
+  });
+  li.addEventListener('dragend', () => {
+    li.classList.remove('dragging');
+    draggingEl = null;
+    buildOutput();
+  });
+
+  return li;
+}
+
+function escapeHtml(s) {
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+list.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  const target = e.target.closest('.order-item');
+  if (!target || target === draggingEl || !draggingEl) return;
+  const rect = target.getBoundingClientRect();
+  const before = (e.clientY - rect.top) < rect.height / 2;
+  list.insertBefore(draggingEl, before ? target : target.nextSibling);
+});
+
+function loadFeatured() {
+  // cache-bust so a just-rebuilt posts.json is picked up immediately
+  return fetch('posts.json?t=' + Date.now())
+    .then((res) => res.json())
+    .then((posts) => {
+      const featured = posts.filter((p) => p.featured);
+      featured.sort((a, b) => {
+        const ao = a.order, bo = b.order;
+        if (ao != null && bo != null) return ao - bo;
+        if (ao != null) return -1;
+        if (bo != null) return 1;
+        return 0;
+      });
+
+      if (!featured.length) {
+        list.innerHTML = '<li class="empty">No featured photos yet — upload one above (with Feature checked), or mark one with "featured: yes".</li>';
+        output.value = '';
+        return;
+      }
+
+      list.innerHTML = '';
+      featured.forEach((post, i) => list.appendChild(makeItem(post, i)));
+      buildOutput();
+    })
+    .catch(() => {
+      list.innerHTML = '<li class="empty">Could not load posts.json — serve this over http:// (e.g. the helper server), not file://.</li>';
+    });
+}
+
+loadFeatured();
+
+document.getElementById('copyBtn').addEventListener('click', () => {
+  buildOutput();
+  navigator.clipboard.writeText(output.value).then(() => {
+    status.textContent = 'Copied to clipboard.';
+  }).catch(() => {
+    status.textContent = 'Could not copy automatically — select the text below and copy manually.';
+  });
+});
+
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  buildOutput();
+  const blob = new Blob([output.value], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'featured-order.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+  status.textContent = 'Downloaded — move it into photos/meta/featured-order.txt.';
+});
+
+// ---- Server-backed actions (upload + save order) ----
+const uploadStatus = document.getElementById('uploadStatus');
+const serverNote = document.getElementById('serverNote');
+
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result); // data: URL; server strips the prefix
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+document.getElementById('uploadBtn').addEventListener('click', async () => {
+  const fileInput = document.getElementById('fileInput');
+  const file = fileInput.files[0];
+  if (!file) {
+    uploadStatus.className = 'status error';
+    uploadStatus.textContent = 'Choose a photo first.';
+    return;
+  }
+
+  uploadStatus.className = 'status';
+  uploadStatus.textContent = 'Uploading and generating thumbnails…';
+  serverNote.hidden = true;
+
+  try {
+    const imageBase64 = await readFileAsBase64(file);
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        filename: file.name,
+        imageBase64,
+        event: document.getElementById('eventInput').value,
+        people: document.getElementById('peopleInput').value,
+        caption: document.getElementById('captionInput').value,
+        featured: document.getElementById('featuredInput').checked,
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+
+    uploadStatus.className = 'status ok';
+    uploadStatus.textContent = 'Added ' + (data.image || file.name) + '.';
+    fileInput.value = '';
+    document.getElementById('captionInput').value = '';
+    await loadFeatured();
+  } catch (err) {
+    uploadStatus.className = 'status error';
+    // A static server (no /api) returns 404/405 or fails to parse — guide the user.
+    if (err instanceof TypeError || /Unexpected token|JSON|404|405/.test(err.message)) {
+      uploadStatus.textContent = 'Upload needs the helper server.';
+      serverNote.hidden = false;
+    } else {
+      uploadStatus.textContent = 'Upload failed: ' + err.message;
+    }
+  }
+});
+
+document.getElementById('saveBtn').addEventListener('click', async () => {
+  buildOutput();
+  const lines = output.value.split('\n').map((s) => s.trim()).filter(Boolean);
+  status.className = 'status';
+  status.textContent = 'Saving order…';
+  try {
+    const res = await fetch('/api/save-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lines }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+    status.className = 'status ok';
+    status.textContent = 'Saved to photos/meta/featured-order.txt. Push to publish (or ask Claude).';
+  } catch (err) {
+    status.className = 'status error';
+    status.textContent = 'Could not save directly (helper server not running). Use the manual fallback below.';
+  }
+});
+</script>
+
+</body>
+</html>
