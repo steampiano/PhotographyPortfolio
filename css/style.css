@@ -1394,6 +1394,21 @@ a {
   transition: background 0.15s ease, color 0.15s ease;
 }
 
+/* border-radius: 999px means the pill's rounded ends and corners fall
+   outside its pointer hit-region — hovering the sides or bottom of the
+   pill would pass through to the row behind, so the avatar preview never
+   appeared. This invisible rectangular fill restores the full hit area:
+   hovering it still counts as hovering the pill, so :hover fires across
+   the whole shape. pointer-events on the preview stay none, so it's
+   unaffected. */
+.people-bubble::before {
+  content: "";
+  position: absolute;
+  inset: -1px; /* cover the 1px border ring too, but no further — the pills
+                  sit only 8px apart and the hit area must not reach a neighbour */
+  border-radius: 0;
+}
+
 .people-bubble:hover {
   background: rgba(255, 255, 255, 0.18);
   color: #dc3055;
