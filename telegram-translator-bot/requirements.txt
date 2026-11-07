@@ -1,0 +1,2 @@
+python-telegram-bot>=22,<23
+deep-translator>=1.11,<2
